@@ -1,0 +1,49 @@
+[user]
+	email = yuwenhao@stu.pku.edu.cn
+	name = pingzi
+
+[core]
+    editor = nvim
+    pager = bat --paging=always --wrap=never
+
+[diff]
+    tool = bat
+
+[difftool]
+    prompt = false
+
+[difftool "bat"]
+    cmd = bat --diff --color=always "$LOCAL" "$REMOTE"
+
+[alias]
+    st = status
+    ci = commit
+    co = checkout
+    br = branch
+    lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+    unstage = reset HEAD --   # 取消暂存：git unstage file.txt
+    last = log -1 HEAD        # 查看最新提交
+
+[init]
+    defaultBranch = main    # git init 时默认创建 main 分支
+
+[push]
+    default = simple        # 只推送当前分支（安全选项）
+
+[pull]
+    rebase = true           # 用 rebase 代替 merge（避免冗余合并提交）
+
+[rebase]
+    autoStash = true        # rebase 前自动 stash 未提交改动
+
+[fetch]
+    prune = true            # fetch 时自动 prune 已删除的远程分支
+
+[rerere]
+    enabled = true          # 复用以前的冲突解决，简化重复冲突处理
+
+[url "git@github.com:"]
+    insteadOf = https://github.com/  # SSH 替代 HTTPS
+
+[color]
+    ui = true
