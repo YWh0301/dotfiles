@@ -8,7 +8,8 @@ antigen bundle sudo
 antigen bundle zsh-users/zsh-autosuggestions
 antigen bundle zsh-users/zsh-syntax-highlighting
 
-antigen theme agnoster
+antigen theme consolemaverick/zsh2000
+export ZSH_2000_DISABLE_RVM='true'
 
 antigen apply
 
