@@ -1,0 +1,131 @@
+# see https://github.com/sigoden/aichat/blob/main/config.example.yaml
+
+model: openrouter:minimax/minimax-m2:free
+save: false
+save_session: null
+compress_threshold: 4096
+summarize_prompt: 'Summarize the discussion briefly in 200 words or less to use as a prompt for future context.'
+summary_prompt: 'This is a summary of the chat history as a recap: '
+keybindings: vi
+editor: nvim
+
+# ---- prelude ----
+repl_prelude: session:temp
+cmd_prelude: null
+agent_prelude: null
+
+# ---- clients ----
+clients:
+- type: openai-compatible
+  name: deepseek
+  api_base: https://api.deepseek.com
+  api_key: sk-fb9766a2d7c2457e9905046dc21bebcb
+  models:
+    - name: deepseek-chat
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: deepseek-reasoner
+      max_input_tokens: 128000
+
+- type: openai-compatible
+  name: openrouter
+  api_base: https://openrouter.ai/api/v1
+  api_key: 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
+  models:
+    - name: deepseek/deepseek-chat-v3.1:free
+      max_input_tokens: 163840
+    - name: tngtech/deepseek-r1t2-chimera:free
+      max_input_tokens: 163840
+    - name: deepseek/deepseek-r1:free
+      max_input_tokens: 163840
+    - name: google/gemini-2.0-flash-001
+      max_input_tokens: 1000000
+    - name: qwen/qwen3-coder:free
+      max_input_tokens: 262000
+    - name: minimax/minimax-m2:free
+      max_input_tokens: 196600
+
+- type: openai-compatible
+  name: chatanywhere
+  api_base: https://api.chatanywhere.tech
+  api_key: sk-UwD44MREtwB2IFnUbKcZyO9y4BATgg3VQWENjtZiQEGO50Tn
+  models:
+    - name: deepseek-v3-2-exp
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: deepseek-v3.1-250821
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: deepseek-reasoner
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: deepseek-r1
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: deepseek-v3
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: deepseek-chat
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: gpt-3.5-turbo
+      max_input_tokens: 16385
+      supports_function_calling: true
+    - name: gpt-3.5-turbo-16k
+      max_input_tokens: 16385
+      supports_function_calling: true
+    - name: gpt-3.5-turbo-instruct
+      max_input_tokens: 4096
+      supports_function_calling: false
+    - name: gpt-4o
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: gpt-4o-mini
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: gpt-4o-search-preview
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: gpt-4o-mini-search-preview
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: gpt-5
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: gpt-5-mini
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: gpt-5-nano
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: gpt-5-chat-latest
+      max_input_tokens: 128000
+      supports_function_calling: true
+    - name: text-embedding-ada-002
+      max_input_tokens: 8191
+      supports_function_calling: false
+    - name: text-embedding-3-small
+      max_input_tokens: 8191
+      supports_function_calling: false
+    - name: text-embedding-3-large
+      max_input_tokens: 8191
+      supports_function_calling: false
+
+- type: gemini
+  api_key: AIzaSyCO8dRbHi-In5Wms8xNxo6skdcDG_5q6cc
+  models:
+    - name: gemini-2.5-flash
+      max_input_tokens: 1048576
+      max_output_tokens: 65536
+      supports_vision: true
+      supports_function_calling: true
+    - name: gemini-2.5-pro
+      max_input_tokens: 1048576
+      max_output_tokens: 65536
+      supports_vision: true
+      supports_function_calling: true
+    - name: gemini-2.5-flash-lite
+      max_input_tokens: 1000000
+      max_output_tokens: 64000
+      supports_vision: true
+      supports_function_calling: true
