@@ -1,131 +1,209 @@
 # see https://github.com/sigoden/aichat/blob/main/config.example.yaml
 
-model: openrouter:minimax/minimax-m2:free
-save: false
-save_session: null
-compress_threshold: 4096
-summarize_prompt: 'Summarize the discussion briefly in 200 words or less to use as a prompt for future context.'
-summary_prompt: 'This is a summary of the chat history as a recap: '
-keybindings: vi
-editor: nvim
+# ---- llm ----
+#model: chatanywhere:gpt-5-mini
+#model: chatanywhere:gpt-5-mini-ca
+#model: chatanywhere:deepseek-v3-2-exp
+model: chatanywhere-free:gpt-5-mini
+#model: deepseek:deepseek-chat
+#model: openrouter-free:minimax/minimax-m2:free
+#model: openrouter-free:tngtech/deepseek-r1t2-chimera:free
+temperature: null                # Set default temperature parameter (0, 1)
+top_p: null                      # Set default top-p parameter, with a range of (0, 1) or (0, 2) depending on the model
+
+# ---- behavior ----
+stream: true                     # Controls whether to use the stream-style API.
+save: true                       # Indicates whether to persist the message
+keybindings: vi                  # Choose keybinding style (emacs, vi)
+editor: nvim                     # Specifies the command used to edit input buffer or session. (e.g. vim, emacs, nano).
+wrap: no                         # Controls text wrapping (no, auto, <max-width>)
+wrap_code: false                 # Enables or disables wrapping of code blocks
 
 # ---- prelude ----
-repl_prelude: session:temp
-cmd_prelude: null
-agent_prelude: null
+repl_prelude: session:temp       # Set a default role or session for REPL mode (e.g. role:<name>, session:<name>, <session>:<role>)
+cmd_prelude: null                # Set a default role or session for CMD mode (e.g. role:<name>, session:<name>, <session>:<role>)
+agent_prelude: null              # Set a session to use when starting a agent (e.g. temp, default)
 
-# ---- clients ----
+# ---- session ----
+# Controls the persistence of the session. if true, auto save; if false, not save; if null, asking the user
+save_session: false
+# Compress session when token count reaches or exceeds this threshold
+compress_threshold: 4096
+# Text prompt used for creating a concise summary of session message
+summarize_prompt: 'Summarize the discussion briefly in 200 words or less to use as a prompt for future context.'
+# Text prompt used for including the summary of the entire session
+summary_prompt: 'This is a summary of the chat history as a recap: '
+
 clients:
-- type: openai-compatible
-  name: deepseek
-  api_base: https://api.deepseek.com
-  api_key: sk-fb9766a2d7c2457e9905046dc21bebcb
-  models:
-    - name: deepseek-chat
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: deepseek-reasoner
-      max_input_tokens: 128000
+  - type: openai-compatible
+    name: openrouter-free
+    api_base: https://openrouter.ai/api/v1
+    api_key: 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
+    models:
+      - name: minimax/minimax-m2:free
+        max_input_tokens: 196600
+        input_price: 0
+        output_price: 0
+      - name: tngtech/deepseek-r1t2-chimera:free
+        max_input_tokens: 163800
+        input_price: 0
+        output_price: 0
+      - name: openrouter/polaris-alpha
+        max_input_tokens: 256000
+        input_price: 0
+        output_price: 0
+      - name: z-ai/glm-4.5-air:free
+        max_input_tokens: 131000
+        input_price: 0
+        output_price: 0
+      - name: deepseek/deepseek-chat-v3-0324:free
+        max_input_tokens: 163800
+        input_price: 0
+        output_price: 0
+    
+  - type: openai-compatible
+    name: chatanywhere
+    #api_base: https://api.chatanywhere.tech
+    api_base: https://api.chatanywhere.org
+    api_key: [Deleted]
+    models:
+      - name: gpt-5
+        max_input_tokens: 400000
+        max_output_tokens: 128000
+        input_price: 8.75
+        output_price: 70
+      - name: gpt-5-ca
+        max_input_tokens: 400000
+        max_output_tokens: 128000
+        input_price: 5
+        output_price: 40
+      - name: gpt-5-mini
+        max_input_tokens: 400000
+        max_output_tokens: 128000
+        input_price: 1.75
+        output_price: 14
+      - name: gpt-5-mini-ca
+        max_input_tokens: 400000
+        max_output_tokens: 128000
+        input_price: 1
+        output_price: 8
+      - name: gpt-4o-mini
+        max_input_tokens: 128000
+        max_output_tokens: 16384
+        input_price: 1.05
+        output_price: 4.2
+      - name: gpt-4o-mini-ca
+        max_input_tokens: 128000
+        max_output_tokens: 16384
+        input_price: 0.75
+        output_price: 3
+      - name: deepseek-v3-2-exp	
+        max_input_tokens: 163800
+        max_output_tokens: 65536
+        input_price: 1.2
+        output_price: 1.8
+      - name: gemini-2.5-flash
+        max_input_tokens: 1048576
+        max_output_tokens: 65536
+        input_price: 0.6
+        output_price: 14
+        supports_vision: true
+        supports_function_calling: true
+      - name: gemini-2.5-pro
+        max_input_tokens: 1048576
+        max_output_tokens: 65536
+        input_price: 7
+        output_price: 40
+        supports_vision: true
+        supports_function_calling: true
+      - name: grok-4
+        max_input_tokens: 256000
+        input_price: 12
+        output_price: 60
+        supports_function_calling: true
+      - name: grok-4-fast
+        max_input_tokens: 2000000
+        input_price: 0.8
+        output_price: 2
+        supports_function_calling: true
 
-- type: openai-compatible
-  name: openrouter
-  api_base: https://openrouter.ai/api/v1
-  api_key: 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
-  models:
-    - name: deepseek/deepseek-chat-v3.1:free
-      max_input_tokens: 163840
-    - name: tngtech/deepseek-r1t2-chimera:free
-      max_input_tokens: 163840
-    - name: deepseek/deepseek-r1:free
-      max_input_tokens: 163840
-    - name: google/gemini-2.0-flash-001
-      max_input_tokens: 1000000
-    - name: qwen/qwen3-coder:free
-      max_input_tokens: 262000
-    - name: minimax/minimax-m2:free
-      max_input_tokens: 196600
+  - type: openai-compatible
+    name: chatanywhere-free
+    #api_base: https://api.chatanywhere.tech
+    api_base: https://api.chatanywhere.org
+    api_key: sk-UwD44MREtwB2IFnUbKcZyO9y4BATgg3VQWENjtZiQEGO50Tn
+    models:
+      - name: gpt-5-mini
+        max_input_tokens: 4096
+        input_price: 0
+        output_price: 0
+      - name: gpt-4o-mini
+        max_input_tokens: 4096
+        input_price: 0
+        output_price: 0
 
-- type: openai-compatible
-  name: chatanywhere
-  api_base: https://api.chatanywhere.tech
-  api_key: sk-UwD44MREtwB2IFnUbKcZyO9y4BATgg3VQWENjtZiQEGO50Tn
-  models:
-    - name: deepseek-v3-2-exp
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: deepseek-v3.1-250821
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: deepseek-reasoner
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: deepseek-r1
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: deepseek-v3
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: deepseek-chat
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: gpt-3.5-turbo
-      max_input_tokens: 16385
-      supports_function_calling: true
-    - name: gpt-3.5-turbo-16k
-      max_input_tokens: 16385
-      supports_function_calling: true
-    - name: gpt-3.5-turbo-instruct
-      max_input_tokens: 4096
-      supports_function_calling: false
-    - name: gpt-4o
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: gpt-4o-mini
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: gpt-4o-search-preview
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: gpt-4o-mini-search-preview
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: gpt-5
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: gpt-5-mini
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: gpt-5-nano
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: gpt-5-chat-latest
-      max_input_tokens: 128000
-      supports_function_calling: true
-    - name: text-embedding-ada-002
-      max_input_tokens: 8191
-      supports_function_calling: false
-    - name: text-embedding-3-small
-      max_input_tokens: 8191
-      supports_function_calling: false
-    - name: text-embedding-3-large
-      max_input_tokens: 8191
-      supports_function_calling: false
+  - type: openai-compatible
+    name: deepseek
+    api_base: https://api.deepseek.com
+    api_key: sk-a000c602afad49f0889b47d0958cdad4
+    models:
+      - name: deepseek-chat
+        max_input_tokens: 128000
+        input_price: 2
+        output_price: 3
+        supports_function_calling: true
+      - name: deepseek-reasoner
+        max_input_tokens: 128000
+        input_price: 2
+        output_price: 3
+        supports_function_calling: false
 
-- type: gemini
-  api_key: AIzaSyCO8dRbHi-In5Wms8xNxo6skdcDG_5q6cc
-  models:
-    - name: gemini-2.5-flash
-      max_input_tokens: 1048576
-      max_output_tokens: 65536
-      supports_vision: true
-      supports_function_calling: true
-    - name: gemini-2.5-pro
-      max_input_tokens: 1048576
-      max_output_tokens: 65536
-      supports_vision: true
-      supports_function_calling: true
-    - name: gemini-2.5-flash-lite
-      max_input_tokens: 1000000
-      max_output_tokens: 64000
-      supports_vision: true
-      supports_function_calling: true
+  - type: gemini
+    name: gemini-free
+    api_base: https://generativelanguage.googleapis.com/v1beta
+    api_key: AIzaSyAVWkM1Y4uDNavR1ZvtuDD3ilfUbmACKaw
+    models:
+      - name: gemini-2.5-pro
+        max_input_tokens: 1048576
+        max_output_tokens: 65536
+        input_price: 0
+        output_price: 0
+      - name: gemini-2.5-flash
+        max_input_tokens: 1048576
+        max_output_tokens: 65536
+        input_price: 0
+        output_price: 0
+
+  # For any platform compatible with OpenAI's API
+  - type: openai-compatible
+    name: ollama
+    api_base: http://localhost:11434/v1
+    models:
+      - name: qwen2.5-coder:7b
+        max_input_tokens: 32000
+        input_price: 0
+        output_price: 0
+      - name: qwen2.5-coder:3b
+        max_input_tokens: 32000
+        input_price: 0
+        output_price: 0
+      - name: qwen2.5:3b
+        max_input_tokens: 32000
+        input_price: 0
+        output_price: 0
+      - name: qwen2.5:7b
+        max_input_tokens: 32000
+        input_price: 0
+        output_price: 0
+      - name: qwen2.5vl:7b
+        max_input_tokens: 125000
+        input_price: 0
+        output_price: 0
+      - name: qwen3-vl:4b
+        max_input_tokens: 256000
+        input_price: 0
+        output_price: 0
+      - name: qwen3-vl:8b
+        max_input_tokens: 256000
+        input_price: 0
+        output_price: 0
