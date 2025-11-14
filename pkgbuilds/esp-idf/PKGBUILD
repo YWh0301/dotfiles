@@ -1,0 +1,38 @@
+# Maintainer: Alex Henrie <alexhenrie24@gmail.com>
+pkgname=esp-idf
+pkgver=5.5.1
+pkgrel=1
+pkgdesc="Espressif IoT Development Framework. Official development framework for ESP32."
+arch=('i686' 'x86_64' 'aarch' 'aarch64' 'armv7h')
+url="https://github.com/espressif/esp-idf"
+license=('APACHE')
+depends=('ccache' 'cmake' 'dfu-util' 'git' 'gperf' 'libusb' 'ninja' 'python')
+install='esp-idf.install'
+options=('!strip')
+source=(https://github.com/espressif/${pkgname}/releases/download/v${pkgver}/${pkgname}-v${pkgver}.zip)
+sha256sums=('7dfcf8ddca496940a06ea2598fc349554d6ac73a40d041c42e95d8aff5cd07b1')
+
+prepare() {
+  cd $srcdir
+  echo "#!/usr/bin/sh" > espsetup
+  echo "export IDF_TOOLS_PATH=/opt/espressif/esp-tools" >> espsetup
+  echo "export IDF_PYTHON_ENV_PATH=/opt/espressif/esp-tools/python_env/idf5.5_py3.12_env" >> espsetup
+  echo "source /opt/espressif/esp-idf/export.sh" >>espsetup
+	cd "$srcdir/${pkgname}-v${pkgver}"
+	git submodule update --init
+  mkdir $srcdir/espressif
+  IDF_TOOLS_PATH=$srcdir/espressif ./install.sh
+}
+
+package() {
+  mkdir -p ${pkgdir}/usr/bin/
+	mkdir -p ${pkgdir}/opt/espressif
+	mkdir -p ${pkgdir}/opt/espressif/esp-idf
+	mkdir -p ${pkgdir}/opt/espressif/esp-tools
+  cd ${srcdir}
+  cp ./espsetup ${pkgdir}/usr/bin/
+	cd "${srcdir}/${pkgname}-v${pkgver}"
+	cp -R . ${pkgdir}/opt/espressif/esp-idf
+	cd "${srcdir}/espressif"
+	cp -R . ${pkgdir}/opt/espressif/esp-tools
+}

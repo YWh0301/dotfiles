@@ -1,0 +1,72 @@
+#!/bin/bash
+
+SAMPLES_DIR="/opt/hpmicro/hpm_sdk/samples/"
+
+# 功能 1: 列出所有包含 CMakeLists.txt 的目录（相对于 samples 目录的路径）
+function list_cmake_dirs() {
+    last_prefix=""
+    find "$SAMPLES_DIR" -type d | while read -r dir; do
+        if [ -f "$dir/CMakeLists.txt" ]; then
+            # 提取前缀路径（除去最后一个目录）
+            prefix=$(dirname "$dir")/
+            # 相对路径
+            rel_path="${prefix#$SAMPLES_DIR}"
+            # 获取当前目录名（即项目名）
+            name=$(basename "$dir")
+            if [ "$prefix" = "${SAMPLES_DIR}" ]; then
+                echo
+                echo -e -n "\e[33m${name}\e[0m"
+            elif [ "$last_prefix" = "$prefix" ]; then
+                :
+                echo -e -n ", \e[33m${name}\e[0m"
+            else
+                echo
+                echo -e -n "${rel_path}: \e[33m${name}\e[0m"
+                last_prefix=$prefix
+            fi
+        fi
+    done
+    echo
+}
+
+# 功能 2: 拷贝指定目录到当前目录作为项目目录
+function copy_sample_project() {
+    local sample_name="$1"
+    if [ -z "$sample_name" ]; then
+        echo "Error: please provide a sample dir."
+        exit 1
+    fi
+    src_dir="${SAMPLES_DIR}$sample_name"
+    if [ ! -d "$src_dir" ]; then
+        echo "Error: '$sample_name' does not exist."
+        exit 1
+    fi
+    if [ ! -f "$src_dir/CMakeLists.txt" ]; then
+        cp -r "$src_dir" "./$(basename "$sample_name")"
+        echo "Copied '$sample_name', but it isn't a sample dir."
+        exit 1
+    fi
+    if [ ! -d "$(basename "$sample_name")" ]; then
+        cp -r "$src_dir" "./$(basename "$sample_name")"
+        src_prefix="$(dirname "$src_dir")"
+        if [ -d "$src_prefix/common" ]; then
+            cp -r "$src_prefix/common" "./$(basename "$sample_name")/common"
+            sed -i "s/..\/common/.\/common/g" "./$(basename "$sample_name")/CMakeLists.txt"
+        fi
+        echo "Copied $sample_name to current dir."
+    else
+        echo "Error: '$(basename "$sample_name")' already exists in current dir."
+    fi
+}
+
+# 主逻辑
+if [ "$1" == "-l" ]; then
+    list_cmake_dirs
+elif [ "$1" == "-c" ]; then
+    copy_sample_project "$2"
+else
+    echo "Usage: $0 -l | -c <sample_relative_path>"
+    echo "   -l: List all samples"
+    echo "   -c: copy sample"
+    exit 1
+fi

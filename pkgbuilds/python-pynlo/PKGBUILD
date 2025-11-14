@@ -1,0 +1,33 @@
+pkgname="python-pynlo"
+_name="PyNLO"
+pkgver="git"
+pkgrel=1
+pkgdesc="Nonlinear optics modeling toolkit for Python"
+url="https://github.com/cdfredrick/${_name}"
+license=('GPLv3')
+arch=('x86_64')
+depends=('python' 'python-numpy' 'python-scipy' 'python-numba')
+makedepends=('python' 'python-installer' 'python-build' 'python-wheel' )
+optdepends=()
+source=("fft.py" "https://github.com/cdfredrick/${_name}/archive/refs/heads/main.zip")
+sha256sums=( 'e6ce153f3dfb3e8d2f813e31bb0927ff01c7595db7f83da3a27720bb02ca4f41' 'cc37d6448038d74eb3c97735a1af9216fbe090467a2088707ccb7e1029504b5e')
+
+prepare() {
+    cd ${srcdir}/${_name}-main/pynlo
+    sed -Ei 's/np\.math\./math./' utility/__init__.py
+    sed -i '/import copy/a import math' utility/__init__.py
+    cp "$srcdir/fft.py" utility/fft.py
+}
+
+
+build() {
+    cd ${srcdir}/${_name}-main
+    python -m build --wheel --no-isolation
+}
+
+package() {
+    cd ${srcdir}/${_name}-main
+    install -Dm644 "./COPYING.txt" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    python -m installer --destdir="$pkgdir" dist/*.whl
+}
+

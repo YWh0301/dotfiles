@@ -1,0 +1,45 @@
+# maintainer pingzi<2400112582@stu.pku.edu.cn>
+pkgname=riscv-openocd-hpm
+pkgver=0.2.0
+pkgrel=1
+pkgdesc="Openocd Binary Package for HPMicro Chips"
+arch=('x86_64')
+url="https://github.com/hpmicro/riscv-openocd"
+license=('GPL-2.0-or-later')
+depends=('libftdi' 'hidapi')
+source=("${pkgname}-v${pkgver}::git+https://github.com/hpmicro/riscv-openocd#branch=riscv-hpmicro")
+sha256sums=('SKIP')
+
+prepare() {
+    cd "${srcdir}/${pkgname}-v${pkgver}"
+
+    # avoid using plugdev group that is not Arch style
+    sed -i 's|GROUP="plugdev",|TAG+="uaccess", TAG+="udev-acl",|' contrib/60-openocd.rules
+
+    # pull jimtcl
+    git submodule update --init --recursive
+}
+
+build() {
+    cd "$srcdir/${pkgname}-v${pkgver}"
+
+    # rename info file so we don't clash with a normal openocd install
+    sed -i 's/openocd.info/riscv-openocd-hpm.info/' doc/openocd.texi
+
+    ./bootstrap
+    ./configure \
+    --prefix=/usr \
+    --program-prefix=riscv- \
+    --program-suffix=-hpm \
+    --disable-werror \
+    ${_features[@]/#/--enable-}
+
+    make pkgdatadir="/usr/share/riscv-openocd-hpm"
+}
+
+package() {
+  cd "$srcdir/${pkgname}-v${pkgver}"
+  make pkgdatadir="/usr/share/riscv-openocd-hpm" DESTDIR="$pkgdir" install
+
+  install -Dm 644 contrib/60-openocd.rules "$pkgdir"/usr/lib/udev/rules.d/60-riscv-openocd-hpm.rules
+}

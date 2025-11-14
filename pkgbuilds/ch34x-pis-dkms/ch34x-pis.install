@@ -1,0 +1,71 @@
+#!/bin/sh
+
+post_install() {
+    echo "==> ch34x-pis: post_install start"
+
+    # 优雅提示：若当前内核缺 headers，提示用户安装匹配的 headers 包
+    if [ ! -d "/lib/modules/$(uname -r)/build" ]; then
+        cat <<'WARN'
+WARNING: Kernel headers for the running kernel ($(uname -r)) were not found.
+DKMS may not be able to build the module until you install the correct headers package,
+for example: linux-headers, linux-zen-headers, linux-lts-headers, etc.
+WARN
+    fi
+
+    # 1) 注册到 DKMS 并尝试构建/安装（best-effort）
+    if command -v dkms >/dev/null 2>&1; then
+        echo "Registering and building ch34x_pis with DKMS..."
+        dkms add -m ch34x_pis -v 1.0 >/dev/null 2>&1 || true
+        dkms build -m ch34x_pis -v 1.0 >/dev/null 2>&1 || echo "dkms build returned non-zero"
+        dkms install -m ch34x_pis -v 1.0 >/dev/null 2>&1 || echo "dkms install returned non-zero"
+    else
+        echo "Note: dkms is not installed; install 'dkms' to enable automatic rebuild on kernel upgrades."
+    fi
+
+    # 2) 尝试卸载潜在冲突模块 spi_ch341（若正在使用则忽略错误）
+    if lsmod | grep -q '^spi_ch341'; then
+        echo "Attempting to remove conflicting module spi_ch341..."
+        rmmod spi_ch341 2>/dev/null || echo "spi_ch341 could not be removed (may be in use)."
+    fi
+
+    # 3) 尝试立即加载模块（如果已构建）
+    if ! lsmod | grep -q '^ch34x_pis'; then
+        modprobe ch34x_pis 2>/dev/null || echo "ch34x_pis not loaded now (it may be built/installed by DKMS later)."
+    fi
+
+    # 4) 更新 ldconfig（如果 libch347.so 已安装）
+    if [ -f /usr/lib/libch347.so ]; then
+        ldconfig || true
+    fi
+
+    # 5) 重新加载 udev 规则并触发（以便新设备获得组/权限）
+    if command -v udevadm >/dev/null 2>&1; then
+        udevadm control --reload-rules 2>/dev/null || true
+        udevadm trigger --action=add 2>/dev/null || true
+    fi
+
+    echo "==> ch34x-pis: post_install complete"
+}
+
+post_upgrade() {
+    echo "==> ch34x-pis: post_upgrade -> calling post_install"
+    post_install
+}
+
+pre_remove() {
+    echo "==> ch34x-pis: pre_remove"
+
+    # 尝试卸载模块
+    rmmod ch34x_pis 2>/dev/null || true
+
+    # 尝试移除 DKMS 注册（所有内核）
+    if command -v dkms >/dev/null 2>&1; then
+        dkms remove -m ch34x_pis -v 1.0 --all >/dev/null 2>&1 || true
+    fi
+
+    echo "==> ch34x-pis: pre_remove complete"
+}
+
+post_remove() {
+    echo "==> ch34x-pis: post_remove (note: group and udev rule files remain to avoid surprising system state removal)"
+}

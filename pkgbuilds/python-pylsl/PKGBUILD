@@ -1,0 +1,27 @@
+pkgname="python-pylsl"
+_name="pylsl"
+pkgver="1.17.6"
+pkgrel=1
+pkgdesc="Python interface to the Lab Streaming Layer (LSL)"
+url="https://github.com/labstreaminglayer/${_name}"
+license=('GPLv3')
+arch=('x86_64')
+depends=('python' 'liblsl' 'python-numpy')
+makedepends=('python' 'python-installer' 'python-build' 'python-wheel' 'python-setuptools' 'python-setuptools-scm' )
+optdepends=()
+source=("https://github.com/labstreaminglayer/${_name}/archive/refs/tags/v${pkgver}.zip")
+sha256sums=( '3a5e77f50f1b4b845f1f63eacc3102e8be692fa82e0fcfe929a3deefc2811f77')
+
+
+build() {
+    export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PYLSL=${pkgver}
+    cd ${srcdir}/${_name}-${pkgver}
+    python -m build --wheel --no-isolation
+}
+
+package() {
+    cd ${srcdir}/${_name}-${pkgver}
+    install -Dm644 "./LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    python -m installer --destdir="$pkgdir" dist/*.whl
+}
+

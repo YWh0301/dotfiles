@@ -1,0 +1,176 @@
+# maintainer pingzi<2400112582@stu.pku.edu.cn>
+pkgname=riscv32-ndsv5f-toolchain
+_reponame=nds-gnu-toolchain
+pkgver=5_3_0_release_linux
+_gitver=5_3_0-release-v5
+pkgrel=1
+pkgdesc="GNU toolchain for RISCV32 AndesCore with Arch rv32imfcxandes"
+arch=('x86_64')
+url="https://github.com/andestech/nds-gnu-toolchain"
+license=('GPL-2.0-or-later')
+makedepends=('git' 'sed' 'autoconf' 'automake' 'curl' 'python' 'libmpc' 'mpfr' 'gmp' 'gawk' 'bison' 'flex' 'texinfo' 'gperf' 'libtool' 'patchutils' 'bc' 'zlib' 'expat')
+options=(!emptydirs !lto !strip !buildflags)
+
+pkgver() {
+  cd "$srcdir/$_reponame"
+  git describe --tags | sed 's/^ast-v//; s/-/_/g'
+}
+
+_download_source() {
+    # you can use SKIP_DOWNLOAD to skip repo clone
+    if [[ -z "$SKIP_DOWNLOAD" ]]; then
+        git clone https://github.com/andestech/${_reponame}.git -b ast-v${_gitver}
+        cd "$srcdir/${_reponame}"
+        git submodule update --init --recursive
+    else
+        echo "Skipping source download..."
+    fi
+}
+
+prepare() {
+    _download_source
+    cd "$srcdir/${_reponame}"
+
+    # add gcc libiberty qsort bug patch
+    echo "diff --git a/gcc/libiberty/qsort.c b/gcc/libiberty/qsort.c" > fix_gcc_libiberty_qsort.patch
+    echo "--- a/gcc/libiberty/qsort.c" >> fix_gcc_libiberty_qsort.patch
+    echo "+++ b/gcc/libiberty/qsort.c" >> fix_gcc_libiberty_qsort.patch
+    echo "@@ -190,7 +190,14 @@" >> fix_gcc_libiberty_qsort.patch
+    echo " weak_alias (__qsort_r, qsort_r)" >> fix_gcc_libiberty_qsort.patch
+    echo " " >> fix_gcc_libiberty_qsort.patch
+    echo "+static int" >> fix_gcc_libiberty_qsort.patch
+    echo "+cmp_wrapper (const void *a, const void *b, void *arg)" >> fix_gcc_libiberty_qsort.patch
+    echo "+{" >> fix_gcc_libiberty_qsort.patch
+    echo "+  int (*real_cmp)(const void*, const void*) = arg;" >> fix_gcc_libiberty_qsort.patch
+    echo "+  return real_cmp(a, b);" >> fix_gcc_libiberty_qsort.patch
+    echo "+}" >> fix_gcc_libiberty_qsort.patch
+    echo "+" >> fix_gcc_libiberty_qsort.patch
+    echo " void" >> fix_gcc_libiberty_qsort.patch
+    echo " qsort (void *a, size_t n, size_t es, int (*cmp) (const void *, const void *))" >> fix_gcc_libiberty_qsort.patch
+    echo " {" >> fix_gcc_libiberty_qsort.patch
+    echo "-  return __qsort_r (a, n, es, cmp, NULL);" >> fix_gcc_libiberty_qsort.patch
+    echo "+  __qsort_r (a, n, es, cmp_wrapper, cmp);" >> fix_gcc_libiberty_qsort.patch
+    echo " }" >> fix_gcc_libiberty_qsort.patch
+    patch -p1 -N < fix_gcc_libiberty_qsort.patch || [ $? -eq 1 ]
+    
+    cd ./gcc
+    ./contrib/download_prerequisites
+}
+
+build() {
+    export CFLAGS=""
+    export CXXFLAGS=""
+    export CPPFLAGS=""
+    export LDFLAGS=""
+
+    TARGET=riscv32-ndsv5f-elf
+    PREFIX=/usr
+    ARCH=rv32imfcxandes
+    ABI=ilp32f
+    CPU=andes-25-series
+    SYS_ROOT=$PREFIX/$TARGET
+    MAKE_PARALLEL=-j`nproc`
+
+    cd "$srcdir/${_reponame}"
+    rm -rf build_dir
+    mkdir -p build_dir/output
+    export PATH=$srcdir/${_reponame}/build_dir/output${PREFIX}/bin:$PATH
+
+    # build binutils
+    cd "$srcdir/${_reponame}/build_dir"
+    mkdir -p binutils
+    cd binutils
+    ${srcdir}/${_reponame}/binutils/configure \
+      --libexecdir=${PREFIX}/lib --datarootdir=${PREFIX}/share/$TARGET \
+      --with-sysroot=${SYS_ROOT} \
+      --target=${TARGET} --prefix=${PREFIX} --with-arch=${ARCH} \
+      --with-curses --disable-nls --disable-tui --with-python=no --with-lzma=no \
+      --with-expat=yes --with-guile=no --enable-plugins --disable-werror \
+      --enable-deterministic-archives --disable-gdb --disable-sim \
+      --enable-multilib=yes --with-multilib-list=dsp
+    make ${MAKE_PARALLEL} all
+    make DESTDIR="$srcdir/${_reponame}/build_dir/output" install
+
+    # build bootstrap-gcc
+    cd "$srcdir/${_reponame}/build_dir"
+    mkdir -p bootstrap-gcc
+    cd bootstrap-gcc
+    ${srcdir}/${_reponame}/gcc/configure \
+      --libexecdir=${PREFIX}/lib --datarootdir=${PREFIX}/share/${TARGET} \
+      --with-sysroot=${SYS_ROOT} \
+      --prefix=${PREFIX} --with-arch=${ARCH} --with-tune=${CPU} --target=${TARGET} \
+      --disable-nls --enable-languages=c --enable-lto \
+      --enable-Os-default-ex9=yes --enable-gp-insn-relax-default=yes \
+      --enable-error-on-no-atomic=yes --disable-tls \
+      --enable-multilib=yes --with-multilib-list=dsp \
+      --with-newlib --with-abi=${ABI} --disable-werror \
+      --disable-shared --enable-threads=single \
+      --enable-checking=release \
+      CFLAGS_FOR_TARGET="-O2 -g -mstrict-align" \
+      CXXFLAGS_FOR_TARGET="-O2 -g -mstrict-align"
+    make ${MAKE_PARALLEL} all-gcc
+    make DESTDIR="$srcdir/${_reponame}/build_dir/output" install-gcc
+
+    # build newlib with bootstrap-gcc
+    cd "$srcdir/${_reponame}/build_dir"
+    mkdir -p newlib
+    cd newlib
+    ${srcdir}/${_reponame}/newlib/configure --prefix=${PREFIX} --target=${TARGET} \
+      --libexecdir=${PREFIX}/lib --datarootdir=${PREFIX}/share/${TARGET} \
+      --with-sysroot=${SYS_ROOT} \
+      CFLAGS_FOR_TARGET="-O2 -ffunction-sections -fdata-sections -mstrict-align"
+    make ${MAKE_PARALLEL} all
+    make DESTDIR="$srcdir/${_reponame}/build_dir/output" install
+
+    # build final gcc
+    cd "$srcdir/${_reponame}/build_dir"
+    mkdir -p gcc
+    cd gcc
+    ${srcdir}/${_reponame}/gcc/configure \
+      --libexecdir=${PREFIX}/lib --datarootdir=${PREFIX}/share/${TARGET} \
+      --with-sysroot=${SYS_ROOT} \
+      --with-build-sysroot=$srcdir/${_reponame}/build_dir/output${SYS_ROOT} \
+      --with-native-system-header-dir=/include \
+      --prefix=${PREFIX} --with-arch=${ARCH} --with-tune=${CPU} --target=${TARGET} \
+      --disable-nls --enable-languages=c,c++ --enable-lto --with-abi=${ABI} \
+      --enable-Os-default-ex9=yes --enable-gp-insn-relax-default=yes \
+      --enable-error-on-no-atomic=yes --disable-tls \
+      --enable-multilib=yes --with-multilib-list=dsp \
+      --with-newlib --disable-shared --enable-threads=single \
+      --disable-werror \
+      --enable-checking=release \
+      CFLAGS_FOR_TARGET="-O2 -g -mstrict-align" \
+      CXXFLAGS_FOR_TARGET="-O2 -g -mstrict-align"
+    make ${MAKE_PARALLEL} all
+
+    # build gdb
+    cd "$srcdir/${_reponame}/build_dir"
+    mkdir -p gdb
+    cd gdb
+    ${srcdir}/${_reponame}/gdb/configure \
+      --libexecdir=${PREFIX}/lib --datarootdir=${PREFIX}/share/${TARGET} \
+      --with-sysroot=${SYS_ROOT} \
+      --target=${TARGET} --prefix=${PREFIX} --with-arch=${ARCH} \
+      --with-curses --disable-nls --enable-tui --with-python=no \
+      --with-lzma=no --with-expat=yes --with-guile=no \
+      --disable-werror --enable-sim \
+      --disable-binutils --disable-ld --disable-gas --disable-gprof
+    make ${MAKE_PARALLEL} all
+}
+
+package() {
+    cd "$srcdir/${_reponame}/build_dir/binutils"
+    make DESTDIR=${pkgdir} install
+    rm "$pkgdir"/usr/lib/bfd-plugins/libdep.so
+
+    cd "$srcdir/${_reponame}/build_dir/newlib"
+    make DESTDIR=${pkgdir} install
+
+    cd "$srcdir/${_reponame}/build_dir/gcc"
+    make DESTDIR=${pkgdir} install
+    rm "$pkgdir"/usr/lib/libcc1.*
+
+    cd "$srcdir/${_reponame}/build_dir/gdb"
+    make DESTDIR=${pkgdir} install
+    rm -r "$pkgdir"/usr/include/gdb/
+}

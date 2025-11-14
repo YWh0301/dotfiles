@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=CRIkit2
+Comment=Hyperspectral imaging (HSI) processing and analysis platform
+Exec=python -m crikit
+Icon=applications-science
+Terminal=false
+Type=Application
+Categories=Science;Research;

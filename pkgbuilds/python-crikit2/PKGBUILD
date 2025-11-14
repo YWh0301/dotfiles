@@ -1,0 +1,33 @@
+pkgname="python-crikit2"
+_name="CRIkit2"
+pkgver=0.4.4
+pkgrel=1
+pkgdesc="A hyperspectral imaging (HSI) platform"
+url="https://github.com/CCampJr/${_name}/archive/refs/tags/${pkgver}.tar.gz"
+license=('custom')
+arch=('x86_64')
+depends=('python' 'python-numpy' 'python-scipy' 'python-matplotlib' 'python-pyqt5' 'python-cvxopt' 'python-sciplot-pyqt' 'python-packaging')
+makedepends=('python-installer' 'python-build' 'python-wheel' 'python-pytest-runner')
+optdepends=('python-sphinx')
+source=("crikit2.desktop" "https://github.com/CCampJr/${_name}/archive/refs/tags/${pkgver}.tar.gz")
+sha256sums=('635af76acb358cec6228e842deee6165d8199e09d166e66130aa0e65e5271caf'\
+    '2eaff562a11f3dbf3c83ddaf26f7d35212952632b6e6ec6d18b80af077d5cfc0')
+
+prepare() {
+    cd ${srcdir}/${_name}-${pkgver}
+    touch docs/__init__.py
+    sed -i '290,320 s/self.mpl.cbar.remove()/self.mpl.cbar.ax.remove()/g' crikit/ui/widget_images.py
+}
+
+build() {
+    cd ${srcdir}/${_name}-${pkgver}
+    python -m build --wheel --no-isolation
+}
+
+package() {
+    cd ${srcdir}/${_name}-${pkgver}
+    install -Dm644 "./LICENSE.md" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    install -Dm644 "$srcdir/crikit2.desktop" "$pkgdir/usr/share/applications/crikit2.desktop"
+    python -m installer --destdir="$pkgdir" dist/*.whl
+}
+

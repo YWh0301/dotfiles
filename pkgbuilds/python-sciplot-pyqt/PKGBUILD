@@ -1,0 +1,30 @@
+pkgname="python-sciplot-pyqt"
+_name="SciPlot-PyQt"
+pkgver=0.2.3
+pkgrel=1
+pkgdesc="A user-interface/matplotlib wrapper built with PyQt5"
+url="https://github.com/CCampJr/${_name}"
+license=('custom')
+arch=('x86_64')
+depends=('python' 'python-numpy' 'python-matplotlib')
+makedepends=('python-installer' 'python-build' 'python-wheel' 'python-pytest-runner')
+source=("https://github.com/CCampJr/${_name}/archive/refs/tags/${pkgver}.tar.gz")
+sha256sums=('ce68d4115a9ab2f510adcfeeed5e79e2329cda1ff3419603046cf7628dab21af')
+
+prepare() {
+    cd ${srcdir}/${_name}-${pkgver}
+    sed -i 's/description-file/description_file/g' setup.cfg
+    sed -i 's/_np.float/_np.float64/g' sciplot/utils/mplstyle.py
+}
+
+build() {
+    cd ${srcdir}/${_name}-${pkgver}
+    python -m build --wheel --no-isolation
+}
+
+package() {
+    cd ${srcdir}/${_name}-${pkgver}
+    install -Dm644 "./LICENSE.md" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+    python -m installer --destdir="$pkgdir" dist/*.whl
+}
+

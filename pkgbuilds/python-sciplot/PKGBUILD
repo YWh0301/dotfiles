@@ -1,0 +1,18 @@
+pkgname="python-sciplot"
+_name=${pkgname#python-}
+pkgver=0.8.1
+pkgrel=1
+pkgdesc="Formats scientific plots created with Matplotlib in a user-friendly, yet highly customizable way"
+url="https://github.com/andreasfuhr/sciplot"
+license=('MIT')
+arch=('x86_64')
+depends=('python' 'python-matplotlib')
+makedepends=('python-installer')
+source=("https://files.pythonhosted.org/packages/py3/${_name::1}/$_name/${_name//-/_}-$pkgver-py3-none-any.whl")
+sha256sums=('456b0d568ce602c521c7ca729fee1b13144a44d371f571b7e918074c10c3e1dc')
+
+package() {
+    cd ${srcdir}
+    python -m installer --destdir="$pkgdir" ./*.whl
+}
+

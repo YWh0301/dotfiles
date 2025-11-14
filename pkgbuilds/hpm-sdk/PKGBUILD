@@ -1,0 +1,70 @@
+# Maintainer: pingzi <2400112582@stu.pku.edu.com>
+pkgname=hpm_sdk
+pkgver=1.9.0
+pkgrel=1
+pkgdesc="Software Development Kit for HPMicro's MCUs"
+arch=('any')
+url="https://github.com/hpmicro/hpm_sdk"
+license=('BSD-3-Clause')
+depends=('cmake' 'ninja' 'python' 'ccache' 'python-jinja' 'python-pyyaml')
+optdepends=('rescv32-ndsv5f-elf-toolchain')
+install='hpm-sdk.install'
+options=('!strip')
+source=(${pkgname}-${pkgver}.zip::"https://github.com/hpmicro/hpm_sdk/archive/refs/tags/v${pkgver}.zip"\
+    "HPMproject")
+sha256sums=('6c20b997d1280d4d58f0d69ed50fa6031f1e833445b31976954d36c880b39431' \
+    '6291c60074076eed7daebc32f63390327565cfbd973ae09570115127bc455aed')
+
+prepare() {
+  cd "${srcdir}/${pkgname}-${pkgver}"
+  # add custom nds-toolchain support
+  sed -i -e '
+  /^if(CUSTOM_TARGET_TRIPLET)/{
+      i \
+if(NOT "$ENV{HPM_SDK_CUSTOM_TARGET_TRIPLET}" STREQUAL "")\
+  set(CUSTOM_TARGET_TRIPLET $ENV{HPM_SDK_CUSTOM_TARGET_TRIPLET})\
+endif()
+  }
+  /set(TARGET_TRIPLET \${CUSTOM_TARGET_TRIPLET})/{
+      a \
+elseif("${TOOLCHAIN_VARIANT}" STREQUAL "nds-gcc" OR "${TOOLCHAIN_VARIANT}" STREQUAL "nds-llvm")\
+    set(TARGET_TRIPLET riscv32-elf)
+  }
+  s/set(CROSS_COMPILE_TARGET riscv32-elf)/set(CROSS_COMPILE_TARGET \${TARGET_TRIPLET})/g
+  s/set(SYSROOT_TARGET       riscv32-elf)/set(SYSROOT_TARGET       \${TARGET_TRIPLET})/g
+  ' cmake/toolchain.cmake
+
+  # patch for dsp support
+  sed -i -e '
+  /sdk_ld_options_ifdef(CONFIG_HPM_MATH_DSP "-ldsp")/{
+      i \
+if(NOT DEFINED HPM_MATH_DSP_LIB)\
+  set(HPM_MATH_DSP_LIB "libdspf")\
+endif()
+  }
+  s/sdk_ld_options_ifdef(CONFIG_HPM_MATH_DSP "-ldsp")/sdk_link_libraries_ifdef(CONFIG_HPM_MATH_DSP "\${CMAKE_CURRENT_SOURCE_DIR}\/nds_dsp\/gcc\/\${HPM_MATH_DSP_LIB}.a")/g
+  /sdk_ses_ld_lib_ifdef(CONFIG_HPM_MATH_DSP "\${CMAKE_CURRENT_SOURCE_DIR}\/nds_dsp\/gcc\/\${HPM_MATH_DSP_SES_LIB}.a")/{
+      i \
+if(NOT DEFINED HPM_MATH_DSP_SES_LIB)\
+  set(HPM_MATH_DSP_SES_LIB "libdspf")\
+endif()
+  }
+  ' middleware/hpm_math/CMakeLists.txt
+}
+
+package() {
+  mkdir -p ${pkgdir}/opt/hpmicro
+  mkdir -p ${pkgdir}/opt/hpmicro/hpm_sdk
+  cd "${srcdir}/${pkgname}-${pkgver}"
+  cp -R . ${pkgdir}/opt/hpmicro/hpm_sdk
+
+  mkdir -p ${pkgdir}/usr/bin
+  install -Dm755 "${srcdir}/HPMproject" "$pkgdir/usr/bin/HPMproject"
+  install -Dm644 /dev/stdin "$pkgdir/usr/bin/HPMset_ndsv5f" <<EOF
+export HPM_SDK_BASE=/opt/hpmicro/hpm_sdk
+export OPENOCD_SCRIPTS=\${HPM_SDK_BASE}/boards/openocd
+export GNURISCV_TOOLCHAIN_PATH=/usr
+export HPM_SDK_TOOLCHAIN_VARIANT=nds-gcc
+export HPM_SDK_CUSTOM_TARGET_TRIPLET=riscv32-ndsv5f-elf
+EOF
+}
