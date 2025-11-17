@@ -974,10 +974,10 @@ xkb_symbols "pc_us_inet(evdev)_altwin(swap_lalt_lwin)_ctrl(swapcaps)" {
 	key <AC03>               {	[               d,               D ] };
 	key <AC04>               {	[               f,               F ] };
 	key <AC05>               {	[               g,               G ] };
-	key <AC06>               {	[               h,               H ] };
-	key <AC07>               {	[               j,               J ] };
-	key <AC08>               {	[               k,               K ] };
-	key <AC09>               {	[               l,               L ] };
+    key <AC06>               {  [               h,               H ] };
+    key <AC07>               {  [               j,               J ] };
+    key <AC08>               {  [               k,               K ] };
+    key <AC09>               {  [               l,               L ] };
 	key <AC10>               {	[       semicolon,           colon ] };
 	key <AC11>               {	[      apostrophe,        quotedbl ] };
 	key <TLDE>               {	[           grave,      asciitilde ] };
@@ -1094,10 +1094,7 @@ xkb_symbols "pc_us_inet(evdev)_altwin(swap_lalt_lwin)_ctrl(swapcaps)" {
 		type= "PC_ALT_LEVEL2",
 		symbols[1]= [           Print,         Sys_Req ]
 	};
-	key <RALT>               {	
-        type= "ONE_LEVEL",
-        symbols[1]= [          Escape ]
-    };
+	key <RALT>               {	[          Escape ] };
 	key <LNFD>               {	[        Linefeed ] };
 	key <HOME>               {	[            Home ] };
 	key <UP>                 {	[              Up ] };
