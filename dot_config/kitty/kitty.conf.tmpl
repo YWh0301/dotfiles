@@ -5,3 +5,7 @@ include current-theme.conf
 #
 # no waring when closing window
 confirm_os_window_close 0
+
+{{ if eq .chezmoi.hostname "homeDesktop" -}}
+font_size 14
+{{- end }}

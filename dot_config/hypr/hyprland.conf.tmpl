@@ -3,7 +3,7 @@
 ################
 # See https://wiki.hyprland.org/Configuring/Monitors/
 source = ~/.config/hypr/monitors.conf #used with nwg-displays
-{{- if eq .chezmoi.hostname "homeDesktop" -}}
+{{ if eq .chezmoi.hostname "homeDesktop" -}}
 # 家中台式机默认复制显示
 monitor=,preferred,auto,auto,mirror,HDMI-A-1
 {{- else -}}
@@ -54,12 +54,12 @@ env = QT_QPA_PLATFORMTHEME,qt6ct
 
 # cursors
 env = XCURSOR_SIZE,24
-{{- if eq .chezmoi.hostname "homeDesktop" -}}
+{{ if eq .chezmoi.hostname "homeDesktop" -}}
 env = HYPRCURSOR_SIZE,24
 env = HYPRCURSOR_THEME,rose-pine-hyprcursor
 {{- end }}
 
-{{- if eq .chezmoi.hostname "homeDesktop" -}}
+{{ if eq .chezmoi.hostname "homeDesktop" -}}
 # nvidia support
 # See https://wiki.hyprland.org/Nvidia
 # since im tring to use amd gpu for hyprland ill comment these out:https://wiki.hyprland.org/Configuring/Multi-GPU/
@@ -233,7 +233,6 @@ bind = $mainMod, S, pin,
 bind = $mainMod, T, exec, $terminal
 bind = $mainMod, R, exec, $terminal -e zsh -i -c 'y; zsh'
 bind = $mainMod, W, exec, $browser
-#bind = $mainMod, C, exec, $browser --new-window chatgpt.com/?temporary-chat=true
 bind = $mainMod, C, exec, $terminal -e zsh -i -c 'aichat; zsh'
 bind = $mainMod Shift, C, exec, $browser --new-window chatgpt.com
 bind = $mainMod, Space, exec, $menu
@@ -242,14 +241,14 @@ bind = $mainMod, V, exec,cliphist list | rofi -dmenu | cliphist decode | wl-copy
 bind =         , Print, exec, grim -g "$(slurp)" - | swappy -f -
 bind = Shift   , Print, exec, grim -g "$(slurp -d)" - | wl-copy
 bind = $mainMod,Backspace, exec,hyprlock
-{{- if hasSuffix .chezmoi.hostname "Laptop" -}}
+{{ if hasSuffix .chezmoi.hostname "Laptop" -}}
 binde =         ,XF86MonBrightnessUp, exec,brightnessctl s +10%
 binde =         ,XF86MonBrightnessDown, exec,brightnessctl s 10%-
-{{- end -}}
+{{- end }}
 binde =         ,XF86AudioRaiseVolume, exec ,pactl set-sink-volume @DEFAULT_SINK@ +5%
 binde =         ,XF86AudioLowerVolume, exec ,pactl set-sink-volume @DEFAULT_SINK@ -5%
 binde =         ,XF86AudioMute, exec ,pactl set-sink-mute @DEFAULT_SINK@ toggle
-{{- if eq .chezmoi.hostname "rogLaptop" -}}
+{{ if eq .chezmoi.hostname "rogLaptop" -}}
 bind =          ,XF86Launch1,exec,notify-send "每年都有很多海狸被自己啃倒的瓶子砸死" # for 海狸
 {{- end }}
 bind = $mainMod, Delete, exec,wlogout -b 2
@@ -350,13 +349,8 @@ submap = reset
 #submap = reset
 
 # Move focus with mainMod + arrow keys
-#bind = $mainMod, H, movefocus, l
-#bind = $mainMod, L, movefocus, r
-#bind = $mainMod, K, movefocus, u
-#bind = $mainMod, J, movefocus, d
 bind = $mainMod,H,layoutmsg,addmaster
 bind = $mainMod,L,layoutmsg,removemaster
-#bind = $mainMod,J,cyclenext
 bind = $mainMod,N,cyclenext # for floating windows, since J only controls windows in master layout
 bind = $mainMod,J,layoutmsg,cyclenext
 bind = $mainMod,K,layoutmsg,cycleprev

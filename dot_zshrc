@@ -18,8 +18,11 @@ antigen apply
 alias ll="ls -al"
 alias n="nvim"
 alias c="wl-copy"
-alias e="aichat -e"
+alias d="chezmoi"
+alias dc="chezmoi cd"
+alias eg="aichat -e"
 alias cg="aichat -c"
+alias g="git"
 function y() {
     local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
     yazi "$@" --cwd-file="$tmp"
