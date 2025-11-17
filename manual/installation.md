@@ -74,7 +74,7 @@
 
 - 使用*vim*编辑镜像列表备份文件`vim /etc/pacman.d/mirrorlist.back`，找到THU清华镜像源后放到最顶部，并覆盖*mirrorlist*文件`:w! /etc/pacman.d/mirrorlist`；
 - 在新机器的磁盘当中安装基础软件包与linux-zen内核
-    - `pacstrap -K /mnt base base-devel linux-zen linux-zen-headers linux-firmware (intel/amd)-ucode efibootmgr networkmanager git pacman-contrib iwd zsh yazi neovim`；
+    - `pacstrap -K /mnt base base-devel linux-zen linux-zen-headers linux-firmware (intel/amd)-ucode efibootmgr networkmanager git pacman-contrib iwd bash zsh yazi neovim`；
     - 如果安装双系统，安装*os-prober* `pacstrap -K /mnt os-prober`；
 
 ### 新系统设置
@@ -83,7 +83,10 @@
 - chroot到新系统中：`arch-chroot /mnt`；
 - 查看并设置时区：`ls /usr/share/zoneinfo`而后`ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime`，并且`hwclock --systohc`；
 - 使用*neovim*编辑*locale*文件，`nvim /etc/locale.gen`将所有想要使用的locale设定前的注释删除。一般而言是`en_US.UTF-8 UTF-8`与`zh_CN.UTF-8 UTF-8`两项。而后运行`locale-gen`并向`/etc/locale.conf`加入`echo "LANG=en_US.UTF-8" >> /etc/locale.conf`设置*console*环境语言。
-- 向`/etc/hostname`写入该机器的*hostname*：`echo "yourhostname" >> /etc/hostname`；
+- 向`/etc/hostname`写入该机器的*hostname*：`echo "yourhostname" >> /etc/hostname`。其中，*hostname*应当和此台机器的硬件相关联，因为系统用户配置文件使用*chezmoi*管理，其中的模板根据机器的*hostname*生成每台机器特定的配置文件；
+    - 如果此台机器为笔记本电脑，其*hostname*应当以`Laptop`结尾；
+    - 如果此台机器为台式机，其*hostname*应当以`Desktop`结尾；
+    - 如果需要更改*hostname*：`sudo hostnamectl set-hostname "your_new_hostname"`；
 - 设置*root*用户的密码`passwd`；
 
 ### 安装Bootloader
@@ -221,7 +224,7 @@
         - 针对Nvidia的新款显卡，安装*nvidia-dkms*、*nvidia-utils*、*nvtop*、*nvidia-prime*;
         - 针对Intel或者AMD的显卡，安装*mesa*、*mesa-utils*，然后分别安装*vulkan-intel*、*vulkan-radeon*
 
-### 进入桌面环境加载配置
+### 进入桌面环境加载用户配置
 
 - `exit && exit`并自动登录到*yourusername*，按`q`忽略zsh提示，运行`Hyprland`进入桌面环境；
 - 生成*ssh key*：`ssh-keygen -t ed25519 -C "yuwenhao@stu.pku.edu.cn"`，默认回车直到生成密钥；
@@ -229,6 +232,13 @@
 - 按下默认`Win+Q`快捷键启动*kitty*，输入`firefox`启动浏览器，登录*github.com*，在设置 -> SSH and GPG keys -> New SSH key粘贴新机器的公钥；
 - 关闭浏览器，在*kitty*输入`chezmoi init https://github.com/YWh0301/dotfiles.git`；
 - `chezmoi apply`加载配置；
+
+### 进行系统级别设置
+
+#### systemd服务
+
+- 如果电脑为笔记本，需要电源管理：
+    - 添加systemd service执行`powertop --auto-tune`；
 
 
 

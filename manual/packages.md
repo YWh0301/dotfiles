@@ -148,6 +148,7 @@
 ### 终端应用
 
 - `kitty`
+- `bash`
 - `zsh`
 - `antigen`(AUR)
     - zsh plugin manager
