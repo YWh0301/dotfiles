@@ -1,11 +1,13 @@
 # see https://github.com/sigoden/aichat/blob/main/config.example.yaml
 
 # ---- llm ----
+model: deepseek:deepseek-chat
+#model: minimax:minimax-m2
+#model: moonshot:kimi-k2-thinking
 #model: chatanywhere:gpt-5-mini
 #model: chatanywhere:gpt-5-mini-ca
 #model: chatanywhere:deepseek-v3-2-exp
-model: chatanywhere-free:gpt-5-mini
-#model: deepseek:deepseek-chat
+#model: chatanywhere-free:gpt-5-mini
 #model: openrouter-free:minimax/minimax-m2:free
 #model: openrouter-free:tngtech/deepseek-r1t2-chimera:free
 temperature: null                # Set default temperature parameter (0, 1)
@@ -36,34 +38,91 @@ summary_prompt: 'This is a summary of the chat history as a recap: '
 
 clients:
   - type: openai-compatible
-    name: openrouter-free
-    api_base: https://openrouter.ai/api/v1
-    api_key: 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
+    name: deepseek
+    api_base: https://api.deepseek.com
+    api_key: sk-a000c602afad49f0889b47d0958cdad4
     models:
-      - name: minimax/minimax-m2:free
-        max_input_tokens: 196600
-        input_price: 0
-        output_price: 0
-      - name: tngtech/deepseek-r1t2-chimera:free
-        max_input_tokens: 163800
-        input_price: 0
-        output_price: 0
-      - name: openrouter/polaris-alpha
-        max_input_tokens: 256000
-        input_price: 0
-        output_price: 0
-      - name: z-ai/glm-4.5-air:free
-        max_input_tokens: 131000
-        input_price: 0
-        output_price: 0
-      - name: deepseek/deepseek-chat-v3-0324:free
-        max_input_tokens: 163800
-        input_price: 0
-        output_price: 0
-    
+      - name: deepseek-chat
+        max_input_tokens: 128000
+        input_price: 2
+        output_price: 3
+        supports_function_calling: true
+      - name: deepseek-reasoner
+        max_input_tokens: 128000
+        input_price: 2
+        output_price: 3
+        supports_function_calling: false
+
   - type: openai-compatible
-    name: chatanywhere
-    #api_base: https://api.chatanywhere.tech
+    name: minimax
+    api_base: https://api.minimaxi.com/v1
+    api_key: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJHcm91cE5hbWUiOiLkv57mlofnmpMiLCJVc2VyTmFtZSI6IuS_nuaWh-eakyIsIkFjY291bnQiOiIiLCJTdWJqZWN0SUQiOiIxOTg4OTU4ODQ3ODA0MzgwMDAyIiwiUGhvbmUiOiIxODc1ODMyOTEyOSIsIkdyb3VwSUQiOiIxOTg4OTU4ODQ3ODAwMTg1Njk4IiwiUGFnZU5hbWUiOiIiLCJNYWlsIjoiIiwiQ3JlYXRlVGltZSI6IjIwMjUtMTEtMTggMDI6NDE6MTkiLCJUb2tlblR5cGUiOjEsImlzcyI6Im1pbmltYXgifQ.vRnVVNDHooAIYy_ky5su5-NyKJuvTE4aJnMCq2TVbZ5jovwzUvRFPbi1bzZRLRdEcujBUKHhzpU_heC0XL01lFfQcOC-36c2zvkxtYzMzxLZP9ZUzwbcqrqOliNwPPgM4OYVOZYT0ev3O_xDOoa7TJpOZD8HSL5kDpyaN3wUA5q6rNuFWNd9-Lsjbs3EotwsxHyrYbEx-MDqAWu1cL1SKDy6RANnmQymEmWDiU57NhNQmc4oKKlOHlvSP8UtrcvRqNm4rEIX_yc67p42H_SjuEG3QK6Qcdjf_wZzkYnF7jLAnwMhFEogS_N5RNE8uR7MprnIYNqmoDsNQVq_22hTxQ
+    models:
+      - name: minimax-m2
+        max_input_tokens: 204800
+        input_price: 2.1
+        output_price: 8.4
+
+  - type: openai-compatible
+    name: moonshot
+    api_base: https://api.moonshot.cn/v1
+    api_key: sk-UCw0MGFi1q9o8EOuvcfeISyBNgLLNINyIit1abvqLfT7lgOw
+    models:
+      - name: kimi-k2-0905-preview
+        max_input_tokens: 262144
+        input_price: 4
+        output_price: 16
+      - name: kimi-k2-thinking
+        max_input_tokens: 262144
+        input_price: 4
+        output_price: 16
+      - name: kimi-k2-turbo-preview
+        max_input_tokens: 262144
+        input_price: 8
+        output_price: 58
+      - name: kimi-k2-thinking-turbo
+        max_input_tokens: 262144
+        input_price: 8
+        output_price: 58
+      - name: kimi-latest
+        max_input_tokens: 131072
+        input_price: 2
+        output_price: 10
+      - name: kimi-latest-32k
+        max_input_tokens: 32768
+        input_price: 5
+        output_price: 20
+      - name: kimi-latest-128k
+        max_input_tokens: 131072
+        input_price: 10
+        output_price: 30
+      - name: moonshot-v1-8k
+        max_input_tokens: 8192
+        input_price: 2
+        output_price: 10
+      - name: moonshot-v1-32k
+        max_input_tokens: 32768
+        input_price: 5
+        output_price: 20
+      - name: moonshot-v1-128k
+        max_input_tokens: 131072
+        input_price: 10
+        output_price: 30
+      - name: moonshot-v1-8k-vision-preview
+        max_input_tokens: 8192
+        input_price: 2
+        output_price: 10
+      - name: moonshot-v1-32k-vision-preview
+        max_input_tokens: 32768
+        input_price: 5
+        output_price: 20
+      - name: moonshot-v1-128k-vision-preview
+        max_input_tokens: 131072
+        input_price: 10
+        output_price: 30
+
+  - type: openai-compatible
+    name: chatanywhere-global
     api_base: https://api.chatanywhere.org
     api_key: [Deleted]
     models:
@@ -128,36 +187,96 @@ clients:
         supports_function_calling: true
 
   - type: openai-compatible
-    name: chatanywhere-free
-    #api_base: https://api.chatanywhere.tech
-    api_base: https://api.chatanywhere.org
-    api_key: sk-UwD44MREtwB2IFnUbKcZyO9y4BATgg3VQWENjtZiQEGO50Tn
+    name: chatanywhere
+    api_base: https://api.chatanywhere.tech
+    api_key: [Deleted]
     models:
+      - name: gpt-5
+        max_input_tokens: 400000
+        max_output_tokens: 128000
+        input_price: 8.75
+        output_price: 70
+      - name: gpt-5-ca
+        max_input_tokens: 400000
+        max_output_tokens: 128000
+        input_price: 5
+        output_price: 40
       - name: gpt-5-mini
-        max_input_tokens: 4096
-        input_price: 0
-        output_price: 0
+        max_input_tokens: 400000
+        max_output_tokens: 128000
+        input_price: 1.75
+        output_price: 14
+      - name: gpt-5-mini-ca
+        max_input_tokens: 400000
+        max_output_tokens: 128000
+        input_price: 1
+        output_price: 8
       - name: gpt-4o-mini
-        max_input_tokens: 4096
-        input_price: 0
-        output_price: 0
+        max_input_tokens: 128000
+        max_output_tokens: 16384
+        input_price: 1.05
+        output_price: 4.2
+      - name: gpt-4o-mini-ca
+        max_input_tokens: 128000
+        max_output_tokens: 16384
+        input_price: 0.75
+        output_price: 3
+      - name: deepseek-v3-2-exp	
+        max_input_tokens: 163800
+        max_output_tokens: 65536
+        input_price: 1.2
+        output_price: 1.8
+      - name: gemini-2.5-flash
+        max_input_tokens: 1048576
+        max_output_tokens: 65536
+        input_price: 0.6
+        output_price: 14
+        supports_vision: true
+        supports_function_calling: true
+      - name: gemini-2.5-pro
+        max_input_tokens: 1048576
+        max_output_tokens: 65536
+        input_price: 7
+        output_price: 40
+        supports_vision: true
+        supports_function_calling: true
+      - name: grok-4
+        max_input_tokens: 256000
+        input_price: 12
+        output_price: 60
+        supports_function_calling: true
+      - name: grok-4-fast
+        max_input_tokens: 2000000
+        input_price: 0.8
+        output_price: 2
+        supports_function_calling: true
 
   - type: openai-compatible
-    name: deepseek
-    api_base: https://api.deepseek.com
-    api_key: sk-a000c602afad49f0889b47d0958cdad4
+    name: openrouter-free
+    api_base: https://openrouter.ai/api/v1
+    api_key: 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
     models:
-      - name: deepseek-chat
-        max_input_tokens: 128000
-        input_price: 2
-        output_price: 3
-        supports_function_calling: true
-      - name: deepseek-reasoner
-        max_input_tokens: 128000
-        input_price: 2
-        output_price: 3
-        supports_function_calling: false
-
+      - name: minimax/minimax-m2:free
+        max_input_tokens: 196600
+        input_price: 0
+        output_price: 0
+      - name: tngtech/deepseek-r1t2-chimera:free
+        max_input_tokens: 163800
+        input_price: 0
+        output_price: 0
+      - name: openrouter/polaris-alpha
+        max_input_tokens: 256000
+        input_price: 0
+        output_price: 0
+      - name: z-ai/glm-4.5-air:free
+        max_input_tokens: 131000
+        input_price: 0
+        output_price: 0
+      - name: deepseek/deepseek-chat-v3-0324:free
+        max_input_tokens: 163800
+        input_price: 0
+        output_price: 0
+    
   - type: gemini
     name: gemini-free
     api_base: https://generativelanguage.googleapis.com/v1beta
@@ -174,7 +293,34 @@ clients:
         input_price: 0
         output_price: 0
 
-  # For any platform compatible with OpenAI's API
+  - type: openai-compatible
+    name: chatanywhere-free-global
+    api_base: https://api.chatanywhere.org
+    api_key: sk-UwD44MREtwB2IFnUbKcZyO9y4BATgg3VQWENjtZiQEGO50Tn
+    models:
+      - name: gpt-5-mini
+        max_input_tokens: 4096
+        input_price: 0
+        output_price: 0
+      - name: gpt-4o-mini
+        max_input_tokens: 4096
+        input_price: 0
+        output_price: 0
+
+  - type: openai-compatible
+    name: chatanywhere-free
+    api_base: https://api.chatanywhere.tech
+    api_key: sk-UwD44MREtwB2IFnUbKcZyO9y4BATgg3VQWENjtZiQEGO50Tn
+    models:
+      - name: gpt-5-mini
+        max_input_tokens: 4096
+        input_price: 0
+        output_price: 0
+      - name: gpt-4o-mini
+        max_input_tokens: 4096
+        input_price: 0
+        output_price: 0
+
   - type: openai-compatible
     name: ollama
     api_base: http://localhost:11434/v1
@@ -207,3 +353,4 @@ clients:
         max_input_tokens: 256000
         input_price: 0
         output_price: 0
+
