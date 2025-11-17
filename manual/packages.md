@@ -26,10 +26,9 @@
 ### 系统应用
 
 - `dkms`
-- `dae`
-- `kbct-git`(AUR)
-    - `evtest`
-    - `wev`
+- `dae`(archlinuxcn)
+- `evtest`
+- `wev`
 - `git`
 - `less`
 - `tree`
@@ -40,9 +39,9 @@
 - `ltrace`
 - `usbutils`
 - `chezmoi`
-- `yay-bin`(AUR)
 - `pacman-contrib`
-- `archlinuxcn-keyring`
+- `archlinuxcn-keyring`(archlinuxcn)
+- `yay`(archlinuxcn)
 
 #### GPU驱动
 
@@ -219,10 +218,10 @@
 - `zathura-pdf-poppler`
 - `poppler`
 - `imagemagick`
-- `pandoc-bin`
+- `pandoc-bin`(archlinuxcn)
 - `wps-office-cn`(AUR)
     - `wps-office-mui-zh-cn`(AUR)
-    - `libtiff5`
+    - `libtiff5`(archlinuxcn)
     - `ttf-wps-fonts`(AUR)
 - `calibre`
 - `libreoffice-fresh`
@@ -230,7 +229,7 @@
 ### 其他
 
 - `firefox`
-    - `vdhcoapp-bin`(AUR)
+    - `vdhcoapp`(archlinuxcn)
 - `aichat`
 
 ## 可选功能软件包
