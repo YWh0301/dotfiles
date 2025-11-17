@@ -15,6 +15,7 @@
 - firefox
 - neovim
 - waybar
+- swaync
 - rofi
 
 使用时可以参考[Arch Wiki](https://wiki.archlinux.org/title/Installation_guide)。
@@ -148,7 +149,7 @@
     ExecStart=-/sbin/agetty --skip-login --nonewline --noissue --autologin yourusername --noreset --noclear - ${TERM}
     ```
 
-### 安装必要软件包
+### 安装系统功能软件包
 
 - 连接网络
     - 启用*NetworkManager*`systemctl enable --now Networkmanager`
@@ -162,7 +163,7 @@
         ```
     - 运行`pacman -Sy archlinuxcn-keyring`加载密钥；
 - 安装*dae*实现透明代理
-    - `pacman -S dae`；
+    - 从archlinuxcn仓库安装*dae*`pacman -S dae`；
     - `systemctl enable --now dae`；
     - 编辑`cp /etc/dae/config.dae.example /etc/dae/config.dae`后`nvim /etc/dae/config.dae`；
         - 主要编辑*subscription*、*group*和*routing*部分；
@@ -200,26 +201,34 @@
             ```
         - 配置完毕运行`dae reload`
         - 检测网络连接`ping pornhub.com`
-- 安装*yay-bin*
-    - `su yourusername`切换到普通用户执行命令，按`q`跳过*zsh*初始化的提示；
-    - `cd`；
-    - `git clone https://aur.archlinux.org/yay-bin.git`；
-    - `cd yay-bin`；
-    - `makepkg -si`;
-    - `cd && rm-rf yay-bin`清理文件；
+- 安装yay
+    1. archlinuxcn中维护了yay二进制包，可以直接`pacman -S yay`
+    2. 如果需要从AUR安装yay，可以安装二进制*yay-bin*：
+        - `su yourusername`切换到普通用户执行命令，按`q`跳过*zsh*初始化的提示；
+        - `cd`；
+        - `git clone https://aur.archlinux.org/yay-bin.git`；
+        - `cd yay-bin`；
+        - `makepkg -si`;
+        - `cd && rm-rf yay-bin`清理文件；
 - 所需的软件包
-    - `sudo pacman -S --needed dkms evtest wev less tree curl wget lsof strace ltrace usbutils chezmoi sshfs openssh exfatprogs btrfs-progs acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-shares-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs gvfs-smb 7zip jq fd fzf ripgrep ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat`；
+    - `sudo pacman -S --needed dkms evtest wev less tree curl wget lsof strace ltrace usbutils chezmoi sshfs openssh exfatprogs btrfs-progs acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-shares-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs gvfs-smb 7zip jq fd fzf ripgrep ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
     - 如果使用笔记本，安装相应软件包`pacman -S brightnessctl powertop thermald`；
     - `rustup default stable`下载工具链，为后续要用到的软件安装做准备；
-    - `yay -S systemd-boot-pacman-hook kbct-git antigen pcloud-drive nvim-lazy vivify wps-office-cn wps-office-mui-zh-cn ttf-wps-fonts vdhcoapp-bin`；
+    - `yay -S antigen pcloud-drive nvim-lazy vivify wps-office-cn wps-office-mui-zh-cn ttf-wps-fonts`；
+    - 如果使用systemd-boot作为bootloader，则`yay -S systemd-boot-pacman-hook`；
     - 安装所需的GPU驱动
         - 详情参见[ArchWiki](https://wiki.archlinux.org/title/Xorg#Driver_installation)。
         - 针对Nvidia的新款显卡，安装*nvidia-dkms*、*nvidia-utils*、*nvtop*、*nvidia-prime*;
         - 针对Intel或者AMD的显卡，安装*mesa*、*mesa-utils*，然后分别安装*vulkan-intel*、*vulkan-radeon*
 
-### 进入桌面环境
+### 进入桌面环境加载配置
 
 - `exit && exit`并自动登录到*yourusername*，按`q`忽略zsh提示，运行`Hyprland`进入桌面环境；
+- 生成*ssh key*：`ssh-keygen -t ed25519 -C "yuwenhao@stu.pku.edu.cn"`，默认回车直到生成密钥；
+- 拷贝公钥：`echo ~/.ssh/id_ed25519.pub | wl-copy`
+- 按下默认`Win+Q`快捷键启动*kitty*，输入`firefox`启动浏览器，登录*github.com*，在设置 -> SSH and GPG keys -> New SSH key粘贴新机器的公钥；
+- 关闭浏览器，在*kitty*输入`chezmoi init https://github.com/YWh0301/dotfiles.git`；
+- `chezmoi apply`加载配置；
 
 
 
@@ -232,4 +241,4 @@
 
 
 
-    - 生成*ssh key*：`ssh-keygen -t ed25519 -C "yuwenhao@stu.pku.edu.cn"`，默认回车直到生成密钥；
+
