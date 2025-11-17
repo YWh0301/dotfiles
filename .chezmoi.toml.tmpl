@@ -1,0 +1,18 @@
+[diff]
+    command = "git"
+    args = [
+        "diff", 
+        "--no-index", 
+        {{ printf "%q" "{{ .Destination }}" }},
+        {{ printf "%q" "{{ .Target }}" }},
+    ]
+    pager = "bat --paging=never --language=diff"
+
+[merge]
+    command = "nvim"
+    args = [
+        "-d",
+        {{ printf "%q" "{{ .Destination }}" }},
+        {{ printf "%q" "{{ .Source }}" }},
+        {{ printf "%q" "{{ .Target }}" }},
+    ]
