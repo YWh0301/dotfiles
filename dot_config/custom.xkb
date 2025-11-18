@@ -605,7 +605,7 @@ xkb_keycodes "evdev_aliases(qwerty)" {
 };
 
 xkb_types "complete" {
-	virtual_modifiers NumLock,Alt,LevelThree,Super,LevelFive,Meta,Hyper=0x4000,ScrollLock=0x8000;
+	virtual_modifiers NumLock,Alt,LShift,RShift,LevelThree,Super,LevelFive,Meta,Hyper=0x4000,ScrollLock=0x8000;
 
 	type "ONE_LEVEL" {
 		modifiers= none;
@@ -616,6 +616,18 @@ xkb_types "complete" {
 		map[Shift]= 2;
 		level_name[1]= "Base";
 		level_name[2]= "Shift";
+	};
+	type "LSHIFT_MODIFIED" {
+		modifiers= LShift;
+		map[LShift]= 2;
+		level_name[1]= "Base";
+		level_name[2]= "LShift";
+	};
+	type "RSHIFT_MODIFIED" {
+		modifiers= RShift;
+		map[RShift]= 2;
+		level_name[1]= "Base";
+		level_name[2]= "RShift";
 	};
 	type "ALPHABETIC" {
 		modifiers= Shift+Lock;
@@ -678,14 +690,14 @@ xkb_types "complete" {
 		level_name[4]= "Shift AltGr";
 		level_name[5]= "Ctrl+Alt";
 	};
-	type "ALT_THREE_LEVEL" {
-		modifiers= Shift+Alt;
+	type "MOD5_THREE_LEVEL" {
+		modifiers= Shift+Mod5;
 		map[Shift]= 2;
-		map[Alt]= 3;
-		map[Shift+Alt]= 3;
+		map[Mod5]= 3;
+		map[Shift+Mod5]= 3;
 		level_name[1]= "Base";
 		level_name[2]= "Shift";
-		level_name[3]= "Alt";
+		level_name[3]= "Mod5";
 	};
 	type "FOUR_LEVEL" {
 		modifiers= Shift+LevelThree;
@@ -916,9 +928,6 @@ xkb_compatibility "complete" {
 		repeat= True;
 		action= Private(type=0x86,data[0]=0x2d,data[1]=0x56,data[2]=0x4d,data[3]=0x6f,data[4]=0x64,data[5]=0x65,data[6]=0x00);
 	};
-	interpret Caps_Lock+AnyOfOrNone(all) {
-		action= LockMods(modifiers=Lock);
-	};
 	interpret Any+AnyOf(all) {
 		action= SetMods(modifiers=modMapMods,clearLocks);
 	};
@@ -946,7 +955,7 @@ xkb_compatibility "complete" {
 	};
 };
 
-xkb_symbols "pc_us_inet(evdev)_altwin(swap_lalt_lwin)_ctrl(swapcaps)" {
+xkb_symbols "pc_us_inet(evdev)" {
 	name[1]="English (US)";
 
 	key <ESC>                {	[          Escape ] };
@@ -977,40 +986,41 @@ xkb_symbols "pc_us_inet(evdev)_altwin(swap_lalt_lwin)_ctrl(swapcaps)" {
 	key <AD11>               {	[     bracketleft,       braceleft ] };
 	key <AD12>               {	[    bracketright,      braceright ] };
 	key <RTRN>               {	[          Return ] };
-	key <LCTL>               {	[       Caps_Lock ] };
+	key <LCTL>               {	[           Alt_L,          Meta_L ] };
 	key <AC01>               {	[               a,               A ] };
 	key <AC02>               {	[               s,               S ] };
 	key <AC03>               {	[               d,               D ] };
 	key <AC04>               {	[               f,               F ] };
 	key <AC05>               {	[               g,               G ] };
 	key <AC06>               {
-		type= "ALT_THREE_LEVEL",
+		type= "MOD5_THREE_LEVEL",
         repeats= Yes,
-		symbols[1]= [               h,               H,            Left],
-        actions[1]= [      NoAction(),      NoAction(), RedirectKey(keycode=<LEFT>, clearmods=Mod1)]
+		symbols[1]= [               h,               H,            Left]
 	};
     key <AC07>               {
-		type= "ALT_THREE_LEVEL",
+		type= "MOD5_THREE_LEVEL",
         repeats= Yes,
-		symbols[1]= [               j,               J,            Down],
-        actions[1]= [      NoAction(),      NoAction(), RedirectKey(keycode=<DOWN>, clearmods=Mod1)]
+		symbols[1]= [               j,               J,            Down]
 	};
     key <AC08>               {
-		type= "ALT_THREE_LEVEL",
+		type= "MOD5_THREE_LEVEL",
         repeats= Yes,
-		symbols[1]= [               k,               K,              Up],
-        actions[1]= [      NoAction(),      NoAction(), RedirectKey(keycode=<UP>, clearmods=Mod1)]
+		symbols[1]= [               k,               K,              Up]
 	};
     key <AC09>               {
-		type= "ALT_THREE_LEVEL",
+		type= "MOD5_THREE_LEVEL",
         repeats= Yes,
-		symbols[1]= [               l,               L,           Right],
-        actions[1]= [      NoAction(),      NoAction(), RedirectKey(keycode=<RGHT>, clearmods=Mod1)]
+		symbols[1]= [               l,               L,           Right]
 	};
 	key <AC10>               {	[       semicolon,           colon ] };
 	key <AC11>               {	[      apostrophe,        quotedbl ] };
 	key <TLDE>               {	[           grave,      asciitilde ] };
-	key <LFSH>               {	[         Shift_L ] };
+	key <LFSH>               {
+		type= "RSHIFT_MODIFIED",
+        repeat= No,
+        symbols[1]= [                  Shift_L,                Caps_Lock ],
+        actions[1]= [ SetMods(modifiers=LShift+Shift), LockMods(modifiers=Lock) ]
+    };
 	key <BKSL>               {	[       backslash,             bar ] };
 	key <AB01>               {	[               z,               Z ] };
 	key <AB02>               {	[               x,               X ] };
@@ -1022,7 +1032,12 @@ xkb_symbols "pc_us_inet(evdev)_altwin(swap_lalt_lwin)_ctrl(swapcaps)" {
 	key <AB08>               {	[           comma,            less ] };
 	key <AB09>               {	[          period,         greater ] };
 	key <AB10>               {	[           slash,        question ] };
-	key <RTSH>               {	[          Shift_R ] };
+	key <RTSH>               {	
+		type= "LSHIFT_MODIFIED",
+        repeat= No,
+        symbols[1]= [                  Shift_R,                Caps_Lock ],
+        actions[1]= [ SetMods(modifiers=RShift+Shift), LockMods(modifiers=Lock) ]
+    };
 	key <KPMU>               {
 		type= "CTRL+ALT",
 		symbols[1]= [     KP_Multiply,     KP_Multiply,     KP_Multiply,     KP_Multiply,   XF86ClearGrab ]
@@ -1149,7 +1164,7 @@ xkb_symbols "pc_us_inet(evdev)_altwin(swap_lalt_lwin)_ctrl(swapcaps)" {
 	key <I129>               {	[      KP_Decimal,      KP_Decimal ] };
 	key <HNGL>               {	[          Hangul ] };
 	key <HJCV>               {	[    Hangul_Hanja ] };
-	key <LWIN>               {	[           Alt_L,          Meta_L ] };
+	key <LWIN>               {	[ISO_Level3_Shift ] };
 	key <RWIN>               {	[         Super_R ] };
 	key <COMP>               {	[            Menu ] };
 	key <STOP>               {	[          Cancel ] };
@@ -1490,14 +1505,13 @@ xkb_symbols "pc_us_inet(evdev)_altwin(swap_lalt_lwin)_ctrl(swapcaps)" {
 	key <I706>               {	[ XF86KbdLcdMenu3 ] };
 	key <I707>               {	[ XF86KbdLcdMenu4 ] };
 	key <I708>               {	[ XF86KbdLcdMenu5 ] };
-	modifier_map Shift { <RTSH>, <LFSH> };
-	modifier_map Lock { <LCTL> };
+	modifier_map Shift { <LFSH>, <RTSH> };
 	modifier_map Control { <CAPS>, <RCTL> };
-	modifier_map Mod1 { <LWIN>, <ALT>, <META> };
+	modifier_map Mod1 { <LCTL>, <ALT>, <META> };
 	modifier_map Mod2 { <NMLK> };
 	modifier_map Mod3 { <LVL5> };
 	modifier_map Mod4 { <LALT>, <RWIN>, <SUPR> };
-	modifier_map Mod5 { <LVL3> };
+	modifier_map Mod5 { <LWIN>, <LVL3> };
 };
 
 };

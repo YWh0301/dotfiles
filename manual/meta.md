@@ -54,3 +54,7 @@
 #### X与wayland
 
 ### Linux图形显示
+
+### Linux IPC：内核功能与用户态服务
+
+### Linux权限管理的历史

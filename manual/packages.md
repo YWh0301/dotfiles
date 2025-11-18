@@ -73,6 +73,7 @@
     - 系统监控
 - `cups`
 - `powertop`
+- `auto-cpufreq`(archlinuxcn)
 - `thermald`
 
 #### 音频
