@@ -19,8 +19,21 @@
 - 设置关机强制关机时间，防止关机失败
 - 减少nvim中plugin的使用以及plugin manager的使用，尽可能自己写lua文件
 - config xdg-user-directories like [this](https://wiki.archlinux.org/title/XDG_user_directories#Creating_custom_directories)
-- hyprland xdg-desktop-portal: set file picker like [this](https://wiki.hyprland.org/Hypr-Ecosystem/xdg-desktop-portal-hyprland/#using-the-kde-file-picker-with-xdph). For firefox, like [this](https://wiki.archlinux.org/title/Firefox#XDG_Desktop_Portal_integration).
 - always try to use arch build system to install software, so *pacman* can manage all of them. try not to just copy a bunch of stuff in random places. if u dont know how to build package by urself, first try to find packages on aur. for example matlab/esp-idf/antigen/oh-my-zsh.
 - user systemd file to start desktop environments: first start hyprland, but sleep 4s poststart.
 - config *xdg-user-dirs* and other apps home directory, so that 各种软件不在home目录拉屎。 
 - 使用rofi替代applet的功能？
+    - rofi做wifi设置
+    - rofi做音频设置
+    - rofi做蓝牙设置
+    - rofi做关机选项
+    - rofi做dae控制
+    - rofi做polkit
+- hyprland xdg-desktop-portal: set file picker like [this](https://wiki.hyprland.org/Hypr-Ecosystem/xdg-desktop-portal-hyprland/#using-the-kde-file-picker-with-xdph). For firefox, like [this](https://wiki.archlinux.org/title/Firefox#XDG_Desktop_Portal_integration).
+- linux游戏
+- 使用btrfs快照进行：
+    - 系统回滚支持：
+        - 对/var和/home单独做子卷，对剩下的/进行快照，使得系统更新不至于损坏系统
+    - 云同步盘备份
+        - 对云同步盘同步位置进行定时快照，使得云同步文件即使被覆盖也不会丢失
+
