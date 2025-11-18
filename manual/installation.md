@@ -216,7 +216,7 @@
 - 所需的软件包
     - `sudo pacman -S --needed dkms evtest wev less tree curl wget lsof strace ltrace usbutils chezmoi sshfs openssh exfatprogs btrfs-progs acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-shares-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs gvfs-smb 7zip jq fd fzf ripgrep ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
     - 如果使用笔记本，安装相应软件包`pacman -S brightnessctl powertop thermald auto-cpufreq`；
-    - `yay -S antigen pcloud-drive nvim-lazy vivify wps-office-cn wps-office-mui-zh-cn ttf-wps-fonts`；
+    - `yay -S antigen pcloudcc-lneely nvim-lazy vivify wps-office-cn wps-office-mui-zh-cn ttf-wps-fonts`；
     - 如果使用systemd-boot作为bootloader，则`yay -S systemd-boot-pacman-hook`；
     - 安装所需的GPU驱动
         - 详情参见[ArchWiki](https://wiki.archlinux.org/title/Xorg#Driver_installation)。
@@ -231,6 +231,14 @@
 - 按下默认`Win+Q`快捷键启动*kitty*，输入`firefox`启动浏览器，登录*github.com*，在设置 -> SSH and GPG keys -> New SSH key粘贴新机器的公钥；
 - 关闭浏览器，在*kitty*输入`chezmoi init https://github.com/YWh0301/dotfiles.git`；
 - `chezmoi apply`加载配置；
+- 对firefox进行手动配置：
+    - 安装插件
+    - 设置硬件视频解码
+- 从用户态修改XDG启动条目
+    - 更改pCloud的默认目录
+- 初次启动*pcloudcc*：`pcloudcc -u 2490224285@qq.com -m $HOME/.misc/pCloudDrive -s`并输入密码；
+    - 使用`-d`参数后台运行*pcloudcc*，而后使用`-k`参数进入REPL配置同步文件夹；
+    - 其中，同步文件夹的`<remote-path>`为`$HOME/.misc/pCloudDrive`起始的路径；
 
 ### 进行系统级别设置
 
