@@ -6,7 +6,7 @@ source = ~/.config/hypr/monitors.conf #used with nwg-displays
 {{ if eq .chezmoi.hostname "homeDesktop" -}}
 # 家中台式机默认复制显示
 monitor=,preferred,auto,auto,mirror,HDMI-A-1
-{{- else -}}
+{{ else -}}
 monitor=,preferred,auto,auto
 {{- end }}
 

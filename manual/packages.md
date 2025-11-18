@@ -5,6 +5,7 @@
 ### Arch Linux 系统基础
 
 - `base`
+    - *systemd*（包含在*base*中）
 - `base-devel`
 - `linux-zen`
 - `linux-zen-headers`
