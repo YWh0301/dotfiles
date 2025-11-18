@@ -216,7 +216,6 @@
 - 所需的软件包
     - `sudo pacman -S --needed dkms evtest wev less tree curl wget lsof strace ltrace usbutils chezmoi sshfs openssh exfatprogs btrfs-progs acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-shares-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs gvfs-smb 7zip jq fd fzf ripgrep ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
     - 如果使用笔记本，安装相应软件包`pacman -S brightnessctl powertop thermald`；
-    - `rustup default stable`下载工具链，为后续要用到的软件安装做准备；
     - `yay -S antigen pcloud-drive nvim-lazy vivify wps-office-cn wps-office-mui-zh-cn ttf-wps-fonts`；
     - 如果使用systemd-boot作为bootloader，则`yay -S systemd-boot-pacman-hook`；
     - 安装所需的GPU驱动
@@ -235,10 +234,10 @@
 
 ### 进行系统级别设置
 
-#### systemd服务
-
+- 开启自动时间校准：`sudo timedatectl set-ntp true`；
+- 开启蓝牙服务：`sudo systemctl enable --now bluetooth`；
 - 如果电脑为笔记本，需要电源管理：
-    - 添加systemd service执行`powertop --auto-tune`；
+    - 添加*systemd* service执行`powertop --auto-tune`；
 
 
 

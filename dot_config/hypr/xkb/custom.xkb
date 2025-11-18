@@ -987,25 +987,25 @@ xkb_symbols "pc_us_inet(evdev)_altwin(swap_lalt_lwin)_ctrl(swapcaps)" {
 		type= "ALT_THREE_LEVEL",
         repeats= Yes,
 		symbols[1]= [               h,               H,            Left],
-        actions[1]= [      NoAction(),      NoAction(), RedirectKey(keycode=<LEFT>, clearmods=Mod5)]
+        actions[1]= [      NoAction(),      NoAction(), RedirectKey(keycode=<LEFT>, clearmods=Mod1)]
 	};
     key <AC07>               {
 		type= "ALT_THREE_LEVEL",
         repeats= Yes,
 		symbols[1]= [               j,               J,            Down],
-        actions[1]= [      NoAction(),      NoAction(), RedirectKey(keycode=<DOWN>, clearmods=Mod5)]
+        actions[1]= [      NoAction(),      NoAction(), RedirectKey(keycode=<DOWN>, clearmods=Mod1)]
 	};
     key <AC08>               {
 		type= "ALT_THREE_LEVEL",
         repeats= Yes,
 		symbols[1]= [               k,               K,              Up],
-        actions[1]= [      NoAction(),      NoAction(), RedirectKey(keycode=<UP>, clearmods=Mod5)]
+        actions[1]= [      NoAction(),      NoAction(), RedirectKey(keycode=<UP>, clearmods=Mod1)]
 	};
     key <AC09>               {
 		type= "ALT_THREE_LEVEL",
         repeats= Yes,
 		symbols[1]= [               l,               L,           Right],
-        actions[1]= [      NoAction(),      NoAction(), RedirectKey(keycode=<RGHT>, clearmods=Mod5)]
+        actions[1]= [      NoAction(),      NoAction(), RedirectKey(keycode=<RGHT>, clearmods=Mod1)]
 	};
 	key <AC10>               {	[       semicolon,           colon ] };
 	key <AC11>               {	[      apostrophe,        quotedbl ] };

@@ -6,6 +6,11 @@ include current-theme.conf
 # no waring when closing window
 confirm_os_window_close 0
 
+font_family JetBrainsMonoNL Nerd Font
 {{ if eq .chezmoi.hostname "homeDesktop" -}}
 font_size 14
+{{ else if eq .chezmoi.hostname "n150MiniDesktop" -}}
+font_size 12
+{{ else -}}
+font_size 12
 {{- end }}
