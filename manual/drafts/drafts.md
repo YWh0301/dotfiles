@@ -6,7 +6,6 @@
 - 双系统时间设置
 - *ssh* with *tmux* needs to install terminfo on server machine. when using *kitty* ,do `kitty +kitten ssh myserver` first to copy terminfo file to server automatically once.
 - *wps* export to pdf not working: 缺少*libtiff5*。fix by either `ln -s /usr/lib/libtiff.so.6 /usr/lib/libtiff.so.5`or download aur package [libtiff5](https://aur.archlinux.org/packages/libtiff5). note that former approach may be risky.
-- *kbct*
 - *pcloud*: `yay -S pcloud-drive` #pcloud would mount on a folder in home directory which is ugly so i change the home and created sim links for all the .folders-and-files (including .mozilla and .pki) in ~/ in the fake home folder to trick pcloud. remeber to also modify the exec in desktop entry of pcloud. furthermore pcloud only take absolute path so ~/ wont work.after this just set sync folder in the app then u can use it without any trouble.
 - combine hyprland with scripts: use *hyprctl* and hyprland ipc, you can basically fulfill any requests that does not include a ui change in the compositor (a ui change requires plugins, which i dont intend to use).
 - 不使用*wlogout*, instead use rofi-wayland to provide a shutdown menu
