@@ -321,6 +321,7 @@ clients:
         input_price: 0
         output_price: 0
 
+{{ if eq .chezmoi.hostname "homeDesktop" }}
   - type: openai-compatible
     name: ollama
     api_base: http://localhost:11434/v1
@@ -353,4 +354,13 @@ clients:
         max_input_tokens: 256000
         input_price: 0
         output_price: 0
-
+{{ else if eq .chezmoi.hostname "n150MiniDesktop" }}
+  - type: openai-compatible
+    name: ollama
+    api_base: http://localhost:11434/v1
+    models:
+      - name: qwen2.5:3b
+        max_input_tokens: 32000
+        input_price: 0
+        output_price: 0
+{{- end }}
