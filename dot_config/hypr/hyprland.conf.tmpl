@@ -39,7 +39,11 @@ exec-once = fcitx5 # input method support
 exec-once = wl-paste --watch cliphist store # clipboard manager
 exec-once = /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 #polkit gui interface
 exec-once = hypridle # idle detector
-exec-once = env HOME="$HOME/.misc/pCloudHome" pcloud #pcloud would mount on a folder in home directory which is ugly so i change the home and created sim links in the folder to trick pcloud. remeber to also modify the exec in desktop entry of pcloud. furthermore pcloud only take absolute path so ~/ wont work.after this just set sync folder in the app then u can use it without any trouble.
+{{ if or (eq .chezmoi.hostname  "homeDesktop") (eq .chezmoi.hostname  "rogLaptop") -}}
+exec-once = env HOME="$HOME/.misc/pCloudDrive" pcloud #pcloud would mount on a folder in home directory which is ugly so i change the home and created sim links in the folder to trick pcloud. remeber to also modify the exec in desktop entry of pcloud. furthermore pcloud only take absolute path so ~/ wont work.after this just set sync folder in the app then u can use it without any trouble.
+{{ else -}}
+exec-once = pcloudcc -m $HOME/.misc/pCloudDrive -u 2490224285@qq.com -d
+{{- end }}
 exec-once = echo "Xft.dpi:192" | xrdb -merge #xwayland scale set. doesnt seem to work on wechat but works on fcitx5 inside wechat.
 
 #############################
