@@ -1,7 +1,7 @@
 # see https://github.com/sigoden/aichat/blob/main/config.example.yaml
 
 # ---- llm ----
-model: deepseek:deepseek-chat
+#model: deepseek:deepseek-chat
 #model: minimax:minimax-m2
 #model: moonshot:kimi-k2-thinking
 #model: chatanywhere:gpt-5-mini
@@ -37,6 +37,24 @@ summarize_prompt: 'Summarize the discussion briefly in 200 words or less to use 
 summary_prompt: 'This is a summary of the chat history as a recap: '
 
 clients:
+  - type: openai-compatible
+    name: aliyun
+    api_base: https://dashscope.aliyuncs.com/compatible-mode/v1
+    api_key: sk-27e5e97796e44924b23660ed1b2b9899
+    models:
+      - name: qwen3-max
+        max_input_tokens: 252000
+        input_price: 6.4
+        output_price: 25.6
+      - name: qwen-plus
+        max_input_tokens: 1000000
+        input_price: 2.4
+        output_price: 24
+      - name: qwen-flash
+        max_input_tokens: 1000000
+        input_price: 0.6
+        output_price: 6
+
   - type: openai-compatible
     name: deepseek
     api_base: https://api.deepseek.com

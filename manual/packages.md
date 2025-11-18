@@ -284,6 +284,10 @@
 - `reaper`
 - `sox`
 
+### Android开发
+
+- `android-tools`
+
 ### 其他
 
 - `wechat`(AUR)
