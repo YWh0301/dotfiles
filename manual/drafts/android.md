@@ -34,3 +34,16 @@
 - 使用bitwarden作为密码管理器
 - 使用vlc作为视频播放器
 - 使用fcitx5小企鹅输入法
+
+## drafts
+
+### 学习资源
+
+- termux
+- magisk
+- kernelSU
+
+### 路径
+
+- 先不考虑GUI
+- 在安卓设备上实现一个自建的特权容器，chroot+namespace+cgroup方式脱离安卓系统的管理并且获得SELinux下的高级权限
