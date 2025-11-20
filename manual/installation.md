@@ -236,7 +236,7 @@
     - 设置硬件视频解码
 - 从用户态修改XDG启动条目
     - 更改pCloud的默认目录
-- 初次启动*pcloudcc*：`pcloudcc -u 2490224285@qq.com -m $HOME/.misc/pCloudDrive -s`并输入密码；
+- 初次启动*pcloudcc*：`pcloudcc -u youremail@mail.com -m $HOME/.misc/pCloudDrive -s`并输入密码；
     - 使用`-d`参数后台运行*pcloudcc*，而后使用`-k`参数进入REPL配置同步文件夹；
     - 其中，同步文件夹的`<remote-path>`为`$HOME/.misc/pCloudDrive`起始的路径；
 

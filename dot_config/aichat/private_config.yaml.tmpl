@@ -1,4 +1,4 @@
-{{- $encryptedFile := joinPath .chezmoi.sourceDir "dot_config" "aichat" "encrypted_aichat.data.toml.age" -}}
+{{- $encryptedFile := joinPath .chezmoi.sourceDir "dot_config" "aichat" "encrypted_aichat.chezmoidata.toml.age" -}}
 {{- $configData := $encryptedFile | include | decrypt | fromToml -}}
 
 # ---- llm ----

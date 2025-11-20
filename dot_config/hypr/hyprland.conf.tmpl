@@ -42,7 +42,7 @@ exec-once = hypridle # idle detector
 {{ if or (eq .chezmoi.hostname  "homeDesktop") (eq .chezmoi.hostname  "rogLaptop") (eq .chezmoi.hostname "t460Laptop") -}}
 exec-once = env HOME="$HOME/.misc/pCloudDrive" pcloud #pcloud would mount on a folder in home directory which is ugly so i change the home and created sim links in the folder to trick pcloud. remeber to also modify the exec in desktop entry of pcloud. furthermore pcloud only take absolute path so ~/ wont work.after this just set sync folder in the app then u can use it without any trouble.
 {{ else -}}
-exec-once = pcloudcc -m $HOME/.misc/pCloudDrive -u 2490224285@qq.com -d
+exec-once = pcloudcc -m $HOME/.misc/pCloudDrive -u {{ .email.default }} -d
 {{- end }}
 exec-once = echo "Xft.dpi:192" | xrdb -merge #xwayland scale set. doesnt seem to work on wechat but works on fcitx5 inside wechat.
 
