@@ -23,6 +23,7 @@ alias dc="chezmoi cd"
 alias eg="aichat -e"
 alias cg="aichat -c"
 alias g="git"
+alias vm="nvim $HOME/.local/share/chezmoi/manual"
 function y() {
     local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
     yazi "$@" --cwd-file="$tmp"
