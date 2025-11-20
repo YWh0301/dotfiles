@@ -1,4 +1,5 @@
-# see https://github.com/sigoden/aichat/blob/main/config.example.yaml
+{{- $encryptedFile := joinPath .chezmoi.sourceDir "dot_config" "aichat" "encrypted_aichat.data.toml.age" -}}
+{{- $configData := $encryptedFile | include | decrypt | fromToml -}}
 
 # ---- llm ----
 model: deepseek:deepseek-chat
@@ -41,7 +42,7 @@ clients:
   - type: openai-compatible
     name: deepseek
     api_base: https://api.deepseek.com
-    api_key: sk-a000c602afad49f0889b47d0958cdad4
+    api_key: {{ $configData.api_keys.deepseek }}
     models:
       - name: deepseek-chat
         max_input_tokens: 128000
@@ -57,7 +58,7 @@ clients:
   - type: openai-compatible
     name: minimax
     api_base: https://api.minimaxi.com/v1
-    api_key: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJHcm91cE5hbWUiOiLkv57mlofnmpMiLCJVc2VyTmFtZSI6IuS_nuaWh-eakyIsIkFjY291bnQiOiIiLCJTdWJqZWN0SUQiOiIxOTg4OTU4ODQ3ODA0MzgwMDAyIiwiUGhvbmUiOiIxODc1ODMyOTEyOSIsIkdyb3VwSUQiOiIxOTg4OTU4ODQ3ODAwMTg1Njk4IiwiUGFnZU5hbWUiOiIiLCJNYWlsIjoiIiwiQ3JlYXRlVGltZSI6IjIwMjUtMTEtMTggMDI6NDE6MTkiLCJUb2tlblR5cGUiOjEsImlzcyI6Im1pbmltYXgifQ.vRnVVNDHooAIYy_ky5su5-NyKJuvTE4aJnMCq2TVbZ5jovwzUvRFPbi1bzZRLRdEcujBUKHhzpU_heC0XL01lFfQcOC-36c2zvkxtYzMzxLZP9ZUzwbcqrqOliNwPPgM4OYVOZYT0ev3O_xDOoa7TJpOZD8HSL5kDpyaN3wUA5q6rNuFWNd9-Lsjbs3EotwsxHyrYbEx-MDqAWu1cL1SKDy6RANnmQymEmWDiU57NhNQmc4oKKlOHlvSP8UtrcvRqNm4rEIX_yc67p42H_SjuEG3QK6Qcdjf_wZzkYnF7jLAnwMhFEogS_N5RNE8uR7MprnIYNqmoDsNQVq_22hTxQ
+    api_key: {{ $configData.api_keys.minimax }}
     models:
       - name: minimax-m2
         max_input_tokens: 204800
@@ -67,7 +68,7 @@ clients:
   - type: openai-compatible
     name: moonshot
     api_base: https://api.moonshot.cn/v1
-    api_key: sk-UCw0MGFi1q9o8EOuvcfeISyBNgLLNINyIit1abvqLfT7lgOw
+    api_key: {{ $configData.api_keys.moonshot }}
     models:
       - name: kimi-k2-0905-preview
         max_input_tokens: 262144
@@ -125,7 +126,7 @@ clients:
   - type: openai-compatible
     name: aliyun
     api_base: https://dashscope.aliyuncs.com/compatible-mode/v1
-    api_key: sk-27e5e97796e44924b23660ed1b2b9899
+    api_key: {{ $configData.api_keys.aliyun }}
     models:
       - name: qwen3-max
         max_input_tokens: 252000
@@ -143,7 +144,7 @@ clients:
   - type: openai-compatible
     name: chatanywhere-global
     api_base: https://api.chatanywhere.org
-    api_key: [Deleted]
+    api_key: {{ $configData.api_keys.chatanywhere }}
     models:
       - name: gpt-5
         max_input_tokens: 400000
@@ -208,7 +209,7 @@ clients:
   - type: openai-compatible
     name: chatanywhere
     api_base: https://api.chatanywhere.tech
-    api_key: [Deleted]
+    api_key: {{ $configData.api_keys.chatanywhere }}
     models:
       - name: gpt-5
         max_input_tokens: 400000
@@ -273,7 +274,7 @@ clients:
   - type: openai-compatible
     name: openrouter-free
     api_base: https://openrouter.ai/api/v1
-    api_key: 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
+    api_key: {{ $configData.api_keys.openrouter_free }}
     models:
       - name: minimax/minimax-m2:free
         max_input_tokens: 196600
@@ -299,7 +300,7 @@ clients:
   - type: gemini
     name: gemini-free
     api_base: https://generativelanguage.googleapis.com/v1beta
-    api_key: AIzaSyAVWkM1Y4uDNavR1ZvtuDD3ilfUbmACKaw
+    api_key: {{ $configData.api_keys.gemini_free }}
     models:
       - name: gemini-2.5-pro
         max_input_tokens: 1048576
@@ -315,7 +316,7 @@ clients:
   - type: openai-compatible
     name: chatanywhere-free-global
     api_base: https://api.chatanywhere.org
-    api_key: sk-UwD44MREtwB2IFnUbKcZyO9y4BATgg3VQWENjtZiQEGO50Tn
+    api_key: {{ $configData.api_keys.chatanywhere_free }}
     models:
       - name: gpt-5-mini
         max_input_tokens: 4096
@@ -329,7 +330,7 @@ clients:
   - type: openai-compatible
     name: chatanywhere-free
     api_base: https://api.chatanywhere.tech
-    api_key: sk-UwD44MREtwB2IFnUbKcZyO9y4BATgg3VQWENjtZiQEGO50Tn
+    api_key: {{ $configData.api_keys.chatanywhere_free }}
     models:
       - name: gpt-5-mini
         max_input_tokens: 4096
