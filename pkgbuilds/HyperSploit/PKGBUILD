@@ -1,0 +1,23 @@
+pkgname=hypersploit
+pkgver=1.1.0
+pkgrel=1
+pkgdesc="a simple zero depedencies utility to bypass HyperOS restrictions on bootloader unlocking"
+arch=('x86_64')
+url="https://github.com/TheAirBlow/HyperSploit"
+license=('custom')
+source=("https://github.com/TheAirBlow/HyperSploit/releases/download/1.1.0/HyperSploit-Linux")
+sha256sums=('a92423ba1735c90ae5b59c02e915bc6171e1c66abcb838ed55904f042b46a305')
+
+prepare() {
+    :
+}
+
+build() {
+    :
+}
+
+package() {
+    cd "$srcdir"
+    
+    install -Dm755 "HyperSploit-Linux" "$pkgdir/usr/bin/HyperSploit"
+}
