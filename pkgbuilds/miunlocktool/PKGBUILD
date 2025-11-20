@@ -1,0 +1,24 @@
+pkgname=miunlocktool
+pkgver=1.5.9
+pkgrel=1
+pkgdesc="Xiaomi device bootloader unlock tool"
+arch=('any')
+url="https://github.com/offici5l/MiUnlockTool"
+license=('unknown')
+depends=(
+    'python'
+    'python-requests'
+    'python-colorama'
+    'python-pycryptodome'
+    'python-urllib3'
+)
+source=("https://github.com/offici5l/MiUnlockTool/releases/download/1.5.9/MiUnlockTool.py")
+sha256sums=('6a5dcf460e4d4accb3b017bee1d8f75916527c6dd2fee63f726ddc9da9148292')
+
+package() {
+    cd "$srcdir"
+    
+    # 安装主Python脚本
+    install -Dm644 "MiUnlockTool.py" "$pkgdir/usr/bin/MiUnlockTool"
+    chmod +x "$pkgdir/usr/bin/MiUnlockTool"
+}

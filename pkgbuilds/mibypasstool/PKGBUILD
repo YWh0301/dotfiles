@@ -1,0 +1,47 @@
+pkgname=mibypasstool
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Xiaomi device bootloader unlock restriction bypass tool"
+arch=('any')
+url="https://github.com/offici5l/MiUnlockTool"
+license=('unknown')
+depends=(
+    'python'
+    'python-pycryptodome'
+    'python-urllib3'
+    'android-tools'
+)
+source=("https://github.com/offici5l/MiBypassTool/releases/download/mibypass/MiBypassTool.py")
+sha256sums=('1b0a337d1e4fb2f8d896eb7ec58485aa15ed0fe92cace29a20d5fc0960d43e02')
+
+prepare() {
+    cd "$srcdir/"
+    
+    # 修改Python脚本使用系统ADB
+    sed -i '/else:/,/systemp = "o"/c\
+else:\
+    # 使用系统ADB（Arch Linux修改）\
+    import shutil\
+    system_adb = shutil.which("adb")\
+    if system_adb:\
+        cmd = system_adb\
+        systemp = "o"\
+    else:\
+        dir = os.path.dirname(__file__)\
+        fp = os.path.join(dir, "platform-tools")\
+        if not os.path.exists(fp):\
+            dw(s)\
+        cmd = os.path.join(fp, "adb")\
+        if s == "Linux" or s == "Darwin":\
+            st = os.stat(cmd)\
+            os.chmod(cmd, st.st_mode | stat.S_IEXEC)\
+        systemp = "o"' MiBypassTool.py
+}
+
+package() {
+    cd "$srcdir"
+    
+    # 安装主Python脚本
+    install -Dm644 "MiBypassTool.py" "$pkgdir/usr/bin/MiBypassTool"
+    chmod +x "$pkgdir/usr/bin/MiBypassTool"
+}
