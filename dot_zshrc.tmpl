@@ -15,15 +15,6 @@ export ZSH_2000_DISABLE_RVM='true'
 
 antigen apply
 
-alias ll="ls -al"
-alias n="nvim"
-alias c="wl-copy"
-alias d="chezmoi"
-alias dc="chezmoi cd"
-alias eg="aichat -e"
-alias cg="aichat -c"
-alias g="git"
-alias vm="nvim $HOME/.local/share/chezmoi/manual"
 function y() {
     local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
     yazi "$@" --cwd-file="$tmp"
@@ -32,3 +23,14 @@ function y() {
     fi
     rm -f -- "$tmp"
 }
+alias ll="ls -al"
+alias n="nvim"
+alias c="wl-copy"
+alias d="chezmoi"
+alias dc="chezmoi cd"
+alias dr="y {{ .chezmoi.homeDir }}/.config/reference"
+alias dp="y {{ .chezmoi.config.sourceDir }}/pkgbuilds"
+alias eg="aichat -e"
+alias cg="aichat -c"
+alias g="git"
+alias vm="nvim {{ .chezmoi.config.sourceDir }}/manual"

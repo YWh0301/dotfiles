@@ -226,7 +226,7 @@
 ### 进入桌面环境加载用户配置
 
 - `exit && exit`并自动登录到*yourusername*，按`q`忽略zsh提示，运行`Hyprland`进入桌面环境；
-- 生成*ssh key*：`ssh-keygen -t ed25519 -C "yuwenhao@stu.pku.edu.cn"`，默认回车直到生成密钥；
+- 生成*ssh key*：`ssh-keygen -t ed25519 -C "youremail@mail.com"`，默认回车直到生成密钥；
 - 拷贝公钥：`echo ~/.ssh/id_ed25519.pub | wl-copy`
 - 按下默认`Win+Q`快捷键启动*kitty*，输入`firefox`启动浏览器，登录*github.com*，在设置 -> SSH and GPG keys -> New SSH key粘贴新机器的公钥；
 - 关闭浏览器，在*kitty*输入`chezmoi init https://github.com/YWh0301/dotfiles.git`；
