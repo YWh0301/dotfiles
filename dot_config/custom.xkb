@@ -718,7 +718,7 @@ xkb_types "complete" {
 };
 
 xkb_compatibility "complete" {
-	virtual_modifiers NumLock,Alt,LevelThree,Super,LevelFive,Meta,Hyper=0x4000,ScrollLock=0x8000;
+	virtual_modifiers NumLock,Alt,LShift,RShift,LevelThree,Super,LevelFive,Meta,Hyper=0x4000,ScrollLock=0x8000;
 
 	interpret.useModMapMods= AnyLevel;
 	interpret.repeat= False;
@@ -730,6 +730,12 @@ xkb_compatibility "complete" {
 		virtualModifier= LevelThree;
 		useModMapMods=level1;
 		action= SetMods(modifiers=LevelThree,clearLocks);
+	};
+	interpret Shift_L {
+		virtualModifier= LShift;
+	};
+	interpret Shift_R {
+		virtualModifier= RShift;
 	};
 	interpret Alt_L+AnyOf(all) {
 		virtualModifier= Alt;
@@ -1016,10 +1022,9 @@ xkb_symbols "pc_us_inet(evdev)" {
 	key <AC11>               {	[      apostrophe,        quotedbl ] };
 	key <TLDE>               {	[           grave,      asciitilde ] };
 	key <LFSH>               {
-		type= "RSHIFT_MODIFIED",
-        repeat= No,
+		type= "TWO_LEVEL",
         symbols[1]= [                  Shift_L,                Caps_Lock ],
-        actions[1]= [ SetMods(modifiers=LShift+Shift), LockMods(modifiers=Lock) ]
+        actions[1]= [ SetMods(modifiers=Shift), LockMods(modifiers=Lock) ]
     };
 	key <BKSL>               {	[       backslash,             bar ] };
 	key <AB01>               {	[               z,               Z ] };
@@ -1033,10 +1038,9 @@ xkb_symbols "pc_us_inet(evdev)" {
 	key <AB09>               {	[          period,         greater ] };
 	key <AB10>               {	[           slash,        question ] };
 	key <RTSH>               {	
-		type= "LSHIFT_MODIFIED",
-        repeat= No,
+		type= "TWO_LEVEL",
         symbols[1]= [                  Shift_R,                Caps_Lock ],
-        actions[1]= [ SetMods(modifiers=RShift+Shift), LockMods(modifiers=Lock) ]
+        actions[1]= [ SetMods(modifiers=Shift), LockMods(modifiers=Lock) ]
     };
 	key <KPMU>               {
 		type= "CTRL+ALT",
@@ -1505,7 +1509,6 @@ xkb_symbols "pc_us_inet(evdev)" {
 	key <I706>               {	[ XF86KbdLcdMenu3 ] };
 	key <I707>               {	[ XF86KbdLcdMenu4 ] };
 	key <I708>               {	[ XF86KbdLcdMenu5 ] };
-	modifier_map Shift { <LFSH>, <RTSH> };
 	modifier_map Control { <CAPS>, <RCTL> };
 	modifier_map Mod1 { <LCTL>, <ALT>, <META> };
 	modifier_map Mod2 { <NMLK> };
