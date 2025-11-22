@@ -60,15 +60,33 @@
     - 如果需要安装Windows虚拟机，则可以单独分配一个分区，使得虚拟机可以使用专门的硬盘分区来进行硬盘直通获得更好的性能。
     - 按`w`来写入分区表；
 - 格式化分区：
-    - 使用*FAT32*格式化*boot*分区`mkfs.fat -F 32 /dev/your_device1`；
+    - 使用*FAT32*格式化*boot*分区`mkfs.fat -F 32 /dev/your_device1`（如果使用Windows系统的EFI分区则不要在此处格式化）；
     - 使用*btrfs*格式化*root*分区`mkfs.btrfs -L root /dev/your_device2`（此处假设第二个分区为*root*分区）；
 - 挂载分区：
     - 先`mount /dev/your_device2 /mnt`；
-    - 而后`mount --mkdir /dev/your_device1 /mnt/boot`；
-- 在*btrfs*文件系统中创建交换文件，大小为内存大小：
-    - `btrfs subvolume create /mnt/swap`
-    - `btrfs filesystem mkswapfile --size 64g(ram size) --uuid clear /mnt/swap/swapfile`
-    - `swapon /mnt/swap/swapfile`.
+    - 在*btrfs*文件系统中创建交换文件使用的子卷，大小为内存大小：
+        - `btrfs subvolume create /mnt/@swap`
+    - 为之后的系统快照功能创建*btrfs*子卷：
+        - `btrfs subvolume create /mnt/@`，使用单独子卷而非顶层子卷作为日后的根节点
+        - `btrfs subvolume create /mnt/@snapshot`，平铺布局，自定义用于快照存放的子卷
+        - `btrfs subvolume create /mnt/@home`，家目录不进入系统快照
+        - 保障`/var/lib/pacman`被快照保存，但剔除其他可以不进入系统快照的目录
+            - `btrfs subvolume create /mnt/@var_log`
+            - `btrfs subvolume create /mnt/@var_cache`
+            - `/var/lib/docker`：*Docker*、`/var/lib/machines`：*systemd-nspawn*、`/var/lib/postgres`：*PostgreSQL*等可以按需处理
+    - 重新挂载
+        - `umount /mnt`
+        - `mount -o subvol=@,compress=zstd:3,noatime /dev/your_device2 /mnt`
+        - `mount --mkdir /dev/your_device1 /mnt/boot`；
+        - `mount -o subvol=@snapshot --mkdir /dev/your_device2 /mnt/.snapshots`
+    - 处理交换文件
+        - `mount -o subvol=@swap,compress=no,noatime --mkdir /dev/your_device2 /mnt/swap`；
+        - `btrfs filesystem mkswapfile --size 64g(ram size) --uuid clear /mnt/swap/swapfile`
+        - `swapon /mnt/swap/swapfile`.
+    - 挂载其余子卷
+        - `mount -o subvol=@home,compress=zstd:3,noatime --mkdir /dev/your_device2 /mnt/home`
+        - `mount -o subvol=@var_log,compress=zstd:1,noatime --mkdir /dev/your_device2 /mnt/var/log`
+        - `mount -o subvol=@var_cache,compress=zstd:1,noatime --mkdir /dev/your_device2 /mnt/var/cache`
 
 ### 拉取软件包
 

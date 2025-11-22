@@ -61,7 +61,34 @@
 - `openssh`
 - `exfatprogs`
 1. 使用btrfs
+    - 子卷是btrfs的概念
+        - 可以理解为文件系统命名空间
+        - 子卷可以单独挂载到不同的目录位置
+        - 子卷可以嵌套，形成类似文件目录的树状结构
+            - 子卷可以嵌套在子卷下
+            - 子卷可以嵌套在同btrfs分区的目录下
+            - 如果子卷没有单独挂载，会自动以子卷嵌套结构显示为文件系统目录结构
+        - btrfs分区具有id=5的顶层子卷，固定不可变，但不一定要被挂载为根目录
+        - btrfs分区具有“默认子卷”，初始设置为顶层子卷，可以使用
+            - 'btrfs get-default /path/to/a/subvolume'获取挂载在这个目录的子卷对应的btrfs分区的“默认子卷”
+            - 'btrfs set-default /path/to/a/subvolume'设置挂载在这个目录的子卷为对应btrfs分区的“默认子卷”
+    - btrfs具有快照功能，可以增量保存一个子卷的快照为另一个子卷
+        - 快照指针对子卷，不能针对目录和文件
+        - 嵌套子卷不会被父子卷的快照保留
+        - 快照默认与原子卷相同权限，但原子卷权限缩紧后快照不会自动变更，可能导致**安全问题**
     - `btrfs-progs`
+    - `snapper`
+        - 用于自动生成btrfs快照，默认生成只读快照
+        - 添加新的快照设置：'snapper -c your_config_label create-config /path/to/subvolume'
+            - 会在需要快照的subvolume下生成'.snapshot'的subvolume用来存储快照，并通过'/path/to/subvolume
+            - 新的快照会存储为'.snapshot/X/snapshot' subvolume，其中X是快照数字编号
+            - 创建新配置的时候需要确保'/path/to/subvolume'子卷下没有名字为'.snapshot'的子卷且没有名字为'.snapshot'的目录，否则都会与snapper创建存放快照的子卷的行为冲突
+            - 当snapper配置创建好之后，可以将'/path/to/subvolume/.snapshot'挂载为其他自定义子卷
+            - snapper根据“配置文件中记录的目录”而非“子卷标识”索引需要快照的子卷与存放快照子卷的位置，因此目录如果挂载了变化的子卷，可能导致快照错误记录或者失败
+        - 用来进行系统保护
+            - 防止滚动更新或者系统目录文件修改破坏系统
+        - 用来进行文件“备份”
+            - 单一位置、单一机器存储并非安全“备份”，可以配合云同步系统实现备份
 2. 使用其他文件系统
     - 暂无
 
