@@ -60,8 +60,8 @@
 - `sshfs`
 - `openssh`
 - `exfatprogs`
-1. 使用btrfs
-    - 子卷是btrfs的概念
+- `btrfs-progs`
+    - btrfs中的子卷概念
         - 可以理解为文件系统命名空间
         - 子卷可以单独挂载到不同的目录位置
         - 子卷可以嵌套，形成类似文件目录的树状结构
@@ -76,21 +76,38 @@
         - 快照指针对子卷，不能针对目录和文件
         - 嵌套子卷不会被父子卷的快照保留
         - 快照默认与原子卷相同权限，但原子卷权限缩紧后快照不会自动变更，可能导致**安全问题**
-    - `btrfs-progs`
-    - `snapper`
-        - 用于自动生成btrfs快照，默认生成只读快照
-        - 添加新的快照设置：'snapper -c your_config_label create-config /path/to/subvolume'
-            - 会在需要快照的subvolume下生成'.snapshot'的subvolume用来存储快照，并通过'/path/to/subvolume
-            - 新的快照会存储为'.snapshot/X/snapshot' subvolume，其中X是快照数字编号
-            - 创建新配置的时候需要确保'/path/to/subvolume'子卷下没有名字为'.snapshot'的子卷且没有名字为'.snapshot'的目录，否则都会与snapper创建存放快照的子卷的行为冲突
-            - 当snapper配置创建好之后，可以将'/path/to/subvolume/.snapshot'挂载为其他自定义子卷
-            - snapper根据“配置文件中记录的目录”而非“子卷标识”索引需要快照的子卷与存放快照子卷的位置，因此目录如果挂载了变化的子卷，可能导致快照错误记录或者失败
-        - 用来进行系统保护
-            - 防止滚动更新或者系统目录文件修改破坏系统
-        - 用来进行文件“备份”
-            - 单一位置、单一机器存储并非安全“备份”，可以配合云同步系统实现备份
-2. 使用其他文件系统
-    - 暂无
+- `snapper`
+    - 用于自动生成btrfs快照，默认生成只读快照
+    - 添加新的快照设置：'snapper -c your_config_label create-config /path/to/subvolume'
+        - 会在需要快照的子卷下生成名称为'.snapshots'的子卷用来存储快照
+        - 新的快照会存储为名称为'.snapshots/X/snapshot'的子卷，其中X是快照数字编号
+        - 创建新配置的时候需要确保'/path/to/subvolume'子卷下没有名字为'.snapshots'的子卷且没有名字为'.snapshots'的目录，否则都会与snapper创建存放快照的子卷的行为冲突
+        - 当snapper配置创建好之后，可以将'/path/to/subvolume/.snapshots'目录挂载为其他自定义子卷，并将snapper默认创建的子卷删除
+            - 'btrfs subvolume delete /path/to/subvolume/.snapshots'
+            - 'mkdir /path/to/subvolume/.snapshots'
+            - 'chmod 750 /path/to/subvolume/.snapshots'
+            - 'sudo mount -o subvol=new_subvol_name /dev/your_partition /path/to/subvolume/.snapshots'
+            - 如果需要默认挂载则重新生成fstab文件（记得先保留fstab的备份）：'sudo genfstab -U / | sudo t /etc/fstab'
+        - snapper根据“配置文件中记录的目录”而非“子卷标识”索引需要快照的子卷与存放快照子卷的位置，因此目录如果挂载了变化的子卷，可能导致快照错误记录或者失败
+    - 用来进行系统保护
+        - 防止滚动更新或者系统目录文件修改破坏系统
+        - 使用平铺布局（Flat Layout）组织子卷，不使用顶层子卷挂载到根目录'/'，而使用单独子卷例如'@'
+        - 将'/home'、'/var/cache'、'/var/log'、'/var/lib/docker'：*Docker*、'/var/lib/machines'：*systemd-nspawn*、'/var/lib/postgres'：*PostgreSQL*等位置用单独子卷挂载避免快照记录过多无用数据
+        - 将'/path/to/volume'改为'/'后创建snapper配置
+        - 修改'.snapshots'挂载的子卷为单独子卷，例如与根目录子卷同级别的'@snapshots'子卷
+        - 当系统损坏的时候：
+            - 如果使用GRUB，可以在进入GRUB菜单后按下'c'进入控制台：
+                - 'insmod btrfs'
+                - 'ls'看有哪些磁盘分区，例如'(hd0,gpt2)'
+                - 'ls (hd0,gpt2)'看文件系统类型与标签，确认是Btrfs分区
+                - 'ls (hd0,gpt2)/'如果默认子卷是顶层，这里能看到'@'、'@snapshots'等
+                - 'ls (hd0,gpt2)/@snapshots'列出其中的快照目录，找到所需快照
+            - 在bootloader的启动options处添加'rootflags=subvol=@snapshots/X/snapshot'就可以以只读方式挂载系统快照
+            - 'sudo mount /your/root/partition /mnt'，把btrfs分区的顶层子卷（并非日常使用的根文件系统子卷）挂载到'/mnt'
+            - 'mv /mnt/@ /mnt/broken_root'
+            - 'btrfs subvolume snapshot /mnt/@snapshots/X/snapshot /mnt/@'
+    - 用来进行文件“备份”
+        - 单一位置、单一机器存储并非安全“备份”，可以配合云同步系统实现备份
 
 #### 电源与硬件管理
 
@@ -215,8 +232,10 @@
     - `ripgrep`
     - `ffmpegthumbnailer`
     - `zoxide`
-- `pcloud-drive`(AUR)
-    - pcloud云盘
+1. 使用图形化pCloud客户端
+    - `pcloud-drive`(AUR)
+2. 使用命令行pCloud客户端
+    - `pcloudcc-lneely`(AUR)
 
 ### 输入法
 

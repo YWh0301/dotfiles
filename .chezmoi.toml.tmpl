@@ -22,3 +22,15 @@ encryption = "age"
         {{ printf "%q" "{{ .Source }}" }},
         {{ printf "%q" "{{ .Target }}" }},
     ]
+
+[data.email]
+    default = "2490224285@qq.com"
+    school = "yuwenhao@stu.pku.edu.cn"
+
+[data.pcloud]
+{{- if or (eq .chezmoi.hostname "homeDesktop") (eq .chezmoi.hostname "rogLaptop") (eq .chezmoi.hostname "t460Laptop") }}
+    client = "pcloud-drive"
+{{- else }}
+    client = "pcloudcc"
+{{- end }}
+

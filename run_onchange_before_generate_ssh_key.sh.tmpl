@@ -1,0 +1,11 @@
+#!/bin/sh
+
+if [ ! -f "${HOME}/.ssh/id_ed25519" ]; then
+    mkdir -p "${HOME}/.ssh"
+    echo "Generating new SSH key..."
+    if ssh-keygen -t ed25519 -C "{{ .email.default }}" -f "${HOME}/.ssh/id_ed25519" -N "" -q; then
+        echo "SSH key generated successfully."
+    else
+        echo "Failed to generate SSH key."
+    fi
+fi
