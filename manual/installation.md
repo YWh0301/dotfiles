@@ -68,7 +68,7 @@
         - `btrfs subvolume create /mnt/@swap`
     - 为之后的系统快照功能创建*btrfs*子卷：
         - `btrfs subvolume create /mnt/@`，使用单独子卷而非顶层子卷作为日后的根节点
-        - `btrfs subvolume create /mnt/@snapshot`，平铺布局，自定义用于快照存放的子卷
+        - `btrfs subvolume create /mnt/@snapshots`，平铺布局，自定义用于快照存放的子卷
         - `btrfs subvolume create /mnt/@home`，家目录不进入系统快照
         - 保障`/var/lib/pacman`被快照保存，但剔除其他可以不进入系统快照的目录
             - `btrfs subvolume create /mnt/@var_log`
@@ -76,24 +76,30 @@
             - `/var/lib/docker`：*Docker*、`/var/lib/machines`：*systemd-nspawn*、`/var/lib/postgres`：*PostgreSQL*等可以按需处理
     - 重新挂载
         - `umount /mnt`
-        - `mount -o subvol=@,compress=zstd:3,noatime /dev/your_device2 /mnt`
+        - `mount -o subvol=@,noatime /dev/your_device2 /mnt`
         - `mount --mkdir /dev/your_device1 /mnt/boot`；
-        - `mount -o subvol=@snapshot --mkdir /dev/your_device2 /mnt/.snapshots`
+        - `mount -o subvol=@snapshots,nodev,nosuid,noexec,noatime --mkdir /dev/your_device2 /mnt/.snapshots`
     - 处理交换文件
-        - `mount -o subvol=@swap,compress=no,noatime --mkdir /dev/your_device2 /mnt/swap`；
+        - `mount -o subvol=@swap,nodev,nosuid,noexec,noatime --mkdir /dev/your_device2 /mnt/swap`；
         - `btrfs filesystem mkswapfile --size 64g(ram size) --uuid clear /mnt/swap/swapfile`
         - `swapon /mnt/swap/swapfile`.
     - 挂载其余子卷
-        - `mount -o subvol=@home,compress=zstd:3,noatime --mkdir /dev/your_device2 /mnt/home`
-        - `mount -o subvol=@var_log,compress=zstd:1,noatime --mkdir /dev/your_device2 /mnt/var/log`
-        - `mount -o subvol=@var_cache,compress=zstd:1,noatime --mkdir /dev/your_device2 /mnt/var/cache`
+        - `mount -o subvol=@home,noatime --mkdir /dev/your_device2 /mnt/home`
+        - `mount -o subvol=@var_log,noatime --mkdir /dev/your_device2 /mnt/var/log`
+        - `mount -o subvol=@var_cache,noatime --mkdir /dev/your_device2 /mnt/var/cache`
+    - 设置*btrfs*子卷的参数：
+        - `btrfs property set -ts /mnt compression zstd:3`
+        - `btrfs quota enable /mnt`
+        - `btrfs property set -ts /mnt/home compression zstd:3`
+        - `btrfs property set -ts /mnt/var/log compression zstd:1`
+        - `btrfs property set -ts /mnt/var/cache compression none`
+        - `btrfs property set -ts /mnt/.snapshots compression zstd:3`
 
 ### 拉取软件包
 
 - 使用*vim*编辑镜像列表备份文件`vim /etc/pacman.d/mirrorlist.back`，找到THU清华镜像源后放到最顶部，并覆盖*mirrorlist*文件`:w! /etc/pacman.d/mirrorlist`；
 - 在新机器的磁盘当中安装基础软件包与linux-zen内核
-    - `pacstrap -K /mnt base base-devel linux-zen linux-zen-headers linux-firmware (intel/amd)-ucode efibootmgr networkmanager git pacman-contrib iwd bash zsh yazi neovim`；
-    - 如果安装双系统，安装*os-prober* `pacstrap -K /mnt os-prober`；
+    - `pacstrap -K /mnt base base-devel linux-zen linux-zen-headers linux-firmware (intel/amd)-ucode efibootmgr networkmanager git pacman-contrib iwd bash zsh yazi neovim chezmoi`；
 
 ### 新系统设置
 
@@ -112,21 +118,34 @@
 #### 选择一：使用GRUB2
 
 - `pacman -S grub`；
+    - 如果安装双系统，安装*os-prober* `pacman -S os-prober`；
 - `grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB`；
-- 如果安装Windows双系统，编辑`nvim /etc/default/grub`并将其中`GRUB_DISABLE_OS_PROBER=false`一行前的注释去除；
-- 编辑其他`/etc/default/grub`中有价值的内容
-    - 一种双系统的良好实践是，设置`GRUB_DEFAULT=0`使得系统默认启动Linux，同时设置`GRUB_TIMEOUT=0`避免选择窗口出现，然后先运行一次下方的`grub-mkconfig`；
-    - 而后查看生成的配置文件中Windows条目的ID：`grep "Windows" /boot/grub/grub.cfg | grep -o "osprober-efi-[^']*"`，返回应该类似于“osprober-efi-8202-EB9C”；
-    - 在`/etc/grub.d/40_cunstom`文件的末尾加入，其中“osprober”部分替换为获得的Windows条目ID
-        ```
-        if keystatus --shift ; then
-            set default="osprober-efi-8202-EB9C"
-        else
-            set default="0"
-        fi
-        ```
-    - 重新生成GRUB的配置文件：`grub-mkconfig -o /boot/grub/grub.cfg`；
-    - 此后双系统默认进入Linux系统，在开机启动过程中若长安*Shift*键则进入Windows系统
+- 编辑`/etc/default/grub`中有价值的内容
+    - `GRUB_DEFAULT=0`仅一个*Linux*启动项情况下默认*Linux*启动
+    - `GRUB_TIMEOUT=0`可以设置GRUB按照最短时间启动
+        - 设置`GRUB_TIMEOUT_STYLE=menu`
+        - 在`/etc/grub.d/40_cunstom`文件的末尾加入
+            ```
+            if keystatus --ctrl ; then
+                set timeout=-1
+            fi
+            ```
+        - 这种配置使得开机过程中长按*Ctrl*键即可显示菜单，否则菜单默认关闭
+    - `GRUB_CMDLINE_LINUX_DEFAULT="rootflags=subvol=@ rw quiet splash loglevel=3 vt.global_cursor_default=0 systemd.show_status=0"`设置常用内核启动参数与根子卷
+    - 如果安装Windows双系统，将其中`GRUB_DISABLE_OS_PROBER=false`一行前的注释去除；
+        - 一种双系统的良好实践是判断启动时键盘的*Shift*有没有被按下决定是否启动Windows；
+        - 先运行一次`grub-mkconfig -o /boot/grub/grub.cfg`；
+        - 而后查看生成的配置文件中Windows条目的ID：`grep "Windows" /boot/grub/grub.cfg | grep -o "osprober-efi-[^']*"`，返回应该类似于“osprober-efi-8202-EB9C”；
+        - 在`/etc/grub.d/40_cunstom`文件的末尾加入，其中“osprober”部分替换为获得的Windows条目ID
+            ```
+            if keystatus --shift ; then
+                set default="osprober-efi-8202-EB9C"
+            else
+                set default="0"
+            fi
+            ```
+        - 重新生成GRUB的配置文件：`grub-mkconfig -o /boot/grub/grub.cfg`；
+        - 此后双系统默认进入Linux系统，在开机启动过程中若长按*Shift*键则进入Windows系统
 - 生成GRUB的配置文件：`grub-mkconfig -o /boot/grub/grub.cfg`；
 - 退出*chroot*环境`exit`，卸载所有挂载的磁盘`umount /mnt/boot`与`umount /mnt`后重启`reboot`并拔下U盘，完成基本安装。
 
@@ -145,7 +164,8 @@
     linux   /vmlinuz-linux-zen
     initrd  /initramfs-linux-zen.img
     ```
-- 获取根分区UUID并加入条目配置：`echo "options root=UUID=$(blkid -s UUID -o value $(findmnt -no SOURCE /)) rw quiet splash loglevel=3 vt.global_cursor_default=0 systemd.show_status=0" | tee -a /boot/loader/entries/zen_arch.conf`；
+- 获取根分区UUID并加入条目配置：`echo "options root=UUID=$(blkid -s UUID -o value $(findmnt -no SOURCE /)) rootflags=subvol=@ rw quiet splash loglevel=3 vt.global_cursor_default=0 systemd.show_status=0" | tee -a /boot/loader/entries/zen_arch.conf`；
+    - 注意，由于我们使用的根位于单独子卷，且并不是*root*设备的默认子卷，因此在条目中需要加入`rootflags=subvol=@`这一*option*
 - 运行`bootctl`检查配置文件正确性；
 - 退出*chroot*环境`exit`，卸载所有挂载的磁盘`umount /mnt/boot`与`umount /mnt`后重启`reboot`并拔下U盘，完成基本安装。
 
@@ -170,7 +190,7 @@
     ExecStart=-/sbin/agetty --skip-login --nonewline --noissue --autologin yourusername --noreset --noclear - ${TERM}
     ```
 
-### 安装系统功能软件包
+### 连接网络与代理
 
 - 连接网络
     - 启用*NetworkManager*`systemctl enable --now Networkmanager`
@@ -185,7 +205,7 @@
     - 运行`pacman -Sy archlinuxcn-keyring`加载密钥；
 - 安装*dae*实现透明代理
     - 从archlinuxcn仓库安装*dae*`pacman -S dae`；
-    - `systemctl enable --now dae`；
+    - 可以先尝试直接进行下一步的加载用户配置从*Github*拉取*chezmoi*仓库，如果成功则可以在`$HOME/.config/reference/dae`中找到*dae*的参考配置
     - 编辑`cp /etc/dae/config.dae.example /etc/dae/config.dae`后`nvim /etc/dae/config.dae`；
         - 主要编辑*subscription*、*group*和*routing*部分；
         - group示例如下：
@@ -220,8 +240,19 @@
               fallback: us
             }
             ```
-        - 配置完毕运行`dae reload`
-        - 检测网络连接`ping pornhub.com`
+    - `systemctl enable --now dae`；
+    - 检测网络连接`ping pornhub.com`
+
+# 加载用户配置
+
+- `su yourusername`以用户身份登录，按`q`忽略zsh提示
+- `chezmoi init https://github.com/YWh0301/dotfiles.git`，输入*chezmoi*配置仓库密码；
+- `chezmoi apply`将配置仓库应用到本台计算机
+    - 可以预先对配置仓库中*.tmpl*结尾模板文件中分机器配置的项目进行检查
+    - 可选使用`chezmoi apply --interactive`交互式地应用配置文件
+
+# 安装软件包
+
 - 安装yay
     1. archlinuxcn中维护了yay二进制包，可以直接`pacman -S yay`
     2. 如果需要从AUR安装yay，可以安装二进制*yay-bin*：
@@ -232,29 +263,32 @@
         - `makepkg -si`;
         - `cd && rm-rf yay-bin`清理文件；
 - 所需的软件包
-    - `sudo pacman -S --needed dkms evtest wev less tree curl wget lsof strace ltrace usbutils chezmoi sshfs openssh exfatprogs btrfs-progs acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-shares-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs gvfs-smb 7zip jq fd fzf ripgrep ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
+    - 可以参考`($chezmoi source-path)/manual/installation.md`与`($chezmoi source-path)/manual/packages.md`进行安装；也可以使用`($chezmoi source-path)/scripts/installation.sh`脚本化必要包安装过程；
+    - `sudo pacman -S --needed dkms evtest wev less tree curl wget lsof strace ltrace usbutils sshfs openssh exfatprogs btrfs-progs snapper acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-shares-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs gvfs-smb 7zip jq fd fzf ripgrep ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
     - 如果使用笔记本，安装相应软件包`pacman -S brightnessctl powertop thermald auto-cpufreq`；
-    - `yay -S antigen pcloudcc-lneely nvim-lazy vivify wps-office-cn wps-office-mui-zh-cn ttf-wps-fonts`；
+    - `yay -S antigen  nvim-lazy vivify wps-office-cn wps-office-mui-zh-cn ttf-wps-fonts`；
+    - 安装*pCloud*客户端
+        - 如果使用*pcloudcc*则安装`yay -S pcloudcc-lneely`，并在`($chezmoi source-path)/.chezmoi.toml.tmpl`中根据*hostname*配置*data.pcloud.client*参数为*pcloudcc*；
+        - 如果使用*pcloud-drive*则安装`yay -S pcloud-drive`，并在`($chezmoi source-path)/.chezmoi.toml.tmpl`中根据*hostname*配置*data.pcloud.client*参数为*pcloud-drive*；
+        - 修改`chezmoi.toml.tmpl`之后：
+            - `chezmoi init --apply`
+            - `git add .`、`git commit`、`git push`推到上游仓库
     - 如果使用systemd-boot作为bootloader，则`yay -S systemd-boot-pacman-hook`；
     - 安装所需的GPU驱动
         - 详情参见[ArchWiki](https://wiki.archlinux.org/title/Xorg#Driver_installation)。
         - 针对Nvidia的新款显卡，安装*nvidia-dkms*、*nvidia-utils*、*nvtop*、*nvidia-prime*;
         - 针对Intel或者AMD的显卡，安装*mesa*、*mesa-utils*，然后分别安装*vulkan-intel*、*vulkan-radeon*
 
-### 进入桌面环境加载用户配置
+### 针对应用进行用户空间设置
 
-- `exit && exit`并自动登录到*yourusername*，按`q`忽略zsh提示，运行`Hyprland`进入桌面环境；
-- 生成*ssh key*：`ssh-keygen -t ed25519 -C "youremail@mail.com"`，默认回车直到生成密钥；
-- 拷贝公钥：`echo ~/.ssh/id_ed25519.pub | wl-copy`
-- 按下默认`Win+Q`快捷键启动*kitty*，输入`firefox`启动浏览器，登录*github.com*，在设置 -> SSH and GPG keys -> New SSH key粘贴新机器的公钥；
-- 关闭浏览器，在*kitty*输入`chezmoi init https://github.com/YWh0301/dotfiles.git`；
-- `chezmoi apply`加载配置；
 - 对firefox进行手动配置：
-    - 安装插件
-    - 设置硬件视频解码
-- 从用户态修改XDG启动条目
-    - 更改pCloud的默认目录
-- 初次启动*pcloudcc*：`pcloudcc -u youremail@mail.com -m $HOME/.misc/pCloudDrive -s`并输入密码；
+    - 登录*Mozilla*账号同步设置
+        - 安装插件
+        - 设置硬件视频解码
+    - 为*github.com*添加*ssh*公钥
+        - 拷贝已经由*chezmoi*脚本创建好的公钥：`echo ~/.ssh/id_ed25519.pub | wl-copy`
+        - 按下默认`Alt_L+w`快捷键启动*firefox*，登录*github.com*（需要Authenticator给出2FA TOPT token），在设置 -> SSH and GPG keys -> New SSH key粘贴新机器的公钥；
+- 若使用*pcloudcc*，需要主动输入密码并配置：`pcloudcc -u youremail@mail.com -m $HOME/.misc/pCloudDrive -s`并输入密码；
     - 使用`-d`参数后台运行*pcloudcc*，而后使用`-k`参数进入REPL配置同步文件夹；
     - 其中，同步文件夹的`<remote-path>`为`$HOME/.misc/pCloudDrive`起始的路径；
 
@@ -266,16 +300,14 @@
     - 添加*systemd* service执行`powertop --auto-tune`；
     - 添加*systemd* service执行`auto-cpufreq`；
     - 添加*systemd* service执行`thermald`；
-
-
-
-
-
-
-
-
-
-
-
-
+- 使用*snapper*与*btrfs*快照进行系统自动备份设置：
+    - 先确保`/.snapshots`不存在，使得*snapper*新配置不冲突：
+        - `sudo umount /.snapshots`
+        - `sudo rmdir /.snapshots`
+    - 添加新的快照设置：`snapper -c system create-config /`
+    - 将*snapper*自动生成的子卷删除并重建对应目录：
+        - `sudo btrfs subvolume delete /.snapshots`
+        - `sudo mkdir /.snapshots`
+        - `sudo chmod 750 /.snapshots`
+        - `sudo mount /.snapshots`
 

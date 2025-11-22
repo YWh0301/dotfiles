@@ -1,8 +1,8 @@
 scripts/
-scripts/*
 manual/
-manual/*
 pkgbuilds/
-pkgbuilds/*
 key.txt.age
 
+{{- if eq .pcloud.client "pcloudcc" }}
+dot_local/share/applications/pcloud.desktop
+{{- end }} 
