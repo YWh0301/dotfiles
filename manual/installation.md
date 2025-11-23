@@ -64,10 +64,9 @@
     - 使用*btrfs*格式化*root*分区`mkfs.btrfs -L root /dev/your_device2`（此处假设第二个分区为*root*分区）；
 - 挂载分区：
     - 先`mount /dev/your_device2 /mnt`；
-    - 在*btrfs*文件系统中创建交换文件使用的子卷，大小为内存大小：
-        - `btrfs subvolume create /mnt/@swap`
     - 为之后的系统快照功能创建*btrfs*子卷：
         - `btrfs subvolume create /mnt/@`，使用单独子卷而非顶层子卷作为日后的根节点
+        - `btrfs subvolume create /mnt/@swap`，创建交换文件使用的子卷
         - `btrfs subvolume create /mnt/@snapshots`，平铺布局，自定义用于快照存放的子卷
         - `btrfs subvolume create /mnt/@home`，家目录不进入系统快照
         - 保障`/var/lib/pacman`被快照保存，但剔除其他可以不进入系统快照的目录
@@ -77,23 +76,23 @@
     - 重新挂载
         - `umount /mnt`
         - `mount -o subvol=@,noatime /dev/your_device2 /mnt`
-        - `mount --mkdir /dev/your_device1 /mnt/boot`；
-        - `mount -o subvol=@snapshots,nodev,nosuid,noexec,noatime --mkdir /dev/your_device2 /mnt/.snapshots`
     - 处理交换文件
         - `mount -o subvol=@swap,nodev,nosuid,noexec,noatime --mkdir /dev/your_device2 /mnt/swap`；
         - `btrfs filesystem mkswapfile --size 64g(ram size) --uuid clear /mnt/swap/swapfile`
         - `swapon /mnt/swap/swapfile`.
     - 挂载其余子卷
+        - `mount --mkdir /dev/your_device1 /mnt/boot`；
+        - `mount -o subvol=@snapshots,nodev,nosuid,noexec,noatime --mkdir /dev/your_device2 /mnt/.snapshots`
         - `mount -o subvol=@home,noatime --mkdir /dev/your_device2 /mnt/home`
         - `mount -o subvol=@var_log,noatime --mkdir /dev/your_device2 /mnt/var/log`
         - `mount -o subvol=@var_cache,noatime --mkdir /dev/your_device2 /mnt/var/cache`
     - 设置*btrfs*子卷的参数：
-        - `btrfs property set -ts /mnt compression zstd:3`
+        - `btrfs property set /mnt compression zstd:3`
         - `btrfs quota enable /mnt`
-        - `btrfs property set -ts /mnt/home compression zstd:3`
-        - `btrfs property set -ts /mnt/var/log compression zstd:1`
-        - `btrfs property set -ts /mnt/var/cache compression none`
-        - `btrfs property set -ts /mnt/.snapshots compression zstd:3`
+        - `btrfs property set /mnt/home compression zstd:3`
+        - `btrfs property set /mnt/var/log compression zstd:1`
+        - `btrfs property set /mnt/var/cache compression none`
+        - `btrfs property set /mnt/.snapshots compression zstd:3`
 
 ### 拉取软件包
 
@@ -147,7 +146,7 @@
         - 重新生成GRUB的配置文件：`grub-mkconfig -o /boot/grub/grub.cfg`；
         - 此后双系统默认进入Linux系统，在开机启动过程中若长按*Shift*键则进入Windows系统
 - 生成GRUB的配置文件：`grub-mkconfig -o /boot/grub/grub.cfg`；
-- 退出*chroot*环境`exit`，卸载所有挂载的磁盘`umount /mnt/boot`与`umount /mnt`后重启`reboot`并拔下U盘，完成基本安装。
+- 退出*chroot*环境`exit`，卸载所有挂载的磁盘`umount -R /mnt`后重启`reboot`并拔下U盘，完成基本安装。
 
 #### 选择二：使用systemd-boot
 
@@ -167,7 +166,7 @@
 - 获取根分区UUID并加入条目配置：`echo "options root=UUID=$(blkid -s UUID -o value $(findmnt -no SOURCE /)) rootflags=subvol=@ rw quiet splash loglevel=3 vt.global_cursor_default=0 systemd.show_status=0" | tee -a /boot/loader/entries/zen_arch.conf`；
     - 注意，由于我们使用的根位于单独子卷，且并不是*root*设备的默认子卷，因此在条目中需要加入`rootflags=subvol=@`这一*option*
 - 运行`bootctl`检查配置文件正确性；
-- 退出*chroot*环境`exit`，卸载所有挂载的磁盘`umount /mnt/boot`与`umount /mnt`后重启`reboot`并拔下U盘，完成基本安装。
+- 退出*chroot*环境`exit`，卸载所有挂载的磁盘`umount -R /mnt`后重启`reboot`并拔下U盘，完成基本安装。
 
 ## 安装后操作
 
@@ -193,7 +192,7 @@
 ### 连接网络与代理
 
 - 连接网络
-    - 启用*NetworkManager*`systemctl enable --now Networkmanager`
+    - 启用*NetworkManager*`systemctl enable --now NetworkManager`
     - `nmcli d wifi connect "WiFiSSID" password "WiFiPassword"`
 - 添加*archlinuxcn*仓库
     - 参考[清华源指南](https://mirrors.tuna.tsinghua.edu.cn/help/archlinuxcn/)；
@@ -243,15 +242,15 @@
     - `systemctl enable --now dae`；
     - 检测网络连接`ping pornhub.com`
 
-# 加载用户配置
+### 加载用户配置
 
-- `su yourusername`以用户身份登录，按`q`忽略zsh提示
+- `su yourusername`以用户身份登录，按`q`忽略zsh提示，`cd`切换到家目录
 - `chezmoi init https://github.com/YWh0301/dotfiles.git`，输入*chezmoi*配置仓库密码；
 - `chezmoi apply`将配置仓库应用到本台计算机
     - 可以预先对配置仓库中*.tmpl*结尾模板文件中分机器配置的项目进行检查
     - 可选使用`chezmoi apply --interactive`交互式地应用配置文件
 
-# 安装软件包
+### 安装软件包
 
 - 安装yay
     1. archlinuxcn中维护了yay二进制包，可以直接`pacman -S yay`
@@ -264,7 +263,7 @@
         - `cd && rm-rf yay-bin`清理文件；
 - 所需的软件包
     - 可以参考`($chezmoi source-path)/manual/installation.md`与`($chezmoi source-path)/manual/packages.md`进行安装；也可以使用`($chezmoi source-path)/scripts/installation.sh`脚本化必要包安装过程；
-    - `sudo pacman -S --needed dkms evtest wev less tree curl wget lsof strace ltrace usbutils sshfs openssh exfatprogs btrfs-progs snapper acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-shares-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs gvfs-smb 7zip jq fd fzf ripgrep ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
+    - `sudo pacman -S --needed dkms evtest wev less tree curl wget lsof strace ltrace usbutils sshfs openssh bind exfatprogs btrfs-progs snapper acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-shares-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs gvfs-smb 7zip jq fd fzf ripgrep ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
     - 如果使用笔记本，安装相应软件包`pacman -S brightnessctl powertop thermald auto-cpufreq`；
     - `yay -S antigen  nvim-lazy vivify wps-office-cn wps-office-mui-zh-cn ttf-wps-fonts`；
     - 安装*pCloud*客户端
