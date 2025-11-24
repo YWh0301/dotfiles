@@ -58,12 +58,12 @@ env = QT_QPA_PLATFORMTHEME,qt6ct
 
 # cursors
 env = XCURSOR_SIZE,24
-{{ if eq .chezmoi.hostname "homeDesktop" -}}
+{{- if eq .chezmoi.hostname "homeDesktop" }}
 env = HYPRCURSOR_SIZE,24
 env = HYPRCURSOR_THEME,rose-pine-hyprcursor
 {{- end }}
 
-{{ if eq .chezmoi.hostname "homeDesktop" -}}
+{{- if eq .chezmoi.hostname "homeDesktop" }}
 # nvidia support
 # See https://wiki.hyprland.org/Nvidia
 # since im tring to use amd gpu for hyprland ill comment these out:https://wiki.hyprland.org/Configuring/Multi-GPU/

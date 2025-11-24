@@ -1,8 +1,10 @@
 # 我的GNU/Linux系统中安装的软件包
 
-## 基础软件包
+## Basic Packages
 
-### Arch Linux 系统基础
+基础软件包
+
+### Basic Arch Linux System
 
 - `base`
     - *systemd*（包含在*base*中）
@@ -10,8 +12,9 @@
 - `linux-zen`
 - `linux-zen-headers`
 - `linux-firmware`
-- `(intel/amd)-ucode`
-    - 根据所使用的CPU制造商决定微码软件包
+- 根据所使用的CPU制造商决定微码软件包
+    - `intel-ucode`
+    - `amd-ucode`
 
 #### Bootloader
 
@@ -24,41 +27,52 @@
     - `systemd-boot`
     - `systemd-boot-pacman-hook`(AUR)
 
-### 系统应用
+### System Applications
 
 - `dkms`
-- `dae`(archlinuxcn)
 - `evtest`
 - `wev`
 - `git`
 - `less`
 - `tree`
-- `curl`
 - `wget`
 - `lsof`
 - `strace`
 - `ltrace`
 - `usbutils`
 - `chezmoi`
+- `dialog`
 - `pacman-contrib`
 - `archlinuxcn-keyring`(archlinuxcn)
 - `yay`(archlinuxcn)
 
-#### GPU驱动
+#### GPU Drivers
 
+- `libvdpau-va-gl`
+- `libva-utils`
 - 参考Arch Wiki进行安装
+- 对于AMD、Intel显卡
     - `mesa`
         - `mesa-utils`
+    - `vulkan-tools`
+    - Intel
+        - `vulkan-intel`
+        - `intel-media-driver`
+        - `libvpl`
+        - `vpl-gpu-rt`
+    - AMD
+        - `vulkan-radeon`
+- 对于Nvidia显卡
     - `nvidia-dkms`
         - `nvidia-prime`
         - `nvidia-utils`
         - `nvtop`
-    - `vulkan-intel`
+    - `egl-wayland`
+    - `libva-nvidia-driver`
 
-#### 文件系统功能
+#### File System Utilities
 
 - `sshfs`
-- `openssh`
 - `exfatprogs`
 - `btrfs-progs`
     - btrfs中的子卷概念
@@ -109,7 +123,7 @@
     - 用来进行文件“备份”
         - 单一位置、单一机器存储并非安全“备份”，可以配合云同步系统实现备份
 
-#### 电源与硬件管理
+#### Hardware Management
 
 - `acpi`
 - `brightnessctl`
@@ -120,7 +134,7 @@
 - `auto-cpufreq`(archlinuxcn)
 - `thermald`
 
-#### 音频
+#### Audio
 
 - `pipewire`
     - `pipewire-alsa`
@@ -129,7 +143,7 @@
     - `pipewire-pulse`
     - `alsa-utils`
 
-#### 网络配置
+#### Networking
 
 - `iwd`
 - `ufw`
@@ -139,15 +153,18 @@
     - `networkmanager`
 2. 使用connman
     - 暂无
+- `openssh`
+- `bind`
+- `dae`(archlinuxcn)
 
-#### 蓝牙
+#### Bluetooth
 
 - `bluez`
 - `bluez-utils`
 
-### GUI应用
+### GUI
 
-#### 桌面环境
+#### Desktop Environment
 
 - `hyprland`
     - wayland合成器
@@ -174,14 +191,14 @@
 - `wayvnc`
     - vnc远程桌面
 
-#### 截图、剪贴板管理
+#### Screen Shot and Clipboard Managing
 
 - `grim`
 - `slurp`
 - `swappy`
 - `cliphist`
 
-#### 图形化设置
+#### GUI Setting Tools
 
 - `nwg-displays`
 - `nwg-look`
@@ -193,7 +210,7 @@
 2. 使用其他网络配置工具或者不需要applet情况
     - 暂无
 
-### 终端应用
+### Terminal
 
 - `kitty`
 - `bash`
@@ -203,7 +220,7 @@
 - `tmux`
     - 终端复用器
 
-### 字体
+### Fonts
 
 - `noto-fonts`
 - `wqy-microhei`
@@ -211,7 +228,7 @@
 - `awesome-terminal-fonts`
 - `ttf-jetbrains-mono-nerd`
 
-### 文件管理
+### File Managing
 
 - `thunar`
     - `thunar-archive-plugin`
@@ -237,7 +254,7 @@
 2. 使用命令行pCloud客户端
     - `pcloudcc-lneely`(AUR)
 
-### 输入法
+### Input Method
 
 - `fcitx5`
 - `fcitx5-chinese-addons`
@@ -245,7 +262,7 @@
 - `fcitx5-gtk`
 - `fcitx5-qt`
 
-### 文本编辑与编程
+### Text Editing and Programming
 
 - `neovim`
 - `nvim-lazy`(AUR)
@@ -257,8 +274,9 @@
 - `rustup`
 - `python`
 - `gdb`
+- `cmake`
 
-### 文件浏览与编辑
+### File Browsing and Editing
 
 - `ncmpcpp`
 - `imv`
@@ -277,15 +295,15 @@
 - `calibre`
 - `libreoffice-fresh`
 
-### 其他
+### Others
 
 - `firefox`
     - `vdhcoapp`(archlinuxcn)
 - `aichat`
 
-## 可选功能软件包
+## Additional Packages
 
-### Wine兼容层
+### Wine
 
 1. 使用pacman管理
     - `wine`
@@ -294,18 +312,18 @@
 2. 使用bottles管理
     - `bottles`
 
-#### Wine专业音频
+#### Wine Pro Audio
 
 - `wineasio`(AUR)
 - `wineasio32`(AUR)
 
-### 文件编辑
+### File Editing
 
 - `inkscape`
 - `gimp`
 - `davinci-resolve`
 
-### 科研研究
+### Scientific Research
 
 - `zotero`
 - `paraview`
@@ -320,23 +338,23 @@
     - `texlive-mathscience`
     - `texlive-plaingeneric`
 
-### 工程软件
+### Engineering
 
 - `kicad`
     - `kicad-library`
     - `kicad-library-3d`
 - `wireshark`
 
-### 音频开发
+### Audio Development
 
 - `reaper`
 - `sox`
 
-### Android开发
+### Android Utilities
 
 - `android-tools`
 
-### 其他
+### Others
 
 - `wechat`(AUR)
 - `wemeet-bin`(AUR)

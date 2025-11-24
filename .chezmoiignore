@@ -2,7 +2,6 @@ scripts/
 manual/
 pkgbuilds/
 key.txt.age
-
 {{- if eq .pcloud.client "pcloudcc" }}
-dot_local/share/applications/pcloud.desktop
+.local/share/applications/pcloud.desktop
 {{- end }} 

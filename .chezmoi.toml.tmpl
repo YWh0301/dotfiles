@@ -28,7 +28,7 @@ encryption = "age"
     school = "yuwenhao@stu.pku.edu.cn"
 
 [data.pcloud]
-{{- if or (eq .chezmoi.hostname "homeDesktop") (eq .chezmoi.hostname "rogLaptop") (eq .chezmoi.hostname "t460Laptop") }}
+{{- if or (eq .chezmoi.hostname "homeDesktop") (eq .chezmoi.hostname "rogLaptop") (eq .chezmoi.hostname "t460Laptop") (eq .chezmoi.hostname "n150MiniDesktop") }}
     client = "pcloud-drive"
 {{- else }}
     client = "pcloudcc"

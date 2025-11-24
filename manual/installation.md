@@ -98,7 +98,7 @@
 
 - 使用*vim*编辑镜像列表备份文件`vim /etc/pacman.d/mirrorlist.back`，找到THU清华镜像源后放到最顶部，并覆盖*mirrorlist*文件`:w! /etc/pacman.d/mirrorlist`；
 - 在新机器的磁盘当中安装基础软件包与linux-zen内核
-    - `pacstrap -K /mnt base base-devel linux-zen linux-zen-headers linux-firmware (intel/amd)-ucode efibootmgr networkmanager git pacman-contrib iwd bash zsh yazi neovim chezmoi`；
+    - `pacstrap -K /mnt base base-devel linux-zen linux-zen-headers linux-firmware (intel/amd)-ucode efibootmgr networkmanager git bash zsh openssh yazi neovim chezmoi dialog`；
 
 ### 新系统设置
 
@@ -205,6 +205,9 @@
 - 安装*dae*实现透明代理
     - 从archlinuxcn仓库安装*dae*`pacman -S dae`；
     - 可以先尝试直接进行下一步的加载用户配置从*Github*拉取*chezmoi*仓库，如果成功则可以在`$HOME/.config/reference/dae`中找到*dae*的参考配置
+        - `sudo cp $HOME/.config/reference/dae/config.dae /etc/dae/config.dae`
+        - `sudo chown root /etc/dae/config.dae`
+        - `sudo chmod 0600 /etc/dae/config.dae`
     - 编辑`cp /etc/dae/config.dae.example /etc/dae/config.dae`后`nvim /etc/dae/config.dae`；
         - 主要编辑*subscription*、*group*和*routing*部分；
         - group示例如下：
@@ -246,6 +249,7 @@
 
 - `su yourusername`以用户身份登录，按`q`忽略zsh提示，`cd`切换到家目录
 - `chezmoi init https://github.com/YWh0301/dotfiles.git`，输入*chezmoi*配置仓库密码；
+    - 如果密码输入错误，运行`chezmoi state delete-bucket --bucket=entryState`而后`chezmoi apply`
 - `chezmoi apply`将配置仓库应用到本台计算机
     - 可以预先对配置仓库中*.tmpl*结尾模板文件中分机器配置的项目进行检查
     - 可选使用`chezmoi apply --interactive`交互式地应用配置文件
@@ -263,7 +267,7 @@
         - `cd && rm-rf yay-bin`清理文件；
 - 所需的软件包
     - 可以参考`($chezmoi source-path)/manual/installation.md`与`($chezmoi source-path)/manual/packages.md`进行安装；也可以使用`($chezmoi source-path)/scripts/installation.sh`脚本化必要包安装过程；
-    - `sudo pacman -S --needed dkms evtest wev less tree curl wget lsof strace ltrace usbutils sshfs openssh bind exfatprogs btrfs-progs snapper acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-shares-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs gvfs-smb 7zip jq fd fzf ripgrep ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
+    - `sudo pacman -S --needed dkms evtest wev less tree wget lsof strace ltrace usbutils sshfs pacman-contrib iwd  bind exfatprogs btrfs-progs snapper acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt5ct qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-shares-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs gvfs-smb 7zip jq fd fzf ripgrep ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb cmake ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
     - 如果使用笔记本，安装相应软件包`pacman -S brightnessctl powertop thermald auto-cpufreq`；
     - `yay -S antigen  nvim-lazy vivify wps-office-cn wps-office-mui-zh-cn ttf-wps-fonts`；
     - 安装*pCloud*客户端
@@ -275,8 +279,8 @@
     - 如果使用systemd-boot作为bootloader，则`yay -S systemd-boot-pacman-hook`；
     - 安装所需的GPU驱动
         - 详情参见[ArchWiki](https://wiki.archlinux.org/title/Xorg#Driver_installation)。
-        - 针对Nvidia的新款显卡，安装*nvidia-dkms*、*nvidia-utils*、*nvtop*、*nvidia-prime*;
-        - 针对Intel或者AMD的显卡，安装*mesa*、*mesa-utils*，然后分别安装*vulkan-intel*、*vulkan-radeon*
+        - 针对Nvidia的新款显卡，`sudo pacman -S nvidia-dkms nvidia-utils nvtop nvidia-prime egl-wayland libva-nvidia-driver libva-utils libvdpau-va-gl`；
+        - 针对Intel或者AMD的显卡，安装`sudo pacman -S mesa mesa-utils vulkan-tools libva-utils libvdpau-va-gl`，然后分别安装`sudo pacman -S vulkan-intel intel-media-driver libvpl vpl-gpu-rt`、`sudo pacman -S vulkan-radeon`；
 
 ### 针对应用进行用户空间设置
 
