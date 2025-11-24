@@ -107,10 +107,12 @@ source=~/.config/hypr/gruvbox.conf
 
 # https://wiki.hyprland.org/Configuring/Variables/#general
 general { 
-    gaps_in = 4
-    gaps_out = 10 
+    gaps_in = 0
+    gaps_out = 0 
 
-    border_size = 0
+    border_size = 2
+    col.active_border = rgb(b8bb26)
+    col.inactive_border = rgb(666666)
 
     # Set to true enable resizing windows by clicking and dragging on borders and gaps
     resize_on_border = true 
@@ -124,20 +126,23 @@ general {
     layout = master
 }
 
+windowrule = bordersize 0, floating:0, onworkspace:w[tv1]s[false], 
+
 # https://wiki.hyprland.org/Configuring/Variables/#decoration
 decoration {
-    rounding = 8
+    rounding = 0
 
-    # shadow as a bottom border to indicate focused window
+    # shadow as a top border to indicate focused window
     shadow {
-      enabled = true
-      range = 0
-      render_power = 4
-      color = rgb(b8bb26)
-      color_inactive = rgba(ff000000)
-      ignore_window = true
-      scale = 1
-      offset = 0 -3
+       enabled = false
+    #   enabled = true
+    #   range = 0
+    #   render_power = 4
+    #   color = rgb(b8bb26)
+    #   color_inactive = rgba(ff000000)
+    #   ignore_window = true
+    #   scale = 1
+    #   offset = 0 -3
     }
 }
 
@@ -147,15 +152,17 @@ animations {
 
     # Default animations, see https://wiki.hyprland.org/Configuring/Animations/ for more
 
-    bezier = myBezier, 0.05, 0.9, 0.1, 1.05
+    #bezier = myBezier, 0.05, 0.9, 0.1, 1.05
 
-    animation = windows, 1, 7, myBezier
-    animation = windowsOut, 1, 7, default, popin 80%
-    animation = border, 1, 10, default
-    animation = borderangle, 1, 8, default
-    animation = fade, 1, 7, default
-    animation = workspaces, 1, 6, default
-    animation = specialWorkspace, 1, 8, default,fade 
+    animation = windows, 1, 2, default,popin 80%
+    animation = windowsOut, 0
+    animation = fade, 0
+    animation = fadeOut, 1, 3, default
+    animation = windowsMove, 0, 4, default
+    animation = border, 1, 4, default
+    animation = borderangle, 1, 4, default
+    animation = workspaces, 1, 3, default,slide
+    animation = specialWorkspace, 1, 2, default,fade 
 }
 
 # See https://wiki.hyprland.org/Configuring/Master-Layout/ for more
@@ -241,20 +248,20 @@ bind = $mainMod, C, exec, $terminal -e zsh -i -c 'aichat; zsh'
 bind = $mainMod Shift, C, exec, $browser --new-window chatgpt.com
 bind = $mainMod, Space, exec, $menu
 bind = $mainMod, E, exec, $fileManager
-bind = $mainMod, V, exec,cliphist list | rofi -dmenu | cliphist decode | wl-copy
+bind = $mainMod, V, exec,cliphist list | rofi -dmenu -display-columns 2 | cliphist decode | wl-copy
 bind = $mainMod, P, exec, grim -g "$(slurp)" - | swappy -f -
 bind = $mainMod Shift, P, exec, grim -g "$(slurp -d)" - | wl-copy
 bind =         , Print, exec, grim -g "$(slurp)" - | swappy -f -
 bind = Shift   , Print, exec, grim -g "$(slurp -d)" - | wl-copy
 bind = $mainMod,Backspace, exec,hyprlock
-{{ if hasSuffix .chezmoi.hostname "Laptop" -}}
+{{- if hasSuffix .chezmoi.hostname "Laptop" }}
 binde =         ,XF86MonBrightnessUp, exec,brightnessctl s +10%
 binde =         ,XF86MonBrightnessDown, exec,brightnessctl s 10%-
 {{- end }}
 binde =         ,XF86AudioRaiseVolume, exec ,pactl set-sink-volume @DEFAULT_SINK@ +5%
 binde =         ,XF86AudioLowerVolume, exec ,pactl set-sink-volume @DEFAULT_SINK@ -5%
 binde =         ,XF86AudioMute, exec ,pactl set-sink-mute @DEFAULT_SINK@ toggle
-{{ if eq .chezmoi.hostname "rogLaptop" -}}
+{{- if eq .chezmoi.hostname "rogLaptop" }}
 bind =          ,XF86Launch1,exec,notify-send "每年都有很多海狸被自己啃倒的瓶子砸死" # for 海狸
 {{- end }}
 bind = $mainMod, Delete, exec,wlogout -b 2
