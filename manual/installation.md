@@ -294,6 +294,9 @@
 - 若使用*pcloudcc*，需要主动输入密码并配置：`pcloudcc -u youremail@mail.com -m $HOME/.misc/pCloudDrive -s`并输入密码；
     - 使用`-d`参数后台运行*pcloudcc*，而后使用`-k`参数进入REPL配置同步文件夹；
     - 其中，同步文件夹的`<remote-path>`为`$HOME/.misc/pCloudDrive`起始的路径；
+- 若使用*pcloud-drive*：
+    - 手动登录，注意登录过程需要为*pcloud*开启代理，并提前准备好账号、密码以及2FA代码快速输入，否则可能登录超时导致失败
+    - 将`$HOME/.config/reference/pcloud/sync_exclusion.txt`中的内容复制到*pcloud-drive*应用中的*Settings -> Exclusions*中排除文件的位置，点击*Apply*
 
 ### 进行系统级别设置
 
