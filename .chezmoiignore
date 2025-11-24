@@ -5,3 +5,4 @@ key.txt.age
 {{- if eq .pcloud.client "pcloudcc" }}
 .local/share/applications/pcloud.desktop
 {{- end }} 
+
