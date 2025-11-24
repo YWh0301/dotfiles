@@ -73,6 +73,7 @@
 #### File System Utilities
 
 - `sshfs`
+- `samba`
 - `exfatprogs`
 - `btrfs-progs`
     - btrfs中的子卷概念

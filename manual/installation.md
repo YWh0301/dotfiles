@@ -267,7 +267,7 @@
         - `cd && rm-rf yay-bin`清理文件；
 - 所需的软件包
     - 可以参考`($chezmoi source-path)/manual/installation.md`与`($chezmoi source-path)/manual/packages.md`进行安装；也可以使用`($chezmoi source-path)/scripts/installation.sh`脚本化必要包安装过程；
-    - `sudo pacman -S --needed dkms evtest wev less tree wget lsof strace ltrace usbutils sshfs pacman-contrib iwd  bind exfatprogs btrfs-progs snapper acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt5ct qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-shares-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs gvfs-smb 7zip jq fd fzf ripgrep ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb cmake ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
+    - `sudo pacman -S --needed dkms evtest wev less tree wget lsof strace ltrace usbutils sshfs samba pacman-contrib iwd  bind exfatprogs btrfs-progs snapper acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt5ct qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-shares-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs gvfs-smb 7zip jq fd fzf ripgrep ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb cmake ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
     - 如果使用笔记本，安装相应软件包`pacman -S brightnessctl powertop thermald auto-cpufreq`；
     - `yay -S antigen  nvim-lazy vivify wps-office-cn wps-office-mui-zh-cn ttf-wps-fonts`；
     - 安装*pCloud*客户端
@@ -316,4 +316,9 @@
         - `sudo mkdir /.snapshots`
         - `sudo chmod 750 /.snapshots`
         - `sudo mount /.snapshots`
-
+- 启用samba服务器：
+    - `sudo cp $HOME/.config/reference/samba/smb.conf /etc/samba/smb.conf`
+    - `sudo smbpasswd -a yourusername`，把当前用户同时也添加到*smb*用户并设定*smb*密码
+    - `sudo systemctl enable --now smb nmb`
+    - `smbclient //localhost/HomeShare -U yourusername`测试本地访问是否可行
+    - 使用*HomeShare*为共享名，*yourusername*为用户名连接

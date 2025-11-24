@@ -1,0 +1,42 @@
+[global]
+    workgroup = WORKGROUP
+    server string = Arch Linux Samba Server
+    security = user
+    map to guest = bad user
+    
+    local master = yes
+    preferred master = yes
+    
+    log file = /var/log/samba/%m.log
+    max log size = 50
+
+[HomeShare]
+    comment = Home Directory Shared Folder
+    path = {{ .chezmoi.homeDir }}/samba
+    browseable = yes
+    writable = yes
+    valid users = {{ .chezmoi.username }}
+    read list = {{ .chezmoi.username }}
+    write list = {{ .chezmoi.username }}
+    create mask = 0664
+    directory mask = 0775
+    guest ok = no
+    wide links = no
+    unix extensions = no
+
+{{- if eq .chezmoi.hostname "homeDesktop" }}
+{{- "\n" }}
+[ResourceShare]
+    comment = Resource Directory Shared Folder
+    path = {{ .chezmoi.homeDir }}/Resources
+    browseable = yes
+    writable = yes
+    valid users = {{ .chezmoi.username }}
+    read list = {{ .chezmoi.username }}
+    write list = {{ .chezmoi.username }}
+    create mask = 0664
+    directory mask = 0775
+    guest ok = no
+    wide links = no
+    unix extensions = no
+{{- end }}
