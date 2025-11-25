@@ -327,6 +327,7 @@
 ### Scientific Research
 
 - `zotero`
+    - 可以在设置中手动更改本地存储文件夹位置，而后手动移动文件夹内容到新位置
 - `paraview`
 - `fiji-bin`
 - `texlive-basic`
