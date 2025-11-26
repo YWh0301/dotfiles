@@ -290,6 +290,8 @@
 - `imagemagick`
 - `pandoc-bin`(archlinuxcn)
 - `wps-office-cn`(AUR)
+    - 对于12.1.2.22571版本，存在二进制文件中的bug，无法通过绝对路径使用CLI打开文件；
+        - 在wps界面左上角“WPS Office”内设置按钮中找到“切换窗口管理模式”，选择任意项点击确定后重启即可
     - `wps-office-mui-zh-cn`(AUR)
     - `libtiff5`(archlinuxcn)
     - `ttf-wps-fonts`(AUR)

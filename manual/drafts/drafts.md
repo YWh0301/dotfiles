@@ -29,6 +29,9 @@
     - rofi做关机选项
     - rofi做dae控制
     - rofi做polkit
+    - rofi添加各种工具
+        - 连接aichat作为翻译工具
+        - 定时提醒工具
 - hyprland xdg-desktop-portal: set file picker like [this](https://wiki.hyprland.org/Hypr-Ecosystem/xdg-desktop-portal-hyprland/#using-the-kde-file-picker-with-xdph). For firefox, like [this](https://wiki.archlinux.org/title/Firefox#XDG_Desktop_Portal_integration).
 - linux游戏
 - 使用btrfs快照进行：
@@ -40,9 +43,11 @@
 - 怎么使用impala？
 - 像omarchy一样安装web应用
 - 使用surf作为精简的web应用界面：surf-git(AUR)
-- wtype直接输入
-    - 非常危险，直接掌控键盘还停步下来，根本不能也不应该这么使用
+- 直接粘贴功能
+    - wtype直接输入：非常危险，直接掌控键盘还停步下来，根本不能也不应该这么使用
+    - 使用x compatible的primary剪贴板也不行，因为它是应用触发的粘贴功能，应用同时会读取鼠标位置，会粘贴到鼠标的地方
 - 读取剪贴板实现划词翻译
+    - 使用primary的剪贴板
 - 默认隐藏的waybar/无bar设计，使用单独的ctrl面板/桌面放置信息？使用rofi快速打开设置界面
 - 使用软链接+云同步音乐库+ncmpcpp创建同步歌单音乐播放
 
