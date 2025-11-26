@@ -288,18 +288,18 @@ bind = $mainMod,catchall, submap, reset
 bindr = , catchall,submap, reset # use bindr to trigger reset after release or else shift+j wont work
 submap = reset
 
-# submap for panic mode
-bind = $mainMod, P, submap, panic
-# will start a submap called "panic"
-submap = panic
-# escape from resizing mode
-bind = , Escape, submap, reset
-# kill all windows in current workspace if any key gets pressed
-bind = $mainMod,catchall, exec, $HOME/.config/hypr/scripts/close_current_workspace.sh
-bindr = , catchall,exec, $HOME/.config/hypr/scripts/close_current_workspace.sh 
-#bind = , mouse:272, exec, $HOME/.config/hypr/scripts/close_current_workspace.sh
-#bind = , mouse:273, exec, $HOME/.config/hypr/scripts/close_current_workspace.sh
-submap = reset
+## submap for panic mode
+#bind = $mainMod, P, submap, panic
+## will start a submap called "panic"
+#submap = panic
+## escape from resizing mode
+#bind = , Escape, submap, reset
+## kill all windows in current workspace if any key gets pressed
+#bind = $mainMod,catchall, exec, $HOME/.config/hypr/scripts/close_current_workspace.sh
+#bindr = , catchall,exec, $HOME/.config/hypr/scripts/close_current_workspace.sh 
+##bind = , mouse:272, exec, $HOME/.config/hypr/scripts/close_current_workspace.sh
+##bind = , mouse:273, exec, $HOME/.config/hypr/scripts/close_current_workspace.sh
+#submap = reset
 
 ## submap for tmux sessios.
 #bind = $mainMod, Control_L, submap, unbindkeys

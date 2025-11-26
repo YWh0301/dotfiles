@@ -17,6 +17,24 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 --]]
 
+---[[ 交换j、k和gj、gk
+-- 在 normal mode 中交换
+vim.keymap.set('n', 'j', 'gj', { noremap = true })
+vim.keymap.set('n', 'k', 'gk', { noremap = true })
+vim.keymap.set('n', 'gj', 'j', { noremap = true })
+vim.keymap.set('n', 'gk', 'k', { noremap = true })
+-- 在 visual mode 中交换
+vim.keymap.set('v', 'j', 'gj', { noremap = true })
+vim.keymap.set('v', 'k', 'gk', { noremap = true })
+vim.keymap.set('v', 'gj', 'j', { noremap = true })
+vim.keymap.set('v', 'gk', 'k', { noremap = true })
+-- 在 operator-pending mode 中交换
+vim.keymap.set('o', 'j', 'gj', { noremap = true })
+vim.keymap.set('o', 'k', 'gk', { noremap = true })
+vim.keymap.set('o', 'gj', 'j', { noremap = true })
+vim.keymap.set('o', 'gk', 'k', { noremap = true })
+--]]
+
 ---[[ lazy.nvim 插件管理器配置
 
 require("lazy").setup({
