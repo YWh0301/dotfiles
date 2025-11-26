@@ -1,6 +1,4 @@
-
 [Default Applications]
-application/pdf=org.pwmt.zathura.desktop
 image/vnd.djvu=org.pwmt.zathura-djvu.desktop;
 image/vnd.djvu+multipage=org.pwmt.zathura-djvu.desktop;
 image/avif=imv-dir.desktop;
@@ -20,3 +18,14 @@ image/webp=imv-dir.desktop;
 image/x-bmp=imv-dir.desktop;
 image/x-farbfeld=imv-dir.desktop;
 image/x-png=imv-dir.desktop;
+application/pdf=org.pwmt.zathura.desktop
+application/msword=wps-office-wps.desktop
+application/vnd.ms-word=wps-office-wps.desktop
+application/vnd.openxmlformats-officedocument.wordprocessingml.document=wps-office-wps.desktop
+application/vnd.ms-excel=wps-office-et.desktop
+application/vnd.openxmlformats-officedocument.spreadsheetml.sheet=wps-office-et.desktop
+application/vnd.ms-powerpoint=wps-office-wpp.desktop
+application/vnd.openxmlformats-officedocument.presentationml.presentation=wps-office-wpp.desktop
+application/vnd.oasis.opendocument.text=wps-office-wps.desktop
+application/vnd.oasis.opendocument.spreadsheet=wps-office-et.desktop
+application/vnd.oasis.opendocument.presentation=wps-office-wpp.desktop
