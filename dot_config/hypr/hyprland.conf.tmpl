@@ -44,7 +44,9 @@ exec-once = pcloudcc -m $HOME/.misc/pCloudDrive -u {{ .email.default }} -d
 {{- else }}
 exec-once = env HOME="$HOME/.misc/pCloudDrive" pcloud #pcloud would mount on a folder in home directory which is ugly so i change the home and created sim links in the folder to trick pcloud. remeber to also modify the exec in desktop entry of pcloud. furthermore pcloud only take absolute path so ~/ wont work.after this just set sync folder in the app then u can use it without any trouble.
 {{- end }}
+{{- if ne .chezmoi.hostname "homeDesktop" }}
 exec-once = echo "Xft.dpi:192" | xrdb -merge #xwayland scale set. doesnt seem to work on wechat but works on fcitx5 inside wechat.
+{{- end }}
 exec-once = xkbcomp -w 0 $HOME/.config/custom.xkb $DISPLAY
 
 #############################
