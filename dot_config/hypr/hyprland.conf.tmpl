@@ -481,8 +481,11 @@ windowrule = float,class:^(thunar)$,title:^(文件操作进度)$
 windowrule = move 73% 5%,class:^(thunar)$,title:^(File Operation Progress)$
 windowrule = move 73% 5%,class:^(thunar)$,title:^(文件操作进度)$
 windowrule = move 73% 5%,class:^(hyprland-dialog)$
-windowrule = float,class:^(wechat)$,title:^(?!微信).+$
-windowrule = size 50% 50%,class:^(wechat)$,title:^(?!微信).+$
+windowrule = float,class:^(wechat)$,title:^(?!微信|Weixin).+$
+windowrule = size 50% 50%,class:^(wechat)$,title:^(?!微信|Weixin).+$
+windowrule = float,class:^(wechat)$,title:^(微信|Weixin)$
+windowrule = size 98% 94%,class:^(wechat)$,title:^(微信|Weixin)$
+windowrule = move 1% 4%,class:^(wechat)$,title:^(微信|Weixin)$
 
 workspace = special:scratchpad,on-created-empty:$terminal -e zsh -i -c 'aichat; zsh',gapsout:100,gapsin:4
 
