@@ -48,6 +48,7 @@ exec-once = env HOME="$HOME/.misc/pCloudDrive" pcloud #pcloud would mount on a f
 exec-once = echo "Xft.dpi:192" | xrdb -merge
 {{- end }}
 exec-once = /usr/bin/bash $HOME/.config/hypr/scripts/hyprland_ipc_hook.sh
+exec-once = /usr/bin/bash $HOME/.config/hypr/scripts/load_plugins.sh
 
 #############################
 ### ENVIRONMENT VARIABLES ###
@@ -102,12 +103,6 @@ env = EDITOR,nvim
 #####################
 ### LOOK AND FEEL ###
 #####################
-
-# Refer to https://wiki.hyprland.org/Configuring/Variables/
-
-# gruvbox hyprland theme
-source=~/.config/hypr/gruvbox.conf
-
 # https://wiki.hyprland.org/Configuring/Variables/#general
 general { 
     gaps_in = 0
@@ -460,3 +455,4 @@ windowrule = float,class:^(wechat)$,title:^(?!微信).+$
 windowrule = size 50% 50%,class:^(wechat)$,title:^(?!微信).+$
 
 workspace = special:scratchpad,on-created-empty:$terminal -e zsh -i -c 'aichat; zsh',gapsout:100,gapsin:4
+
