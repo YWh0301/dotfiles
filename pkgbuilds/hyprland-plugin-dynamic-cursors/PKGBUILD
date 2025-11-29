@@ -1,0 +1,26 @@
+pkgname='hyprland-plugin-dynamic-cursors'
+pkgdesc="Hyprland plugin to change cursor animation."
+pkgver='git'
+pkgrel=1
+arch=('x86_64')
+url='https://github.com/hyprwm/hyprland-plugins'
+license=('BSD')
+depends=("hyprland")
+makedepends=('git' 'hyprland')
+source=("git+https://github.com/VirtCode/hypr-dynamic-cursors.git")
+sha256sums=('SKIP')
+
+build() {
+    cd "$srcdir/hypr-dynamic-cursors"
+
+    make all
+}
+
+package() {
+
+    cd "$srcdir/hypr-dynamic-cursors/out"
+    install -Dm755 dynamic-cursors.so "$pkgdir/usr/lib/libhyprdynamiccursors.so.${pkgver}"
+    install -Dm644 ../LICENSE.md "$pkgdir/usr/share/licenses/hyprland-plugin-dynamic-cursors/LICENSE"
+    cd "$pkgdir/usr/lib/"
+    ln -s "./libhyprdynamiccursors.so.${pkgver}" libhyprdynamiccursors.so
+}
