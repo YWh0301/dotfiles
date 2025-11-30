@@ -1,9 +1,9 @@
 // -*- mode: jsonc -*-
 {
     "layer": "top", // Waybar at top layer
-     "position": "top", // Waybar position (top|bottom|left|right)
+     "position": "bottom", // Waybar position (top|bottom|left|right)
     // "width": 1280, // Waybar width
-    "spacing": 4, // Gaps between modules (4px)
+    "spacing": 0, // Gaps between modules (4px)
     // Choose the order of the modules
     "modules-left": [
         "custom/workspace-base",
@@ -49,6 +49,9 @@
     // },
     "hyprland/workspaces": {
         "format": "{name}",
+        "ignore-workspaces": [
+            "^n.*"
+        ]
 	},
     "keyboard-state": {
         "numlock": true,
@@ -109,7 +112,7 @@
     "clock": {
         // "timezone": "America/New_York",
         "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
-        "format": "{:%H:%M %Y-%m-%d}"
+        "format": "{:%Y-%m-%d %H:%M}"
     },
     "cpu": {
         "format": "{usage}% ",
@@ -191,7 +194,8 @@
     "custom/workspace-base": {
         "exec": "echo $(($(cat /tmp/hyprland_workspace_base 2>/dev/null || echo 0) / 10 + 1))",
         "signal": 10,  // 监听信号
-        "format": "{}"
+        "format": "{}",
+        "on-click": "rofi -show drun"
     },
     "custom/media": {
         "format": "{icon} {}",
