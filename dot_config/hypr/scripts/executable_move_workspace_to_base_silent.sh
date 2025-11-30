@@ -12,6 +12,5 @@ fi
 
 # 获取当前工作区的所有窗口address
 hyprctl -j clients | jq -r ".[] | select(.workspace.id == "$current_workspace") | .address" | while read address; do
-    echo $address >> $HOME/test.txt
     hyprctl dispatch movetoworkspacesilent $new_workspace,address:$address 
 done

@@ -25,6 +25,12 @@ window#waybar.empty {
     border-top: 3px solid #665c54; /* gruvbox-bg4 */
 }
 
+#custom-workspace-base {
+    padding: 0 10px 0 10px;
+    background-color: #b8bb26;
+    color: #3c3836; /* gruvbox-fg1 */
+}
+
 #workspaces button {
     padding: 0 5px;
     background-color: transparent;

@@ -6,6 +6,7 @@
     "spacing": 4, // Gaps between modules (4px)
     // Choose the order of the modules
     "modules-left": [
+        "custom/workspace-base",
         "hyprland/workspaces"
         //"custom/media"
     ],
@@ -46,6 +47,9 @@
     //         "default": ""
     //     }
     // },
+    "hyprland/workspaces": {
+        "format": "{name}"
+	},
     "keyboard-state": {
         "numlock": true,
         "capslock": true,
@@ -183,6 +187,11 @@
             "default": ["", "", ""]
         },
         "on-click": "pavucontrol"
+    },
+    "custom/workspace-base": {
+        "exec": "echo $(($(cat /tmp/hyprland_workspace_base 2>/dev/null || echo 0) / 10 + 1))",
+        "signal": 10,  // 监听信号
+        "format": "{}"
     },
     "custom/media": {
         "format": "{icon} {}",
