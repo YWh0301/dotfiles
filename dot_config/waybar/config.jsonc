@@ -48,7 +48,7 @@
     //     }
     // },
     "hyprland/workspaces": {
-        "format": "{name}"
+        "format": "{name}",
 	},
     "keyboard-state": {
         "numlock": true,
