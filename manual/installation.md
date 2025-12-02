@@ -249,7 +249,6 @@
 
 - `su yourusername`以用户身份登录，按`q`忽略zsh提示，`cd`切换到家目录
 - `chezmoi init https://github.com/YWh0301/dotfiles.git`，输入*chezmoi*配置仓库密码；
-    - 如果密码输入错误，运行`chezmoi state delete-bucket --bucket=entryState`而后`chezmoi apply`
 - `chezmoi apply`将配置仓库应用到本台计算机
     - 可以预先对配置仓库中*.tmpl*结尾模板文件中分机器配置的项目进行检查
     - 可选使用`chezmoi apply --interactive`交互式地应用配置文件
@@ -323,3 +322,7 @@
     - `sudo systemctl enable --now smb nmb`
     - `smbclient //localhost/HomeShare -U yourusername`测试本地访问是否可行
     - 使用*HomeShare*为共享名，*yourusername*为用户名连接
+- 如果需要，启用wayvnc服务器：
+    - 将`$HOME/.local/share/chezmoi/.chezmoi.toml.tmpl`中针对本机的`data.wayvnc.enable`设置为`true`
+    - `chezmoi init`后`chezmoi apply`，自动在59900端口开启wayvnc服务
+

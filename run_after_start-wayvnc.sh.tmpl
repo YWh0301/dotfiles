@@ -1,0 +1,10 @@
+#!/bin/sh
+
+{{- if .wayvnc.enable }}
+wayvnc_status=$(systemctl --user is-active wayvnc)
+if [ "$wayvnc_status" = "inactive" ]; then
+    systemctl --user enable --now wayvnc
+fi
+{{- else }}
+systemctl --user disable --now wayvnc
+{{- end }} 

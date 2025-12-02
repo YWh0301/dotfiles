@@ -1,0 +1,24 @@
+[Unit]
+Description=WayVNC VNC Server for Hyprland
+After=graphical-session.target
+Requires=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+Environment=WAYLAND_DISPLAY=wayland-1
+Environment=WLR_BACKENDS=headless
+Environment=WLR_LIBINPUT_NO_DEVICES=1
+# 如果需要指定分辨率，可以设置 WLR_HEADLESS_OUTPUTS
+Environment=WLR_HEADLESS_OUTPUTS=1
+
+# 使用虚拟显示器
+ExecStartPre=/usr/bin/sleep 2
+ExecStart=/usr/bin/wayvnc
+
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

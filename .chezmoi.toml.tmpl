@@ -13,6 +13,7 @@ encryption = "age"
         {{ printf "%q" "{{ .Target }}" }},
     ]
     pager = "bat --paging=never --language=diff"
+    exclude = ["scripts"]
 
 [merge]
     command = "nvim"
@@ -37,6 +38,13 @@ encryption = "age"
 [data.samba]
 {{- if contains "Desktop" .chezmoi.hostname }}
     enable = true
+{{- else }}
+    enable = false
+{{- end }}
+
+[data.wayvnc]
+{{- if contains "Desktop" .chezmoi.hostname }}
+    enable = false
 {{- else }}
     enable = false
 {{- end }}
