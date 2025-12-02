@@ -167,6 +167,7 @@
 
 #### Desktop Environment
 
+- 对于桌面环境而言，compositor、panel和launcher是最重要的三个组成部分，并且这三者的配置也会紧密结合，互相依赖
 - `hyprland`
     - wayland合成器
     - `qt5-wayland`
@@ -175,6 +176,10 @@
     - `qt6ct`
     - `xdg-desktop-portal-hyprland`
     - `polkit-gnome`
+- `rofi`
+    - 启动器以及多功能选择器
+- `waybar`
+    - 可自定义的panel bar
 - `xdg-user-dirs`
 - `hypridle`
     - 闲置监控
@@ -182,9 +187,6 @@
     - 锁屏界面
 - `hyprpaper`
     - 壁纸设置
-- `rofi`
-    - 启动器以及多功能选择器
-- `waybar`
 - `hyprpicker`
     - 颜色提取器
 - `swaync`

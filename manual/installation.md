@@ -316,7 +316,8 @@
         - `sudo mkdir /.snapshots`
         - `sudo chmod 750 /.snapshots`
         - `sudo mount /.snapshots`
-- 启用samba服务器：
+- 如果需要启用samba服务器：
+    - 将`$HOME/.local/share/chezmoi/.chezmoi.toml.tmpl`中针对本机的`data.samba.enable`设置为`true`
     - `sudo cp $HOME/.config/reference/samba/smb.conf /etc/samba/smb.conf`
     - `sudo smbpasswd -a yourusername`，把当前用户同时也添加到*smb*用户并设定*smb*密码
     - `sudo systemctl enable --now smb nmb`

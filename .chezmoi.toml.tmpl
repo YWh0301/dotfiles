@@ -35,4 +35,8 @@ encryption = "age"
 {{- end }}
 
 [data.samba]
+{{- if contains "Desktop" .chezmoi.hostname }}
     enable = true
+{{- else }}
+    enable = false
+{{- end }}

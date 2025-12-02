@@ -32,6 +32,7 @@
     - rofi添加各种工具
         - 连接aichat作为翻译工具
         - 定时提醒工具
+    - 窗口切换工具
 - hyprland xdg-desktop-portal: set file picker like [this](https://wiki.hyprland.org/Hypr-Ecosystem/xdg-desktop-portal-hyprland/#using-the-kde-file-picker-with-xdph). For firefox, like [this](https://wiki.archlinux.org/title/Firefox#XDG_Desktop_Portal_integration).
 - linux游戏
 - 使用btrfs快照进行：
@@ -52,3 +53,4 @@
 - 使用软链接+云同步音乐库+ncmpcpp创建同步歌单音乐播放
 - 可控制的久坐提醒
 - 多工作区，不单单是1～10,还可以切换所有1～10（实际是11～20）
+    - 通过hyprland IPC、hyprctl和waybar ignore-workspaces实现（waybar修改还没有合并到上游）
