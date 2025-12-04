@@ -11,4 +11,5 @@ key.txt.age
 {{- end }} 
 {{- if not .wayvnc.enable }}
 .config/wayvnc
+.config/systemd/user/wayvnc.service
 {{- end }} 

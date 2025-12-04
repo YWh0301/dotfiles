@@ -6,5 +6,7 @@ if [ "$wayvnc_status" = "inactive" ]; then
     systemctl --user enable --now wayvnc
 fi
 {{- else }}
-systemctl --user disable --now wayvnc
+if [ -f "$HOME/.config/systemd/user/wayvnc.service" ]; then
+    systemctl --user disable --now wayvnc
+fi
 {{- end }} 
