@@ -47,14 +47,70 @@
 
 ### 网络配置
 
+### Linux专业音频
+
 ### 键盘映射：从键码到输入
 
 #### 内核与console
 
 #### X与wayland
 
+#### Android
+
 ### Linux图形显示
+
+#### 内核驱动：DRM/KMS与propriety modules
+
+#### 用户空间驱动：OpenGL、Vulkan和Mesa项目
 
 ### Linux IPC：内核功能与用户态服务
 
 ### Linux权限管理的历史
+
+- DAC、MAC
+
+### ABI、链接器和动态链接
+
+- C ABI、System V ABI、Linux ELF规范
+- 不同语言库之间的配合、libffi、C ABI作为事实标准
+    - 不同语言ABI的动态链接库都是ELF格式，但不同ABI不能互相调用
+- 动态链接与libc与binutils
+- 和编译器的关系？
+- glibc的符号版本
+
+### 交叉编译
+
+- GNU/Linux核心编译工具链
+    - binutils、gcc、libc（glibc还需要linux-headers）
+    - GNU/Linux的称呼包含技术上的洞见
+        - 虽然直接使用的gnu软件往往是命令行工具，可能人们不太使用
+        - 但是gcc、glibc很难避免，仍然是事实标准，许多软件与驱动大量使用gcc特性，只能gcc编译
+        - 各种高级语言与大型项目在运行时、构建时、生态中、历史上四个层面都存在GNU的身影，而要排除GNU的难度指数级增加
+        - 从技术的角度来说，如同triplet中的kernel-os组成的system项，GNU是OS,Linux是kernel
+        - GNU的自由精神为GNU/Linux提供了灵魂
+        - C、gcc、glibc具有奠基性地位
+- 交叉编译过程需要的资源：from host/from target
+    - 编译所需要的资源：头文件和动态链接库文件
+    - 一般项目的交叉编译：在host上需要有target库文件
+- 编译交叉编译器：build、host、target
+    - 编译器配置的复杂性：libc的循环引用逻辑
+        - host->target的gcc依赖host的libgcc依赖target glibc
+            - gcc-libs包含gcc可以编译的多种语言的运行时，如果程序是用到了gcc的专有特性就会需要这些运行时
+        - 需要host->target的gcc编译target glibc
+        - 先编译没有target glibc的stage 1 host->target gcc
+        - stage 1 gcc 编译 target glibc
+        - 把glibc链接进去编译stage 2 host->target gcc
+        - 还可以把glibc链接进去直接编译stage 2 target->target gcc
+        - 顺序：
+            - binutils
+            - stage 1 gcc
+            - libc （如果是glibc的话还要先安装linux-headers）
+            - stage 2 gcc
+    - autoconf的屎山特性
+    - triplet：arch-vendor-kernel-os
+        - 架构-厂商-内核-C库
+    - 不同编译器的扩展属性
+    - 不同操作系统的差异
+    - 对齐差异：C ABI未定义、平台ABI规范与编译器配合
+- headers的打包策略
+- GNU/Linux核心基础库
