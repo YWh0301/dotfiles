@@ -187,35 +187,18 @@
 
 #### Desktop Environment
 
-- 对于桌面环境而言，compositor、panel和launcher是最重要的三个组成部分，并且这三者的配置也会紧密结合，互相依赖
-- **hyprland**
-    - wayland合成器
-    - **qt5-wayland**
-    - **qt6-wayland**
-    - **qt5ct**
-    - **qt6ct**
-    - **xdg-desktop-portal-hyprland**
-    - **polkit-gnome**
+- 对于X11桌面环境而言，window manager、panel和launcher是最重要的三个组成部分，并且这三者的配置也会紧密结合，互相依赖
+- **xorg-server**
+    - **xorg-xinit**
+    - **xorg-xev**
+- **i3-wm**
+    - **i3blocks**
+    - **i3lock**
+    - **i3status**
+    - **i3status**
 - **rofi**
     - 启动器以及多功能选择器
-- **waybar**
-    - 可自定义的panel bar
 - **xdg-user-dirs**
-- **hypridle**
-    - 闲置监控
-- **hyprlock**
-    - 锁屏界面
-- **hyprpaper**
-    - 壁纸设置
-- **hyprpicker**
-    - 颜色提取器
-- **swaync**
-    - 通知中心
-- **wayvnc**
-    - vnc远程桌面
-    - 通过`openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -sha384 -days 3650 -nodes -keyout tls_key.pem -out tls_cert.pem -subj /CN=$(hostnamectl hostname)`生成TLS/SSL证书，可以实现VNC服务器认证
-    - 通过`openssl x509 -in tls_cert.pem -fingerprint -sha1 -noout`查看服务器公钥的SHA1；只要客户端接受到的证书公钥和机器上的公钥一致，就能确定没有被中间人攻击
-    - 配合wayvnc中设置强密码实现较高安全性
 
 #### Screen Shot and Clipboard Managing
 
