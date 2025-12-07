@@ -93,6 +93,20 @@ Android 的 Verified Boot 过程始于第二级引导加载程序（SSBL）对 `
     - 大部分外网软件往往只能通过 Google Play Store 下载，并且会检查 Integrity 状态，否则会登录失败或导致账号冻结
     - 使用外网软件前应当先用开源工具进行 Integrity API 自查
     - 通过加载 KernelSU Module 对抗检测
+        - TEESimulator/TrickyStore
+        - PlayIntegrityFix
     - 在 Google 没有强制要求 strong 级别的 Integrity Check 之前，理论上都可以软件绕过检测
 
 移动设备从计算机科学的角度来说和个人电脑没有区别。然而，在短短二十年中，从设备形态上的差异出发，通过与社会文化、生产生活方式的相辅相成的演化，移动设备的软硬件生态和商业模式与个人电脑已经截然不同。电脑中的开放的可能性与移动设备中的封闭的逻辑形成的刺目对比总让我感到荒谬，但一恍然又似乎又觉得，从来如此，或许就应然如此。
+
+Zygisk和Lsposed框架安装：
+
+- ReZygisk
+- Lsposed from JingMatrix
+    - 安装的时候可能需要手动解压压缩包中的manager.apk安装后给予Root权限才可使用
+
+其他模块：
+
+- bindhosts
+- Universal GMS Doze
+
