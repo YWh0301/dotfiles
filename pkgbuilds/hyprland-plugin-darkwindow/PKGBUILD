@@ -1,6 +1,6 @@
 pkgname='hyprland-plugin-darkwindow'
 pkgdesc="Hyprland plugin that adds possibility to modify the fragment shader of a specific windows."
-pkgver='0.52.1'
+pkgver='0.52.2'
 pkgrel=1
 arch=('x86_64')
 url='https://github.com/hyprwm/hyprland-plugins'
@@ -8,7 +8,7 @@ license=('BSD')
 depends=("hyprland")
 makedepends=('git' 'hyprland')
 source=("https://github.com/micha4w/Hypr-DarkWindow/archive/refs/tags/v${pkgver}.zip")
-sha256sums=('cd72d6da50511d5b47331f33cded30aa865b70c49cd6d047ba8f78f951fb3d0d')
+sha256sums=('64bbe4e6b0b19152660312376d51de050f6349723e47f446cd56e5186c4dde41')
 
 build() {
     cd "$srcdir/Hypr-DarkWindow-${pkgver}"

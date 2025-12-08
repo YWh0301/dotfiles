@@ -280,6 +280,8 @@
         - 详情参见[ArchWiki](https://wiki.archlinux.org/title/Xorg#Driver_installation)。
         - 针对Nvidia的新款显卡，`sudo pacman -S nvidia-dkms nvidia-utils nvtop nvidia-prime egl-wayland libva-nvidia-driver libva-utils libvdpau-va-gl`；
         - 针对Intel或者AMD的显卡，安装`sudo pacman -S mesa mesa-utils vulkan-tools libva-utils libvdpau-va-gl`，然后分别安装`sudo pacman -S vulkan-intel intel-media-driver libvpl vpl-gpu-rt`、`sudo pacman -S vulkan-radeon`；
+    - 安装*hyprland*相关插件
+        - 将`$HOME/.local/chezmoi/pkgbuilds/`目录下的*hyprland*插件相关安装脚本复制到临时目录，并分别运行`makepkg -si`
 
 ### 针对应用进行用户空间设置
 
