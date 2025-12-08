@@ -190,6 +190,7 @@
 - 对于X11桌面环境而言，window manager、panel和launcher是最重要的三个组成部分，并且这三者的配置也会紧密结合，互相依赖
 - **xorg-server**
     - **xorg-xinit**
+    - **xorg-xinput**
     - **xorg-xev**
 - **i3-wm**
     - **i3blocks**
@@ -202,15 +203,13 @@
 
 #### Screen Shot and Clipboard Managing
 
-- **grim**
-- **slurp**
-- **swappy**
-- **cliphist**
+- **clipmenu**
+- **xclip**
 
 #### GUI Setting Tools
 
-- **nwg-displays**
-- **nwg-look**
+- **arandr**
+- **lxappearance**
 - **blueman**
 - **pavucontrol**
 

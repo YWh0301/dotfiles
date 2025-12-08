@@ -1,2 +1,6 @@
 export PATH="$HOME/.local/share/chezmoi/scripts:$PATH"
 
+if [ -z "$DISPLAY" ] && [ "$XDG_VTNR" = 1 ]; then
+  startx >/dev/null 2>&1
+  exit
+fi

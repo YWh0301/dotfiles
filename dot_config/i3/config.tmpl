@@ -1,32 +1,16 @@
 # i3 config file (v4)
-#
-# Please see https://i3wm.org/docs/userguide.html for a complete reference!
-#
-# This config file uses keycodes (bindsym) and was written for the QWERTY
-# layout.
-#
-# To get a config file with the same key positions, but for your current
-# layout, use the i3-config-wizard
-#
 
 # Font for window titles. Will also be used by the bar unless a different font
 # is used in the bar {} block below.
+{{- if eq .chezmoi.hostname "rogLaptop" }}
+font pango:Awesome-Terminal-Fonts 16
+{{- else }}
 font pango:Awesome-Terminal-Fonts 24
-
-# This font is widely installed, provides lots of unicode glyphs, right-to-left
-# text rendering and scalability on retina/hidpi displays (thanks to pango).
-#font pango:DejaVu Sans Mono 8
-
-# Start XDG autostart .desktop files using dex. See also
-# https://wiki.archlinux.org/index.php/XDG_Autostart
-# exec --no-startup-id dex --autostart --environment i3
-
-# The combination of xss-lock, nm-applet and pactl is a popular choice, so
-# they are included here as an example. Modify as you see fit.
+{{- end }}
 
 # xss-lock grabs a logind suspend inhibit lock and will use i3lock to lock the
 # screen before suspend. Use loginctl lock-session to lock your screen.
-exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
+#exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
 
 # NetworkManager is the most popular way to manage wireless networks on Linux,
 # and nm-applet is a desktop environment-independent system tray GUI for it.
@@ -34,11 +18,19 @@ exec --no-startup-id nm-applet
 exec --no-startup-id blueman-applet
 
 # Use fcitx5 for input method
-#exec --no-startup-id fcitx5
+exec --no-startup-id fcitx5
+
+# Use clipmenu for clipboard managing
+exec --no-startup-id clipmenud
 
 # Set keyboard repitition and mapping
 exec --no-startup-id "xset r rate 200 45"
 exec --no-startup-id "xkbcomp $HOME/.config/custom.xkb $DISPLAY"
+
+{{- if eq .chezmoi.hostname "rogLaptop" }}
+exec --no-startup-id "xinput set-prop 'ELAN1201:00 04F3:3098 Touchpad' 'libinput Natural Scrolling Enabled' 1"
+exec --no-startup-id "xinput set-prop 'ELAN1201:00 04F3:3098 Touchpad' 'libinput Tapping Enabled' 1"
+{{- end }}
 
 # Use pactl to adjust volume in PulseAudio.
 set $refresh_i3status killall -SIGUSR1 i3status
@@ -47,12 +39,19 @@ bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT
 bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && $refresh_i3status
 bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle && $refresh_i3status
 
+
+{{- if hasSuffix "Laptop" .chezmoi.hostname }}
+# Use brightnessctl to adjust screen backlight
+bindsym XF86MonBrightnessUp exec --no-startup-id brightnessctl set +10% && $refresh_i3status
+bindsym XF86MonBrightnessDown exec --no-startup-id brightnessctl set 10%- && $refresh_i3status
+{{- end }}
+
 # use these keys for focus, movement, and resize directions when reaching for
 # the arrows is not convenient
-set $up l
-set $down k
-set $left j
-set $right semicolon
+set $up k
+set $down j
+set $left h
+set $right l
 set $mod Mod4
 
 # use Mouse+$mod to drag floating windows to their wanted position
@@ -71,13 +70,11 @@ bindsym $mod+w exec firefox
 # kill focused window
 bindsym $mod+Escape kill
 
-# start dmenu (a program launcher)
-#bindsym $mod+d exec --no-startup-id dmenu_run
-# A more modern dmenu replacement is rofi:
+# start rofi (a program launcher)
 bindsym $mod+space exec "rofi -show drun"
-# There also is i3-dmenu-desktop which only displays applications shipping a
-# .desktop file. It is a wrapper around dmenu, so you need that installed.
-# bindsym $mod+d exec --no-startup-id i3-dmenu-desktop
+
+# show clipboard history
+bindsym $mod+v exec "CM_LAUNCHER=rofi clipmenu"
 
 # change focus
 bindsym $mod+$left focus left
@@ -104,16 +101,16 @@ bindsym $mod+Shift+Up move up
 bindsym $mod+Shift+Right move right
 
 # split in horizontal orientation
-bindsym $mod+h split h
+#bindsym $mod+h split h
 
 # split in vertical orientation
-bindsym $mod+v split v
+#bindsym $mod+v split v
 
 # enter fullscreen mode for the focused container
 bindsym $mod+f fullscreen toggle
 
 # change container layout (stacked, tabbed, toggle split)
-bindsym $mod+m layout toggle all
+#bindsym $mod+m layout toggle all
 
 # toggle tiling / floating
 bindsym $mod+g floating toggle
@@ -130,12 +127,12 @@ bindsym $mod+n focus mode_toggle
 # focus the child container
 #bindsym $mod+d focus child
 
-# move the currently focused window to the scratchpad
-bindsym $mod+Shift+Tab move scratchpad
-
 # Show the next scratchpad window or hide the focused scratchpad window.
 # If there are multiple scratchpad windows, this command cycles through them.
 bindsym $mod+Tab scratchpad show
+
+# move the currently focused window to the scratchpad
+bindsym $mod+Shift+Tab move scratchpad
 
 # Define names for default workspaces for which we configure key bindings later on.
 # We use variables to avoid repeating the names in multiple places.
@@ -161,6 +158,8 @@ bindsym $mod+7 workspace number $ws7
 bindsym $mod+8 workspace number $ws8
 bindsym $mod+9 workspace number $ws9
 bindsym $mod+0 workspace number $ws10
+bindsym $mod+equal workspace next
+bindsym $mod+minus workspace prev
 
 # move focused container to workspace
 bindsym $mod+Shift+1 move container to workspace number $ws1
@@ -173,13 +172,13 @@ bindsym $mod+Shift+7 move container to workspace number $ws7
 bindsym $mod+Shift+8 move container to workspace number $ws8
 bindsym $mod+Shift+9 move container to workspace number $ws9
 bindsym $mod+Shift+0 move container to workspace number $ws10
+bindsym $mod+Shift+equal move container to workspace next
+bindsym $mod+Shift+minus move container to workspace prev
 
 # reload the configuration file
 bindsym $mod+Shift+c reload
-# restart i3 inplace (preserves your layout/session, can be used to upgrade i3)
-#bindsym $mod+Shift+r restart
 # exit i3 (logs you out of your X session)
-bindsym $mod+Shift+Backspace exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -B 'Yes, exit i3' 'i3-msg exit'"
+bindsym $mod+Shift+BackSpace exec "i3-msg exit"
 
 # resize window (you can also use the mouse for that)
 mode "resize" {
@@ -189,16 +188,16 @@ mode "resize" {
         # Pressing right will grow the window’s width.
         # Pressing up will shrink the window’s height.
         # Pressing down will grow the window’s height.
-        bindsym $left       resize shrink width 10 px or 10 ppt
-        bindsym $down       resize grow height 10 px or 10 ppt
-        bindsym $up         resize shrink height 10 px or 10 ppt
-        bindsym $right      resize grow width 10 px or 10 ppt
+        bindsym $left       resize shrink width 40 px or 1 ppt
+        bindsym $down       resize grow height 40 px or 1 ppt
+        bindsym $up         resize shrink height 40 px or 1 ppt
+        bindsym $right      resize grow width 200 px or 1 ppt
 
         # same bindings, but for the arrow keys
-        bindsym Left        resize shrink width 10 px or 10 ppt
-        bindsym Down        resize grow height 10 px or 10 ppt
-        bindsym Up          resize shrink height 10 px or 10 ppt
-        bindsym Right       resize grow width 10 px or 10 ppt
+        bindsym Left        resize shrink width 40 px or 1 ppt
+        bindsym Down        resize grow height 40 px or 1 ppt
+        bindsym Up          resize shrink height 40 px or 1 ppt
+        bindsym Right       resize grow width 40 px or 1 ppt
 
         # back to normal: Enter or Escape or $mod+r
         bindsym Return mode "default"
