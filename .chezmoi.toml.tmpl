@@ -41,6 +41,11 @@ encryption = "age"
 {{- else }}
     enable = false
 {{- end }}
+{{- if eq "homeDesktop" .chezmoi.hostname }}
+    sambadir = true
+{{- else }}
+    sambadir = false
+{{- end }}
 
 [data.wayvnc]
 {{- if contains "Desktop" .chezmoi.hostname }}

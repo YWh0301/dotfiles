@@ -1,3 +1,4 @@
+{{- if eq .chezmoi.hostname "homeDesktop" }}
 [global]
     workgroup = WORKGROUP
     server string = Arch Linux Samba Server
@@ -9,6 +10,11 @@
     
     log file = /var/log/samba/%m.log
     max log size = 50
+
+    # 强制区分大小写处理
+    case sensitive = yes
+    preserve case = yes
+    short preserve case = yes
 
 [HomeShare]
     comment = Home Directory Shared Folder
@@ -24,8 +30,6 @@
     wide links = no
     unix extensions = no
 
-{{- if eq .chezmoi.hostname "homeDesktop" }}
-{{- "\n" }}
 [ResourceShare]
     comment = Resource Directory Shared Folder
     path = {{ .chezmoi.homeDir }}/Resources
@@ -39,4 +43,71 @@
     guest ok = no
     wide links = no
     unix extensions = no
+{{- else -}}
+[global]
+    workgroup = WORKGROUP
+    server string = Samba Server
+    security = user
+    
+    # === 安全增强 ===
+    server min protocol = SMB3_00
+    client min protocol = SMB3_00
+    
+    # 强制加密传输
+    smb encrypt = required
+    
+    # 禁用匿名访问
+    map to guest = never
+    
+    # 限制服务器角色（避免冲突）
+    local master = yes
+    domain master = no
+    preferred master = yes
+    os level = 65
+    
+    # 日志设置
+    log file = /var/log/samba/%m.log
+    max log size = 50
+    
+    # 连接限制
+    max connections = 3
+    deadtime = 15
+    
+    # 隐藏不需要的共享
+    access based share enum = yes
+
+    # 禁用不安全的特性
+    server signing = mandatory
+    client signing = if_required
+    restrict anonymous = 1
+    
+    # 强制区分大小写处理
+    case sensitive = yes
+    preserve case = yes
+    short preserve case = yes
+
+[HomeShare]
+    comment = Home Directory
+    path = {{ .chezmoi.homeDir }}
+    
+    # 访问控制
+    browseable = yes
+    writable = yes
+    valid users = {{ .chezmoi.username }}
+    read list = {{ .chezmoi.username }}
+    write list = {{ .chezmoi.username }}
+    
+    # 权限设置
+    create mask = 0660
+    directory mask = 0770
+    force create mode = 0660
+    force directory mode = 0770
+    
+    # 安全设置
+    guest ok = no
+    wide links = no
+    unix extensions = no
+    
+    # 用户限制
+    max connections = 3
 {{- end }}

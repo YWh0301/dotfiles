@@ -9,6 +9,9 @@ key.txt.age
 {{- if not .samba.enable }}
 .config/reference/samba
 {{- end }} 
+{{- if not .samba.sambadir }}
+samba
+{{- end }} 
 {{- if not .wayvnc.enable }}
 .config/wayvnc
 {{- end }} 
