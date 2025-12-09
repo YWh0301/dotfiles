@@ -15,3 +15,6 @@ samba
 {{- if not .wayvnc.enable }}
 .config/wayvnc
 {{- end }} 
+{{- if not .sshd.enable }}
+.config/reference/ssh
+{{- end }} 

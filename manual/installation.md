@@ -317,14 +317,16 @@
         - `sudo mkdir /.snapshots`
         - `sudo chmod 750 /.snapshots`
         - `sudo mount /.snapshots`
-- 如果需要启用samba服务器：
+- 如果需要启用*samba*服务器：
     - 将`$HOME/.local/share/chezmoi/.chezmoi.toml.tmpl`中针对本机的`data.samba.enable`设置为`true`
-    - `sudo cp $HOME/.config/reference/samba/smb.conf /etc/samba/smb.conf`
-    - `sudo smbpasswd -a yourusername`，把当前用户同时也添加到*smb*用户并设定*smb*密码
+    - `sudo cp $HOME/.config/reference/samba/smb.conf /etc/samba/smb.conf`；如果处在开放的网络环境，应当编辑*chezmoi*的参考配置文件采用强制加密的*SMB3*以上协议
+    - `sudo smbpasswd -a yourusername`，把当前用户同时也添加到*smb*用户并设定*smb*密码；建议使用存储在*Bitwarden*中的强密码
     - `sudo systemctl enable --now smb nmb`
     - `smbclient //localhost/HomeShare -U yourusername`测试本地访问是否可行
     - 使用*HomeShare*为共享名，*yourusername*为用户名连接
-- 如果需要，启用wayvnc服务器：
+- 如果需要，启用*wayvnc*服务器：
     - 将`$HOME/.local/share/chezmoi/.chezmoi.toml.tmpl`中针对本机的`data.wayvnc.enable`设置为`true`
     - `chezmoi init`后`chezmoi apply`，自动在59900端口开启wayvnc服务
-
+- 如果需要，启动*ssh*服务器：
+    - `sudo cp $HOME/.config/reference/ssh/sshd_config /etc/ssh/sshd_config`；按照默认的规则，应当仅允许密钥连接
+    - `sudo systemctl enable --now sshd`

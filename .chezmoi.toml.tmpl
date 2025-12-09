@@ -53,3 +53,10 @@ encryption = "age"
 {{- else }}
     enable = false
 {{- end }}
+
+[data.sshd]
+{{- if contains "Desktop" .chezmoi.hostname }}
+    enable = true
+{{- else }}
+    enable = false
+{{- end }}
