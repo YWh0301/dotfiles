@@ -44,7 +44,9 @@ exec-once = waybar # panel
 exec-once = fcitx5 # input method support
 exec-once = wl-paste --watch cliphist store # clipboard manager
 exec-once = /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 #polkit gui interface
+{{- if ne .chezmoi.hostname "n150MiniDesktop" }}
 exec-once = hypridle # idle detector
+{{- end }}
 {{- if eq .pcloud.client "pcloudcc" }}
 exec-once = pcloudcc -m $HOME/.misc/pCloudDrive -u {{ .email.default }} -d
 {{- else }}
