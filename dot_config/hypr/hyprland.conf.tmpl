@@ -34,6 +34,7 @@ $menu = rofi -show drun
 # Autostart necessary processes (like notifications daemons, status bars, etc.)
 # Or execute your favorite apps at launch like this:
 
+exec-once = systemctl --user import-environment WAYLAND_DISPLAY 
 exec-once = nwg-look -a
 exec-once = hyprlock -c $HOME/.config/hypr/hyprlock_wall.conf
 exec-once = hyprpaper # wallpaper

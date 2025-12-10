@@ -386,6 +386,7 @@
 ### Others
 
 - **wechat**(AUR)
+- **obs-studio**
 - **wemeet-bin**(AUR)
 - **wemeet-wayland-screenshare-git**(AUR)
 - **xunlei-bin**(AUR)
