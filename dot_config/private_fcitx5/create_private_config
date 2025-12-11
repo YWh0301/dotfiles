@@ -1,7 +1,11 @@
 [Hotkey]
-# 反复按切换键时进行轮换
+# 按住切换键的修饰键时进行轮换切换
 EnumerateWithTriggerKeys=True
-# 临时在当前和第一个输入法之间切换
+# 激活输入法
+ActivateKeys=
+# 取消激活输入法
+DeactivateKeys=
+# 临时切换输入法
 AltTriggerKeys=
 # 向前切换输入法
 EnumerateForwardKeys=
@@ -9,18 +13,16 @@ EnumerateForwardKeys=
 EnumerateBackwardKeys=
 # 轮换输入法时跳过第一个输入法
 EnumerateSkipFirst=False
-# 向前切换输入分组
+# 向前切换输入法分组
 EnumerateGroupForwardKeys=
 # 向后切换输入法分组
 EnumerateGroupBackwardKeys=
-# 激活输入法
-ActivateKeys=
-# 取消激活输入法
-DeactivateKeys=
-# 默认跳转前一个候选词
+# 缺省前一个候选词
 PrevCandidate=
 # 切换是否使用嵌入预编辑
 TogglePreedit=
+# 触发修饰键快捷键的时限 (毫秒)
+ModifierOnlyKeyTimeout=250
 
 [Hotkey/TriggerKeys]
 0=Control+space
@@ -28,10 +30,12 @@ TogglePreedit=
 [Hotkey/PrevPage]
 0=minus
 1=Up
+2=comma
 
 [Hotkey/NextPage]
 0=equal
 1=Down
+2=period
 
 [Hotkey/NextCandidate]
 0=Tab
@@ -55,9 +59,9 @@ CompactInputMethodInformation=True
 ShowFirstInputMethodInformation=True
 # 默认页大小
 DefaultPageSize=9
-# 覆盖 Xkb 选项
+# 覆盖 XKB 选项
 OverrideXkbOption=False
-# 自定义 Xkb 选项
+# 自定义 XKB 选项
 CustomXkbOption=
 # Force Enabled Addons
 EnabledAddons=
