@@ -55,7 +55,7 @@ hyprland_version=$(hyprctl -j version | jq -r '.version')
 declare -A lib_commands=(
     # 格式: ["库文件名(前面不带lib,后面不带.so)"]="期望版本:要执行的命令"
     ["hyprdynamiccursors"]="all:echo hello"
-    ["hyprdarkwindow"]="${hyprland_version}:hyprctl keyword bind SUPER,D,shadewindow, activewindow invert"
+    #["hyprdarkwindow"]="${hyprland_version}:hyprctl keyword bind SUPER,D,shadewindow, activewindow invert"
 )
 
 main
