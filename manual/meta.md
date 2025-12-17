@@ -45,6 +45,49 @@
 
 ## GNU/Linux技术笔记
 
+### GNU/Linux的基础工具链
+
+GNU世界的基础工具链是gcc、binutils和glibc，三者绑定。glibc是GNU世界的主要C库和其他多种高级语言基础库的依赖（比如rust在linux下的default target的std库就调用了glibc功能）。同时glibc提供的用户空间标准调用又在事实上规定了根文件系统的应有的布局、线程调用和内存分配的规范等OS的基础标准，因此在编译器用于标识独特target的三元组<arch>-<vendor>-<kernel>-<os>中，往往会出现以gnu作为os配合linux的组合。
+
+在编译工具链的过程当中，不论是为同样的系统进行自举的编译，还是为了不同系统的交叉编译，一般都遵循如下顺序：
+
+1. 编译binutils
+2. 编译stage1 gcc，此处的gcc只用作基础的编译器
+3. 使用stage1 gcc编译libc
+4. 链接libc中的函数编译stage2 gcc，此处的gcc除了基础的编译器，还提供libgcc、libstdc++等运行在目标机器上的依赖libc的为gcc提供特性支持的语言运行时库，和记录了libc以及动态链接器的硬性位置的gcc specs
+
+可见，完全体的gcc不仅仅包含了基础的编译器二进制程序，还包含了依赖libc的库和specs，而libc又依赖gcc的编译。依靠这种两步编译gcc的bootstrap编译法可以解决这种循环依赖的问题。此后，该gcc就和一并生产的libc绑定，如果需要为libc位置、版本或各方面细节有差异的机器编译程序，就不宜使用这个gcc，而应通过某种方式的交叉编译流程进行。
+
+gcc、glibc、binutils项目的代码使用GNU Autoconf工具组织，其编译流程一般是`./conficure`脚本配置编译选项并自动生成Makefile，而后运行`make -j$(nproc)`进行编译。Autoconf工具依赖Posix Shell（且/bin/sh应指向一个POSIX shell）和m4工具。
+
+### 交叉编译
+
+交叉编译的概念不仅仅用于不同架构、不同芯片生产商的机器互相编译程序，也适用于kernel和os层面差异的机器互相之间编译的过程。换句话说，运行编译器的机器（host）的三元组<arch>-<vendor>-<kernel>-<os>与运行产物的机器（target）的三元组有任意方面的不同（os的差异由libc的差异决定，包括版本、安装位置等方面的差异），均应该通过交叉编译流程来编译程序。
+
+交叉编译的第一步是构建交叉编译器。构建交叉编译器的过程本质上就是构建编译工具链的过程。这一过程本身也可能是交叉的，即构建交叉编译器的机器（build）和运行交叉编译器的机器（host）不一定三元组一致，最终导致build、host、target均不同的情况出现。但不论如何，编译工具链的四步法本身都是适用的，只是需要明确build机器上运行的交叉工具链为host机器编译了binutils、stage1 gcc后，需要将两者移到host机器上编译运行在target上的libc，最后将libc产物带回build机器上构建stage2 gcc。
+
+### 内核
+
+Linux内核项目分为两个主要仓库，即一般称作mainstream的[linux仓库](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git)和一般称作stable的[linux-stable仓库](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git)。同时，在github.com上存在自动同步的[镜像](https://github.com/torvalds/linux)。stable仓库保留Linux的长期支持（LTS）版本分支，并将安全更新backport到LTS版本中；而所有的开发活动均在主线Linux上进行。
+
+使用`git clone --depth 1 https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git`命令可以克隆最新的内核代码。内核代码中的Documentation文件夹内包含了同步的内核文档，可以本地访问，也可以经由[网页文档](https://www.kernel.org/doc/html/latest/)在线浏览。通过阅读Linux项目的`README`，可以获得开始阅读文档的指南。
+
+#### 内核代码仓库与发布节奏
+
+**mainstream**仓库中有且仅有一个`master`分支（使用`git ls-remote --heads https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git`验证），由Linus Torvalds本人维护。Linus之下有各个子系统维护者，再下方还有多层的中间维护者，每个人均有一个单独的仓库，并由维护者负责定期从mainstream仓库中fetch（保障merge base和最新的tag一致）。根据Linux的发布节奏，Linus每9到10周会对新版本的Linux在其仓库的唯一分支中打上如`v6.12`的tag，并且在该版本tag打上之后立即进行为期两周的下一个版本`v6.13`的合并窗口。在合并窗口期间，所有维护者统一进行新功能向上提交与合并的新版本准备工作（一般下层维护者在第一周完成向上层提交的工作），两周后合并窗口关闭，Linux打上下一个版本第一个rc版本`v6.13-rc1`标签。此后7到8周按照每周一个rc版本的进度发布新版本的预览版本，期间不再接受新功能的提交。rc版本迭代的7到8周内，Linus一般周一到周三接受包括关键bug修复、回归修复、文档更新在内的更新，周四至周五测试代码，并于周日发布rc版本。
+
+Linux的维护者合之间合并代码的方式是在不同的维护者仓库之间通过request-pull请求和pull的方式进行合并（对于紧急情况也会使用patch），而开发者向维护者提交代码的方式则是向维护者发送包含代码更改的patch补丁，并由维护者手动应用（开发者提交patch并不受到合并窗口的限制，所有patch由维护者总结并等到合并窗口一并提交）。开发者patch应当根据patch修改的内容和影响范围决定自己的patch base是子系统的next分支、子系统的稳定分支，或是linux稳定版本分支，以方便维护者的合并工作。开发者、维护者之间的沟通通过邮件列表进行。
+
+**stable**仓库中会为每一个`<major>.<minor>`版本的发布tag创建单独分支（使用`git ls-remote --heads https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git`验证），并且在这个版本还是LTS版本的时间内，为该版本提供新的安全更新。更新之后会对分支添加修订号tag`v<major>.<minor>.<revision>`（例如使用`git ls-remote --tags https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git | grep "refs/tags/v6.1\."`查看6.1版本的修订发布）。一般各大发行版从stable仓库中拉取代码编译使用。
+
+#### 编译内核
+
+[官方编译指南](https://www.kernel.org/doc/html/latest/admin-guide/quickly-build-trimmed-linux.html)可以在线阅读。在Arch Linux平台下，编译内核所可能需要的工具包括`base-devel bc bison cpio flex git kmod libelf openssl pahole perl bzip2 gzip lz4 lzop xz zstd ncurses qt5-tools`。
+
+内核通过专门的Kbuild构建系统组织项目。Kbuild 的核心是一套用GNU Make语法编写的、高度递归的Makefile框架，在执行时，会调用POSIX Shell来运行命令，并依赖Perl、Python等脚本语言来处理复杂的代码生成和配置转换（例如生成头文件、解析数据结构）。此外，构建某些内核部分（如词法分析）还需要Bison和Flex等编译工具。[文档](https://www.kernel.org/doc/html/latest/kbuild/makefiles.html)中含有一些内核构建系统的信息。
+
+内核编译的配置文件在项目文件夹下的`.config`。该文件可以用内核构建系统中的多种方式手动设置，也可以用于传播编译选项。当取用老版本内核的配置文件时，需要准备好`.config`文件之后运行`make olddefconfig`继承原有配置，并对新老版本配置选项的差异做出自动更正；也可以进一步使用`make menuconfig`检查。当`.config`配置文件准备完成后，可以使用`make -j$(nproc)`进行编译。注意，交叉编译时需要对所有make相关步骤设置环境变量`ARCH`与`CROSS_COMPILE`，如`ARCH=arm64`与`CROSS_COMPILE=aarch64-linux-gnu-`。
+
 ### 网络配置
 
 ### 键盘映射：从键码到输入
@@ -59,29 +102,3 @@
 
 ### Linux权限管理的历史
 
-### GNU/Linux的基础工具链
-
-GNU世界的基础工具链是gcc、binutils和glibc，三者绑定。glibc是GNU世界的主要C库和其他多种高级语言基础库的依赖（比如rust在linux下的default target的std库就调用了glibc功能）。同时glibc提供的用户空间标准调用又在事实上规定了根文件系统的应有的布局、线程调用和内存分配的规范等OS的基础标准，因此在编译器用于标识独特target的三元组<arch>-<vendor>-<kernel>-<os>中，往往会出现以gnu作为os配合linux的组合。
-
-在编译工具链的过程当中，不论是为同样的系统进行自举的编译，还是为了不同系统的交叉编译，一般都遵循如下顺序：
-
-1. 编译binutils
-2. 编译stage1 gcc，此处的gcc只用作基础的编译器
-3. 使用stage1 gcc编译libc
-4. 链接libc中的函数编译stage2 gcc，此处的gcc除了基础的编译器，还提供libgcc、libstdc++等运行在目标机器上的依赖libc的为gcc提供特性支持的语言运行时库，和记录了libc以及动态链接器的硬性位置的gcc specs
-
-可见，完全体的gcc不仅仅包含了基础的编译器二进制程序，还包含了依赖libc的库和specs，而libc又依赖gcc的编译。依靠这种两步编译gcc的bootstrap编译法可以解决这种循环依赖的问题。此后，该gcc就和一并生产的libc绑定，如果需要为libc位置、版本或各方面细节有差异的机器编译程序，就不宜使用这个gcc，而应通过某种方式的交叉编译流程进行。
-
-### 交叉编译
-
-交叉编译的概念不仅仅用于不同架构、不同芯片生产商的机器互相编译程序，也适用于kernel和os层面差异的机器互相之间编译的过程。换句话说，运行编译器的机器（host）的三元组<arch>-<vendor>-<kernel>-<os>与运行产物的机器（target）的三元组有任意方面的不同（os的差异由libc的差异，包括版本和位置），均应该通过交叉编译流程来编译程序。
-
-交叉编译的第一步是构建交叉编译器。构建交叉编译器的过程本质上就是构建编译工具链的过程。这一过程本身也可能是交叉的，即构建交叉编译器的机器（build）和运行交叉编译器的机器（host）不一定三元组一致，最终导致build、host、target均不同的情况出现。但不论如何，编译工具链的四步法本身都是适用的，只是需要搞清楚build机器上运行的交叉工具链给host机器编译了binutils、stage1 gcc后，需要将两者移到host机器上编译运行在target上的libc，最后将libc产物带回build机器上构建stage2 gcc。
-
-### 内核编译
-
-### BSP内核
-
-#### 不同架构的内核：<arch>-<vendor>的差异
-
-#### 良好BSP实践
