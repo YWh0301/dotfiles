@@ -54,15 +54,15 @@ GNU世界的基础工具链是gcc、binutils和glibc，三者绑定。glibc是GN
 1. 编译binutils
 2. 编译stage1 gcc，此处的gcc只用作基础的编译器
 3. 使用stage1 gcc编译libc
-4. 链接libc中的函数编译stage2 gcc，此处的gcc除了基础的编译器，还提供libgcc、libstdc++等运行在目标机器上的依赖libc的为gcc提供特性支持的语言运行时库，和记录了libc以及动态链接器的硬性位置的gcc specs
+4. 使用stage1 gcc编译stage2 gcc，此处的gcc除了基础的编译器，还提供libgcc、libstdc++等运行在目标机器上的依赖目标机器libc的为gcc提供特性支持的语言运行时库，和记录了sysroot、libc以及动态链接器的硬性位置的gcc specs
 
-可见，完全体的gcc不仅仅包含了基础的编译器二进制程序，还包含了依赖libc的库和specs，而libc又依赖gcc的编译。依靠这种两步编译gcc的bootstrap编译法可以解决这种循环依赖的问题。此后，该gcc就和一并生产的libc绑定，如果需要为libc位置、版本或各方面细节有差异的机器编译程序，就不宜使用这个gcc，而应通过某种方式的交叉编译流程进行。
+可见，完全体的gcc不仅仅包含了基础的编译器二进制程序，还包含了依赖libc的库和specs（使用`gcc -dumpspecs`查看），而libc又依赖gcc的编译。依靠这种两步编译gcc的bootstrap编译法可以解决这种循环依赖的问题。此后，该gcc就和一并生产的libc绑定，如果需要为libc位置、版本或各方面细节有差异的机器编译程序，就不宜（glibc保持向后兼容，用旧版本glibc编译的程序可以使用新版本glibc库运行，但不保证向前兼容；推荐同时更新所有工具链内容）使用这个gcc，而应通过某种方式的交叉编译流程先生产交叉编译器后进行编译。具体而言，为任意目标机器（包括本机）编译程序时，gcc需要知道编译时的sysroot参数（默认从specs中获得），并将对应的sysroot目录当作目标机器的根目录解析，查询需要的头文件和动态链接库文件（比如基础的libc）。gcc具有动态切换sysroot的功能，但在编译libc并构建sysroot本身时，并没有参数选项能够实现足够的隔离而使用本机工具链编译目标机器libc，因此目标机器sysroot的构建过程必须伴随着完整的（交叉）编译工具链的构建。
 
 gcc、glibc、binutils项目的代码使用GNU Autoconf工具组织，其编译流程一般是`./conficure`脚本配置编译选项并自动生成Makefile，而后运行`make -j$(nproc)`进行编译。Autoconf工具依赖Posix Shell（且/bin/sh应指向一个POSIX shell）和m4工具。
 
 ### 交叉编译
 
-交叉编译的概念不仅仅用于不同架构、不同芯片生产商的机器互相编译程序，也适用于kernel和os层面差异的机器互相之间编译的过程。换句话说，运行编译器的机器（host）的三元组<arch>-<vendor>-<kernel>-<os>与运行产物的机器（target）的三元组有任意方面的不同（os的差异由libc的差异决定，包括版本、安装位置等方面的差异），均应该通过交叉编译流程来编译程序。
+交叉编译的概念不仅仅用于不同架构、不同芯片生产商的机器互相编译程序，也适用于kernel和os层面差异的机器互相之间编译的过程。换句话说，运行编译器的机器（host）的三元组<arch>-<vendor>-<kernel>-<os>与运行产物的机器（target）的三元组有任意方面的不同（os的差异由libc的差异决定，包括版本、安装位置等方面的差异），均应该通过交叉编译流程构建专门的交叉工具链来编译程序。同一套交叉编译工具可以动态切换不同的sysroot来为不同的目标机器编译程序，但不同的sysroot中libc的版本应当都与交叉编译工具链一同构建的；为目标机器编译具有其他依赖的程序时（例如依赖qt、wayland等库），运行编译器的机器上指定的sysroot中必须包含所有所需库及其头文件。
 
 交叉编译的第一步是构建交叉编译器。构建交叉编译器的过程本质上就是构建编译工具链的过程。这一过程本身也可能是交叉的，即构建交叉编译器的机器（build）和运行交叉编译器的机器（host）不一定三元组一致，最终导致build、host、target均不同的情况出现。但不论如何，编译工具链的四步法本身都是适用的，只是需要明确build机器上运行的交叉工具链为host机器编译了binutils、stage1 gcc后，需要将两者移到host机器上编译运行在target上的libc，最后将libc产物带回build机器上构建stage2 gcc。
 
