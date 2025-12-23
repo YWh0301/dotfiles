@@ -1,0 +1,69 @@
+pkgname=imx-bsp-walnascar
+_kernel_ver=6.12.34
+pkgver=2.1.0
+pkgrel=1
+pkgdesc="NXP i.MX Yocto Project BSP"
+arch=('x86_64')
+url="https://github.com/nxp-imx/meta-imx"
+install='imx-bsp-walnascar.install'
+license=('custom')
+depends=('chrpath' 'cpio' 'diffstat' 'file' 'gawk' 'git' 'inetutils' 'iputils' 'acl' 'lz4' 'python' 'python-gitpython' 'python-jinja' 'python-pexpect' 'python-pip' 'python-subunit' 'rpcsvc-proto' 'socat' 'texinfo' 'unzip' 'wget' 'xz' 'zstd')
+makedepends=('repo')
+
+prepare() {
+  cd $srcdir
+  repo init -u https://github.com/nxp-imx/imx-manifest.git -b imx-linux-walnascar -m imx-${_kernel_ver}-${pkgver}.xml
+  repo sync
+  sed -i 's| sources/| /opt/nxp/imx-bsp-walnascar/sources/|g' \
+    sources/base/setup-environment \
+    sources/meta-imx/tools/imx-setup-release.sh \
+    sources/meta-nxp-connectivity/tools/matter-image-build.sh
+
+  sed -i 's| \./| /opt/nxp/imx-bsp-walnascar/|g' \
+    sources/meta-imx/tools/imx-setup-release.sh
+
+  sed -i 's|\$PWD/|/opt/nxp/imx-bsp-walnascar/|g' \
+    sources/base/setup-environment
+
+  sed -i 's|\$CWD/sources/|/opt/nxp/imx-bsp-walnascar/sources/|g' \
+    sources/base/setup-environment \
+    sources/meta-imx/tools/imx-setup-release.sh
+
+  sed -i 's|\${CWD}/sources/|/opt/nxp/imx-bsp-walnascar/sources/|g' \
+    sources/base/setup-environment \
+    sources/meta-imx/tools/imx-setup-release.sh
+
+  sed -i 's|BSPDIR|TOPDIR|g' \
+    sources/base/setup-environment 
+
+  sed -i 's|BSPDIR :=|PROJECTDIR :=|g' \
+    sources/base/conf/bblayers.conf 
+
+  sed -i '22a\BSPDIR="/opt/nxp/imx-bsp-walnascar"' \
+    sources/base/setup-environment \
+    sources/meta-imx/tools/imx-setup-release.sh
+
+  sed -i '4a\BSPDIR := "/opt/nxp/imx-bsp-walnascar"' \
+    sources/base/conf/bblayers.conf 
+}
+
+package() {
+  mkdir -p ${pkgdir}/opt/nxp/imx-bsp-walnascar/
+  cd ${srcdir}
+  cp -R * ${pkgdir}/opt/nxp/imx-bsp-walnascar/
+  mkdir -p ${pkgdir}/usr/bin/
+  cat > ${pkgdir}/usr/bin/imx-bsp-walnascar-setup << 'EOF'
+#!/bin/bash
+# Wrapper script for i.MX BSP walnascar setup
+# This script sources the actual setup script from the installation directory
+
+if [ -f /opt/nxp/imx-bsp-walnascar/imx-setup-release.sh ]; then
+    echo "Setting up i.MX BSP environment..."
+    source /opt/nxp/imx-bsp-walnascar/imx-setup-release.sh "$@"
+else
+    echo "Error: i.MX BSP setup script not found!"
+    echo "Expected location: /opt/nxp/imx-bsp-walnascar/imx-setup-release.sh"
+    exit 1
+fi
+EOF
+}
