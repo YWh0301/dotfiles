@@ -33,7 +33,7 @@ prepare() {
     sources/base/setup-environment \
     sources/meta-imx/tools/imx-setup-release.sh
 
-  sed -i 's|BSPDIR|TOPDIR|g' \
+  sed -i 's|BSPDIR|PROJECTDIR|g' \
     sources/base/setup-environment 
 
   sed -i 's|BSPDIR :=|PROJECTDIR :=|g' \
