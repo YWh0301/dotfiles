@@ -133,7 +133,7 @@ general {
     layout = master
 }
 
-windowrule = bordersize 0, floating:0, onworkspace:w[tv1]s[false], 
+windowrule = border_size 0, match:float 0, match:workspace w[tv1]s[false], 
 
 # https://wiki.hyprland.org/Configuring/Variables/#decoration
 decoration {
@@ -488,26 +488,26 @@ bindm = $mainMod, mouse:273, resizewindow
 # windowrule = float, ^(kitty)$
 
 # Example windowrule v2
-# windowrulev2 = float,class:^(kitty)$,title:^(kitty)$
+# windowrulev2 = float,match:class ^(kitty)$,match:title ^(kitty)$
 
-windowrule = suppressevent maximize, class:.* # You'll probably like this.
-windowrule = opacity 0.9 override 0.85,class:^(kitty)$
-windowrule = workspace 10 silent,class:^(?i)pcloud$
-windowrule = fullscreen,class:^(mpv)$
-windowrule = workspace 10 silent,class:^(kitty)$,title:^(~/pCloudDrive)$
-windowrule = float,class:^(blueman-manager)$,title:^(Bluetooth Devices)$
-windowrule = move 67% 5%,class:^(blueman-manager)$,title:^(Bluetooth Devices)$
-windowrule = size 30% 70%,class:^(blueman-manager)$,title:^(Bluetooth Devices)$
-windowrule = float,class:^(thunar)$,title:^(File Operation Progress)$
-windowrule = float,class:^(thunar)$,title:^(文件操作进度)$
-windowrule = move 73% 5%,class:^(thunar)$,title:^(File Operation Progress)$
-windowrule = move 73% 5%,class:^(thunar)$,title:^(文件操作进度)$
-windowrule = move 73% 5%,class:^(hyprland-dialog)$
-windowrule = float,class:^(wechat)$,title:^(?!微信|Weixin).+$
-windowrule = size 50% 50%,class:^(wechat)$,title:^(?!微信|Weixin).+$
-windowrule = float,class:^(wechat)$,title:^(微信|Weixin)$
-windowrule = size 98% 94%,class:^(wechat)$,title:^(微信|Weixin)$
-windowrule = move 1% 4%,class:^(wechat)$,title:^(微信|Weixin)$
+windowrule = suppress_event maximize, match:class .* # You'll probably like this.
+windowrule = opacity 0.9 override 0.85,match:class ^(kitty)$
+windowrule = workspace 10 silent,match:class ^(?i)pcloud$
+windowrule = fullscreen on,match:class ^(mpv)$
+windowrule = workspace 10 silent,match:class ^(kitty)$,match:title ^(~/pCloudDrive)$
+windowrule = float on,match:class ^(blueman-manager)$,match:title ^(Bluetooth Devices)$
+windowrule = move 67% 5%,match:class ^(blueman-manager)$,match:title ^(Bluetooth Devices)$
+windowrule = size 30% 70%,match:class ^(blueman-manager)$,match:title ^(Bluetooth Devices)$
+windowrule = float on,match:class ^(thunar)$,match:title ^(File Operation Progress)$
+windowrule = float on,match:class ^(thunar)$,match:title ^(文件操作进度)$
+windowrule = move 73% 5%,match:class ^(thunar)$,match:title ^(File Operation Progress)$
+windowrule = move 73% 5%,match:class ^(thunar)$,match:title ^(文件操作进度)$
+windowrule = move 73% 5%,match:class ^(hyprland-dialog)$
+windowrule = float on,match:class ^(wechat)$,match:title ^(?!微信|Weixin).+$
+windowrule = size 50% 50%,match:class ^(wechat)$,match:title ^(?!微信|Weixin).+$
+windowrule = float on,match:class ^(wechat)$,match:title ^(微信|Weixin)$
+windowrule = size 98% 94%,match:class ^(wechat)$,match:title ^(微信|Weixin)$
+windowrule = move 1% 4%,match:class ^(wechat)$,match:title ^(微信|Weixin)$
 
 workspace = special:scratchpad,on-created-empty:$terminal -e zsh -i -c 'aichat; zsh',gapsout:100,gapsin:4
 
