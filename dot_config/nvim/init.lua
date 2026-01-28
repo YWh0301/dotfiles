@@ -15,6 +15,8 @@ vim.opt.relativenumber = true
 vim.opt.number = true
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
+vim.cmd("filetype plugin on")
+vim.g.maplocalleader = ","
 --]]
 
 ---[[ 交换j、k和gj、gk
@@ -47,7 +49,8 @@ require("lazy").setup({
   { "nvim-tree/nvim-tree.lua", version = "*", lazy = false, dependencies = { "nvim-tree/nvim-web-devicons", }, config = function() require("nvim-tree").setup {} end, },
   { "lervag/vimtex", ft = { "tex" }, config = function() vim.g.vimtex_view_method = "zathura" vim.g.vimtex_compiler_method = "latexmk" vim.g.vimtex_quickfix_mode = 0 end, },
   { "hrsh7th/nvim-cmp", dependencies = { "hrsh7th/cmp-buffer", "hrsh7th/cmp-path", "hrsh7th/cmp-nvim-lsp", "hrsh7th/cmp-cmdline", "saadparwaiz1/cmp_luasnip", "kdheepak/cmp-latex-symbols", } },
-  { "L3MON4D3/LuaSnip", dependencies = { "rafamadriz/friendly-snippets" }, }
+  { "L3MON4D3/LuaSnip", dependencies = { "rafamadriz/friendly-snippets" }, },
+  { "tidalcycles/vim-tidal", ft = "tidal" }
 })
 --]]
 
@@ -103,6 +106,12 @@ require("nvim-cursorline").setup {
   cursorline = { enable = true, timeout = 0, number = true, },
   cursorword = { enable = true, min_length = 3, hl = { underline = true }, }
 }
+--]]
+
+---[[ vim-tidal配置
+vim.g.tidal_target = "terminal"
+vim.g.tidal_ghci = "ghci"
+vim.g.tidal_sc_enable = 1
 --]]
 
 ---[[ 控制中文输入法自动切换

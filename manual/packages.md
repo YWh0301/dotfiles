@@ -378,6 +378,7 @@
 
 - **reaper**
 - **sox**
+- **haskell-tidal**
 
 ### Android Utilities
 
