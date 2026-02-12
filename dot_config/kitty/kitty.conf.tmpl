@@ -7,11 +7,11 @@ include current-theme.conf
 confirm_os_window_close 0
 
 font_family JetBrainsMonoNL Nerd Font
-{{ if eq .chezmoi.hostname "homeDesktop" -}}
+{{ if eq .hostname "homeDesktop" -}}
 font_size 14
-{{ else if eq .chezmoi.hostname "n150MiniDesktop" -}}
+{{ else if eq .hostname "n150MiniDesktop" -}}
 font_size 12
-{{ else if eq .chezmoi.hostname "rogLaptop" -}}
+{{ else if eq .hostname "rogLaptop" -}}
 font_size 16
 {{ else -}}
 font_size 12

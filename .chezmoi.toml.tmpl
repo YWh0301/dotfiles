@@ -24,38 +24,42 @@ encryption = "age"
         {{ printf "%q" "{{ .Target }}" }},
     ]
 
+[data]
+    {{ $hostname := output "hostname" "-f" | trim }}
+    hostname = {{ $hostname | quote }}
+
 [data.email]
     default = "2490224285@qq.com"
     school = "yuwenhao@stu.pku.edu.cn"
 
 [data.pcloud]
-{{- if or (eq .chezmoi.hostname "homeDesktop") (eq .chezmoi.hostname "rogLaptop") (eq .chezmoi.hostname "t460Laptop") (eq .chezmoi.hostname "n150MiniDesktop") }}
+{{- if or (eq $hostname "homeDesktop") (eq $hostname "rogLaptop") (eq $hostname "t460Laptop") (eq $hostname "n150MiniDesktop") }}
     client = "pcloud-drive"
 {{- else }}
     client = "pcloudcc"
 {{- end }}
 
 [data.samba]
-{{- if contains "Desktop" .chezmoi.hostname }}
+{{- if contains "Desktop" $hostname }}
     enable = true
 {{- else }}
     enable = false
 {{- end }}
-{{- if eq "homeDesktop" .chezmoi.hostname }}
+{{- if eq "homeDesktop" $hostname }}
     sambadir = true
 {{- else }}
     sambadir = false
 {{- end }}
 
 [data.wayvnc]
-{{- if contains "Desktop" .chezmoi.hostname }}
+{{- if contains "Desktop" $hostname }}
     enable = false
 {{- else }}
     enable = false
 {{- end }}
 
 [data.sshd]
-{{- if contains "Desktop" .chezmoi.hostname }}
+{{- if contains "Desktop" $hostname }}
     enable = true
 {{- else }}
     enable = false
