@@ -372,11 +372,14 @@
 - **kicad**
     - **kicad-library**
     - **kicad-library-3d**
+- **freecad**
 - **wireshark**
 
 ### Audio Development
 
 - **reaper**
+    - **sws**
+    - **reapack**
 - **sox**
 - **haskell-tidal**
 
