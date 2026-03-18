@@ -150,6 +150,7 @@ dns {
         request {
             # Lookup China mainland domains using alidns, otherwise googledns.
             qname(geosite:cn) -> alidns
+            qname(suffix:pku.edu.cn) -> asis
             # fallback is also called default.
             fallback: googledns
         }
