@@ -163,6 +163,9 @@
     - **pipewire-jack**
     - **pipewire-pulse**
     - **alsa-utils**
+- **wireplumber**
+- **pavucontrol**
+- **carla**
 
 #### Networking
 
@@ -382,6 +385,24 @@
     - **reapack**
 - **sox**
 - **haskell-tidal**
+- **vcvrack**(pro-audio)
+    - **vcvrack-plugins**(pro-audio)
+    - **cardinal**
+- **lsp-plugins**
+- **dragonfly-reverb**
+- **avldrums.lv2**
+- **zynaddsubfx**
+- **yoshimi**
+- **vital-synth**(AUR)
+- **surge-xt**
+- **guitarix**
+- **sfizz**
+- **infamousplugins**
+- **drumgizmo**
+- **setbfree**
+- **musescore**
+- **polyphone**
+- **qtractor**
 
 ### Android Utilities
 
