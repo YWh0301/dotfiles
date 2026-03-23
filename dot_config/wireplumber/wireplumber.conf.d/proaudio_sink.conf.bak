@@ -1,0 +1,112 @@
+## WirePlumber Pro Audio dedicated configuration
+##
+## This configuration implements fixed channel mapping of proaudio_sink to hardware devices
+## Supports minimal audio processing and auto-connect
+
+wireplumber.components = [
+  ## Load proaudio link script
+  {
+    name = "proaudio_link.lua",
+    type = "script/lua",
+    provides = "hooks.linking.target.find_proaudio"
+  }
+]
+
+wireplumber.profiles = {
+  main = {
+    hooks.linking.target.find_proaudio = required
+  }
+}
+
+wireplumber.settings.schema = {
+  ## Pro Audio configuration options
+  
+  ## Enable/disable auto-connect feature
+  proaudio.auto_connect = {
+    name = "Auto connect",
+    description = "Automatically connect proaudio_sink to hardware devices",
+    type = "bool",
+    default = true
+  },
+  
+  ## Enable debug logging
+  proaudio.debug = {
+    name = "Debug mode",
+    description = "Enable detailed debug log output",
+    type = "bool",
+    default = false
+  }
+}
+
+## Pro Audio channel mapping configuration
+##
+## Defines fixed mapping of proaudio_sink AUX channels to hardware devices
+## Format: channel name = device name pattern
+proaudio.channel_mapping = {
+  ## AUX0 channel mapping
+  AUX0 = {
+    device_pattern = "alsa_output.*.analog-stereo",
+    description = "Main analog output",
+    required = true
+  },
+  
+  ## AUX1 channel mapping  
+  AUX1 = {
+    device_pattern = "alsa_output.usb-*",
+    description = "USB audio device",
+    required = false
+  },
+  
+  ## AUX2 channel mapping
+  AUX2 = {
+    device_pattern = "bluez_output.*",
+    description = "Bluetooth audio device",
+    required = false
+  },
+  
+  ## AUX3 channel mapping
+  AUX3 = {
+    device_pattern = "alsa_output.*.hdmi-*",
+    description = "HDMI audio output",
+    required = false
+  }
+}
+
+## Pro Audio link parameters configuration
+##
+## Special parameters for professional audio links (minimal processing, low latency)
+proaudio.link_params = {
+  passthrough = true,      # Enable passthrough mode, reduce processing
+  exclusive = true,        # Exclusive link, avoid mixing
+  monitor_volumes = false, # Disable monitor volume control
+  audio_position = "AUX0", # Fixed to AUX0 channel (mono link)
+  stream_dont_remix = true # Disable remixing
+}
+
+## Device exclusion rules
+proaudio.exclude_rules = [
+  {
+    matches = [
+      {
+        node.name = "~.*\\.monitor"
+      },
+      {
+        node.name = "~proaudio_sink"
+      },
+      {
+        node.name = "~desktop_sink"
+      },
+      {
+        node.name = "~Virtual.*"
+      },
+      {
+        media.class = "Audio/Source"
+      }
+    ]
+    actions = {
+      update-props = {
+        proaudio.excluded = true
+      }
+    }
+  }
+]

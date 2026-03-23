@@ -1,0 +1,400 @@
+#!/bin/bash
+# WirePlumber Desktop Sink 音频输出切换工具
+#
+# 这个工具用于控制 desktop_sink 连接到哪个音频输出设备
+
+set -e
+
+# 颜色定义
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# 帮助信息
+show_help() {
+    cat << EOF
+WirePlumber Desktop Sink 音频输出切换工具
+
+用法: $0 [命令] [参数]
+
+命令:
+  list                  列出所有可用的音频输出设备
+  status                显示当前连接状态
+  auto                  自动选择最佳设备（根据配置规则）
+  connect <设备名称>    连接到指定的设备
+  bluetooth             切换到蓝牙设备（如果有）
+  hdmi                  切换到 HDMI 设备（如果有）
+  analog                切换到模拟音频设备
+  enable                启用自动连接功能
+  disable               禁用自动连接功能
+  help                  显示此帮助信息
+
+示例:
+  $0 list                # 列出所有设备
+  $0 status              # 显示当前状态
+  $0 auto                # 自动选择最佳设备
+  $0 connect "alsa_output.pci-0000_00_1f.3.analog-stereo"
+  $0 bluetooth           # 切换到蓝牙设备
+
+设备名称可以通过 'list' 命令获取，通常是类似：
+  alsa_output.pci-0000_00_1f.3.analog-stereo
+  bluez_output.00_11_22_33_44_55.a2dp-sink
+  alsa_output.pci-0000_01_00.1.hdmi-stereo
+EOF
+}
+
+# 检查 WirePlumber 是否运行
+check_wireplumber() {
+    if ! systemctl --user is-active --quiet wireplumber; then
+        echo -e "${RED}错误: WirePlumber 服务未运行${NC}"
+        echo "请运行: systemctl --user start wireplumber"
+        exit 1
+    fi
+}
+
+# 检查 desktop_sink 脚本是否加载
+check_script_loaded() {
+    if ! wpctl status 2>/dev/null | grep -q "desktop_sink"; then
+        echo -e "${YELLOW}警告: desktop_sink 脚本可能未加载${NC}"
+        echo "请确保已正确安装配置并重启 WirePlumber"
+        echo "运行: systemctl --user restart wireplumber"
+    fi
+}
+
+# 使用 wpctl 执行 Lua 代码
+wpctl_lua() {
+    local lua_code="$1"
+    wpctl eval "$lua_code" 2>/dev/null || echo "{}"
+}
+
+# 列出所有设备
+list_devices() {
+    check_wireplumber
+    check_script_loaded
+    
+    echo -e "${BLUE}=== 可用音频输出设备 ===${NC}"
+    
+    local result
+    result=$(wpctl_lua 'if desktop_sink then print(require("json").encode(desktop_sink.list_devices())) end')
+    
+    if echo "$result" | grep -q "^{"; then
+        # 解析 JSON 输出
+        echo "$result" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    if isinstance(data, list):
+        for i, dev in enumerate(data, 1):
+            active = '✓' if dev.get('active') else ' '
+            typ = dev.get('type', 'unknown')
+            print(f'{i:2d}. [{active}] {dev[\"name\"]}')
+            print(f'     描述: {dev.get(\"description\", \"N/A\")}')
+            print(f'     类型: {typ} | 优先级: {dev.get(\"priority\", 0)}')
+            print()
+    else:
+        print('未找到设备')
+except Exception as e:
+    print(f'解析错误: {e}')
+    print('原始输出:', data)
+" 2>/dev/null || echo "$result"
+    else
+        # 回退到使用 pw-cli 列出设备
+        echo -e "${YELLOW}使用 pw-cli 列出设备:${NC}"
+        pw-cli list-objects | grep -A2 "node.name.*output" | grep -E "(node.name|node.description)" | while read line; do
+            if [[ $line == *node.name* ]]; then
+                name=$(echo "$line" | cut -d= -f2 | xargs)
+                echo -n "$name - "
+            elif [[ $line == *node.description* ]]; then
+                desc=$(echo "$line" | cut -d= -f2 | xargs)
+                echo "$desc"
+            fi
+        done
+    fi
+}
+
+# 显示状态
+show_status() {
+    check_wireplumber
+    check_script_loaded
+    
+    echo -e "${BLUE}=== Desktop Sink 连接状态 ===${NC}"
+    
+    local result
+    result=$(wpctl_lua 'if desktop_sink then print(require("json").encode(desktop_sink.get_status())) end')
+    
+    if echo "$result" | grep -q "^{"; then
+        echo "$result" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    if data.get('connected'):
+        print(f'状态: {GREEN}已连接{NC}')
+        print(f'目标设备: {data[\"target\"]}')
+        print(f'Monitor: {data.get(\"monitor\", \"N/A\")}')
+    else:
+        print(f'状态: {RED}未连接{NC}')
+        if data.get('error'):
+            print(f'错误: {data[\"error\"]}')
+        else:
+            print(f'Monitor: {data.get(\"monitor\", \"N/A\")}')
+except Exception as e:
+    print(f'解析错误: {e}')
+    print('原始输出:', data)
+" 2>/dev/null || echo "$result"
+    else
+        echo -e "${YELLOW}无法获取状态信息${NC}"
+    fi
+    
+    echo
+    echo -e "${BLUE}=== 当前默认音频设备 ===${NC}"
+    wpctl status | grep -A5 "Audio" | head -10
+}
+
+# 自动选择设备
+auto_select() {
+    check_wireplumber
+    check_script_loaded
+    
+    echo -e "${BLUE}正在自动选择最佳设备...${NC}"
+    
+    local result
+    result=$(wpctl_lua 'if desktop_sink then 
+        local devices, err = desktop_sink.list_devices()
+        if err then print(err) return end
+        if #devices > 0 then
+            local best = devices[1]
+            print(best.name)
+        else
+            print("未找到可用设备")
+        end
+    end')
+    
+    if [[ -n "$result" && ! "$result" =~ "未找到" ]]; then
+        echo -e "选择设备: ${GREEN}$result${NC}"
+        connect_device "$result"
+    else
+        echo -e "${RED}自动选择失败: $result${NC}"
+        exit 1
+    fi
+}
+
+# 连接到指定设备
+connect_device() {
+    local device="$1"
+    
+    if [[ -z "$device" ]]; then
+        echo -e "${RED}错误: 请指定设备名称${NC}"
+        echo "使用 '$0 list' 查看可用设备"
+        exit 1
+    fi
+    
+    check_wireplumber
+    check_script_loaded
+    
+    echo -e "${BLUE}正在连接到设备: $device${NC}"
+    
+    local result
+    result=$(wpctl_lua "if desktop_sink then 
+        local ok, err = desktop_sink.switch_to_device('$device')
+        if ok then
+            print('success')
+        else
+            print('error:' .. (err or '未知错误'))
+        end
+    end")
+    
+    if [[ "$result" == "success" ]]; then
+        echo -e "${GREEN}连接成功${NC}"
+        # 等待一下然后显示状态
+        sleep 0.5
+        show_status
+    else
+        echo -e "${RED}连接失败: ${result#error:}${NC}"
+        exit 1
+    fi
+}
+
+# 切换到蓝牙设备
+switch_bluetooth() {
+    echo -e "${BLUE}查找蓝牙设备...${NC}"
+    
+    local bt_device
+    bt_device=$(wpctl_lua 'if desktop_sink then 
+        local devices, err = desktop_sink.list_devices()
+        if err then return end
+        for _, dev in ipairs(devices) do
+            if dev.type == "bluetooth" then
+                print(dev.name)
+                return
+            end
+        end
+        print("not_found")
+    end')
+    
+    if [[ "$bt_device" == "not_found" ]]; then
+        echo -e "${YELLOW}未找到蓝牙设备${NC}"
+        exit 1
+    elif [[ -n "$bt_device" ]]; then
+        connect_device "$bt_device"
+    else
+        echo -e "${RED}查找蓝牙设备失败${NC}"
+        exit 1
+    fi
+}
+
+# 切换到 HDMI 设备
+switch_hdmi() {
+    echo -e "${BLUE}查找 HDMI 设备...${NC}"
+    
+    local hdmi_device
+    hdmi_device=$(wpctl_lua 'if desktop_sink then 
+        local devices, err = desktop_sink.list_devices()
+        if err then return end
+        for _, dev in ipairs(devices) do
+            if dev.type == "hdmi" then
+                print(dev.name)
+                return
+            end
+        end
+        print("not_found")
+    end')
+    
+    if [[ "$hdmi_device" == "not_found" ]]; then
+        echo -e "${YELLOW}未找到 HDMI 设备${NC}"
+        exit 1
+    elif [[ -n "$hdmi_device" ]]; then
+        connect_device "$hdmi_device"
+    else
+        echo -e "${RED}查找 HDMI 设备失败${NC}"
+        exit 1
+    fi
+}
+
+# 切换到模拟音频设备
+switch_analog() {
+    echo -e "${BLUE}查找模拟音频设备...${NC}"
+    
+    local analog_device
+    analog_device=$(wpctl_lua 'if desktop_sink then 
+        local devices, err = desktop_sink.list_devices()
+        if err then return end
+        for _, dev in ipairs(devices) do
+            if dev.type == "analog" then
+                print(dev.name)
+                return
+            end
+        end
+        print("not_found")
+    end')
+    
+    if [[ "$analog_device" == "not_found" ]]; then
+        echo -e "${YELLOW}未找到模拟音频设备${NC}"
+        exit 1
+    elif [[ -n "$analog_device" ]]; then
+        connect_device "$analog_device"
+    else
+        echo -e "${RED}查找模拟音频设备失败${NC}"
+        exit 1
+    fi
+}
+
+# 启用自动连接
+enable_auto() {
+    check_wireplumber
+    check_script_loaded
+    
+    echo -e "${BLUE}启用自动连接功能...${NC}"
+    
+    local result
+    result=$(wpctl_lua 'if desktop_sink then 
+        local ok = desktop_sink.enable()
+        if ok then
+            print("enabled")
+        else
+            print("error")
+        end
+    end')
+    
+    if [[ "$result" == "enabled" ]]; then
+        echo -e "${GREEN}自动连接已启用${NC}"
+    else
+        echo -e "${RED}启用自动连接失败${NC}"
+    fi
+}
+
+# 禁用自动连接
+disable_auto() {
+    check_wireplumber
+    check_script_loaded
+    
+    echo -e "${BLUE}禁用自动连接功能...${NC}"
+    
+    local result
+    result=$(wpctl_lua 'if desktop_sink then 
+        local ok = desktop_sink.disable()
+        if ok then
+            print("disabled")
+        else
+            print("error")
+        end
+    end')
+    
+    if [[ "$result" == "disabled" ]]; then
+        echo -e "${YELLOW}自动连接已禁用${NC}"
+    else
+        echo -e "${RED}禁用自动连接失败${NC}"
+    fi
+}
+
+# 主函数
+main() {
+    local command="$1"
+    
+    case "$command" in
+        list)
+            list_devices
+            ;;
+        status)
+            show_status
+            ;;
+        auto)
+            auto_select
+            ;;
+        connect)
+            connect_device "$2"
+            ;;
+        bluetooth|bt)
+            switch_bluetooth
+            ;;
+        hdmi)
+            switch_hdmi
+            ;;
+        analog)
+            switch_analog
+            ;;
+        enable)
+            enable_auto
+            ;;
+        disable)
+            disable_auto
+            ;;
+        help|--help|-h)
+            show_help
+            ;;
+        *)
+            if [[ -z "$command" ]]; then
+                show_status
+            else
+                echo -e "${RED}未知命令: $command${NC}"
+                echo
+                show_help
+                exit 1
+            fi
+            ;;
+    esac
+}
+
+# 运行主函数
+main "$@"

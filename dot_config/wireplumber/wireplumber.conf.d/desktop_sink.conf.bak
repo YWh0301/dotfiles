@@ -1,0 +1,58 @@
+## WirePlumber Desktop Sink auto-connect configuration
+##
+## This configuration implements automatic connection of desktop_sink monitor interface
+## to actual audio devices
+
+wireplumber.components = [
+  ## Load custom desktop sink link script
+  {
+    name = "desktop_sink_link.lua",
+    type = "script/lua",
+    provides = "hooks.linking.target.find_desktop_sink"
+  }
+]
+
+wireplumber.profiles = {
+  main = {
+    hooks.linking.target.find_desktop_sink = required
+  }
+}
+
+wireplumber.settings.schema = {
+  ## Desktop Sink configuration options
+  
+  ## Enable/disable auto-connect feature
+  desktop_sink.auto_connect = {
+    name = "Auto connect",
+    description = "Automatically connect desktop_sink to audio devices",
+    type = "bool",
+    default = true
+  }
+  
+  ## Preferred device types (in priority order)
+  desktop_sink.preferred_devices = {
+    name = "Preferred devices",
+    description = "Device types to connect to (in priority order)",
+    type = "array",
+    default = [ "bluetooth", "hdmi", "displayport", "analog", "usb" ]
+  }
+  
+  ## Auto-switch delay (milliseconds)
+  desktop_sink.switch_delay = {
+    name = "Switch delay",
+    description = "Delay before auto-switching after device change (milliseconds)",
+    type = "int",
+    default = 1000,
+    min = 0,
+    max = 10000
+  }
+  
+  ## Enable debug logging
+  desktop_sink.debug = {
+    name = "Debug mode",
+    description = "Enable detailed debug log output",
+    type = "bool",
+    default = false
+  }
+}
+

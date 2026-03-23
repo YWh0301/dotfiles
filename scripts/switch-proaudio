@@ -1,0 +1,308 @@
+#!/bin/bash
+# WirePlumber Pro Audio 控制工具
+#
+# 这个工具用于控制 proaudio_sink 的专业音频链接
+# 支持一键重联、状态查看等功能
+
+set -e
+
+# 颜色定义
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# 帮助信息
+show_help() {
+    cat << EOF
+WirePlumber Pro Audio 控制工具
+
+用法: $0 [命令]
+
+命令:
+  reconnect    一键重联（断开所有链接后重新连接）
+  disconnect   断开所有 proaudio 链接
+  status       查看当前链接状态
+  enable       启用自动连接
+  disable      禁用自动连接
+  connect <设备模式>  手动连接到匹配模式的设备
+  help         显示此帮助信息
+
+示例:
+  $0 reconnect    # 一键重联所有链接
+  $0 status       # 查看当前状态
+  $0 disconnect   # 断开所有链接
+  $0 connect "alsa_output.*.analog-stereo"
+
+设备模式可以使用通配符，如：
+  alsa_output.*.analog-stereo
+  alsa_output.usb-*
+  bluez_output.*
+  alsa_output.*.hdmi-*
+EOF
+}
+
+# 检查 WirePlumber 是否运行
+check_wireplumber() {
+    if ! systemctl --user is-active --quiet wireplumber; then
+        echo -e "${RED}错误: WirePlumber 服务未运行${NC}"
+        echo "请运行: systemctl --user start wireplumber"
+        exit 1
+    fi
+}
+
+# 检查 proaudio 脚本是否加载
+check_script_loaded() {
+    if ! wpctl status 2>/dev/null | grep -q "proaudio"; then
+        echo -e "${YELLOW}警告: proaudio 脚本可能未加载${NC}"
+        echo "请确保已正确安装配置并重启 WirePlumber"
+        echo "运行: systemctl --user restart wireplumber"
+    fi
+}
+
+# 使用 wpctl 执行 Lua 代码
+wpctl_lua() {
+    local lua_code="$1"
+    wpctl eval "$lua_code" 2>/dev/null || echo "{}"
+}
+
+# 一键重联
+reconnect_all() {
+    check_wireplumber
+    check_script_loaded
+    
+    echo -e "${BLUE}执行一键重联...${NC}"
+    echo "效果类似于在 qpwgraph 中手动断开后重新连接所有硬件链接"
+    
+    local result
+    result=$(wpctl_lua 'if proaudio then 
+        local ok, msg = proaudio.reconnect_all()
+        if ok then
+            print("success:" .. msg)
+        else
+            print("error:" .. msg)
+        end
+    end')
+    
+    if [[ "$result" == success:* ]]; then
+        echo -e "${GREEN}✓ ${result#success:}${NC}"
+        
+        # 显示新状态
+        sleep 1
+        show_status
+    else
+        echo -e "${RED}✗ 重联失败: ${result#error:}${NC}"
+        exit 1
+    fi
+}
+
+# 断开所有链接
+disconnect_all() {
+    check_wireplumber
+    check_script_loaded
+    
+    echo -e "${BLUE}断开所有 proaudio 链接...${NC}"
+    
+    local result
+    result=$(wpctl_lua 'if proaudio then 
+        local ok, msg = proaudio.disconnect_all()
+        if ok then
+            print("success:" .. msg)
+        else
+            print("error:" .. msg)
+        end
+    end')
+    
+    if [[ "$result" == success:* ]]; then
+        echo -e "${GREEN}✓ ${result#success:}${NC}"
+    else
+        echo -e "${RED}✗ 断开失败: ${result#error:}${NC}"
+        exit 1
+    fi
+}
+
+# 显示状态
+show_status() {
+    check_wireplumber
+    check_script_loaded
+    
+    echo -e "${BLUE}=== Pro Audio 链接状态 ===${NC}"
+    
+    local result
+    result=$(wpctl_lua 'if proaudio then 
+        local status, err = proaudio.get_status()
+        if err then print("error:" .. err) return end
+        print(require("json").encode(status))
+    end')
+    
+    if echo "$result" | grep -q "^{"; then
+        echo "$result" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    print(f'总链接数: {data.get(\"total_links\", 0)}')
+    print()
+    
+    monitors = data.get('monitors', [])
+    if monitors:
+        print('通道状态:')
+        for i, mon in enumerate(monitors, 1):
+            status = '已连接' if mon.get('connected') else '未连接'
+            color = GREEN if mon.get('connected') else RED
+            print(f'  {i}. {mon.get(\"name\", \"unknown\")}')
+            print(f'     通道: {mon.get(\"channel\", \"unknown\")}')
+            print(f'     状态: {color}{status}{NC}')
+            if mon.get('connected'):
+                print(f'     目标设备: {mon.get(\"target\", \"unknown\")}')
+            print()
+    else:
+        print('未找到 proaudio_sink monitor')
+        
+except Exception as e:
+    print(f'解析错误: {e}')
+    print('原始输出:', data)
+" 2>/dev/null || echo "$result"
+    else
+        if [[ "$result" == error:* ]]; then
+            echo -e "${RED}获取状态失败: ${result#error:}${NC}"
+        else
+            echo -e "${YELLOW}无法获取状态信息${NC}"
+        fi
+    fi
+    
+    echo
+    echo -e "${BLUE}=== 检查 proaudio_sink ===${NC}"
+    if pw-cli list-objects 2>/dev/null | grep -q "proaudio_sink"; then
+        echo -e "${GREEN}✓ proaudio_sink 存在${NC}"
+        pw-cli list-objects | grep -A2 "proaudio_sink" | head -5
+    else
+        echo -e "${RED}✗ proaudio_sink 不存在${NC}"
+        echo "请确保 PipeWire 配置正确"
+    fi
+}
+
+# 启用自动连接
+enable_auto() {
+    check_wireplumber
+    check_script_loaded
+    
+    echo -e "${BLUE}启用 proaudio 自动连接...${NC}"
+    
+    local result
+    result=$(wpctl_lua 'if proaudio then 
+        local ok = proaudio.enable()
+        if ok then
+            print("enabled")
+        else
+            print("error")
+        end
+    end')
+    
+    if [[ "$result" == "enabled" ]]; then
+        echo -e "${GREEN}✓ 自动连接已启用${NC}"
+    else
+        echo -e "${RED}✗ 启用自动连接失败${NC}"
+    fi
+}
+
+# 禁用自动连接
+disable_auto() {
+    check_wireplumber
+    check_script_loaded
+    
+    echo -e "${BLUE}禁用 proaudio 自动连接...${NC}"
+    
+    local result
+    result=$(wpctl_lua 'if proaudio then 
+        local ok = proaudio.disable()
+        if ok then
+            print("disabled")
+        else
+            print("error")
+        end
+    end')
+    
+    if [[ "$result" == "disabled" ]]; then
+        echo -e "${YELLOW}✓ 自动连接已禁用${NC}"
+    else
+        echo -e "${RED}✗ 禁用自动连接失败${NC}"
+    fi
+}
+
+# 手动连接设备
+connect_device() {
+    local pattern="$1"
+    
+    if [[ -z "$pattern" ]]; then
+        echo -e "${RED}错误: 请指定设备模式${NC}"
+        echo "示例: $0 connect \"alsa_output.*.analog-stereo\""
+        exit 1
+    fi
+    
+    check_wireplumber
+    check_script_loaded
+    
+    echo -e "${BLUE}连接到设备模式: $pattern${NC}"
+    
+    local result
+    result=$(wpctl_lua "if proaudio then 
+        local ok, msg = proaudio.connect_device('$pattern')
+        if ok then
+            print('success:' .. msg)
+        else
+            print('error:' .. msg)
+        end
+    end")
+    
+    if [[ "$result" == success:* ]]; then
+        echo -e "${GREEN}✓ ${result#success:}${NC}"
+        sleep 0.5
+        show_status
+    else
+        echo -e "${RED}✗ 连接失败: ${result#error:}${NC}"
+        exit 1
+    fi
+}
+
+# 主函数
+main() {
+    local command="$1"
+    
+    case "$command" in
+        reconnect|refresh)
+            reconnect_all
+            ;;
+        disconnect)
+            disconnect_all
+            ;;
+        status)
+            show_status
+            ;;
+        enable)
+            enable_auto
+            ;;
+        disable)
+            disable_auto
+            ;;
+        connect)
+            connect_device "$2"
+            ;;
+        help|--help|-h)
+            show_help
+            ;;
+        *)
+            if [[ -z "$command" ]]; then
+                show_status
+            else
+                echo -e "${RED}未知命令: $command${NC}"
+                echo
+                show_help
+                exit 1
+            fi
+            ;;
+    esac
+}
+
+# 运行主函数
+main "$@"
