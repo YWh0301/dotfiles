@@ -149,8 +149,8 @@ dns {
         # Match rules from top to bottom.
         request {
             # Lookup China mainland domains using alidns, otherwise googledns.
-            qname(geosite:cn) -> alidns
             qname(suffix:pku.edu.cn) -> asis
+            qname(geosite:cn) -> alidns
             # fallback is also called default.
             fallback: googledns
         }
