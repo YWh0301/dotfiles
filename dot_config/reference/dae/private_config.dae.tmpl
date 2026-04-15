@@ -194,6 +194,7 @@ routing {
     # Network managers in localhost should be direct to avoid false negative network connectivity check when binding to
     # WAN.
     pname(NetworkManager) -> direct
+    pname(baidunetdisk) -> direct
     pname(pcloud) -> direct
     #pname(pcloud) -> {{ $configData.proxy.name }}_us
     pname(spotify) -> direct
@@ -216,6 +217,8 @@ routing {
     domain(suffix:pku.edu.cn) -> direct
     domain(suffix:chatanywhere.tech) -> direct
     domain(suffix:ollama.com) -> direct
+    domain(suffix:baidu.com) -> direct
+    domain(suffix:rateyourmusic.com) -> {{ $configData.proxy.name }}_hongkong
     domain(suffix:pcloud.com) -> direct
     #domain(suffix:pcloud.com) -> {{ $configData.proxy.name }}_us
     domain(suffix:spotify.com) -> direct
