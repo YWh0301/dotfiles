@@ -403,6 +403,8 @@
 - **musescore**
 - **polyphone**
 - **qtractor**
+- **mixxx**
+    - FOSS digital software for djing
 
 ### Android Utilities
 
