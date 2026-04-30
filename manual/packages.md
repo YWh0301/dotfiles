@@ -405,6 +405,10 @@
 - **qtractor**
 - **mixxx**
     - FOSS digital software for djing
+- **beets**
+    - CLI FOSS music management and tagging software
+- **quodlibet**
+    - music management software and music player
 
 ### Android Utilities
 
