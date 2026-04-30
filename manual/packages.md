@@ -278,10 +278,7 @@
     - **ripgrep**
     - **ffmpegthumbnailer**
     - **zoxide**
-1. 使用图形化pCloud客户端
     - **pcloud-drive**(AUR)
-2. 使用命令行pCloud客户端
-    - **pcloudcc-lneely**(AUR)
 
 ### Input Method
 
@@ -331,6 +328,7 @@
 - **firefox**
     - **vdhcoapp**(archlinuxcn)
 - **aichat**
+- **qbittorrent**
 
 ## Additional Packages
 
