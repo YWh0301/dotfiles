@@ -2,10 +2,10 @@
 {{- $configData := $encryptedFile | include | decrypt | fromToml -}}
 
 # ---- llm ----
-model: moonshot:kimi-k2-turbo-preview
+model: deepseek:deepseek-v4-flash
+#model: moonshot:kimi-k2-turbo-preview
 #model: moonshot:kimi-k2-0905-preview
 #model: moonshot:kimi-k2-thinking
-#model: deepseek:deepseek-chat
 #model: minimax:minimax-m2
 #model:aliyun:qwen3-max
 #model: chatanywhere:gpt-5-mini
@@ -46,16 +46,18 @@ clients:
     api_base: https://api.deepseek.com
     api_key: {{ $configData.api_keys.deepseek }}
     models:
-      - name: deepseek-chat
-        max_input_tokens: 128000
-        input_price: 2
-        output_price: 3
+      - name: deepseek-v4-flash
+        max_input_tokens: 1000000
+        max_output_tokens: 384000
+        input_price: 1
+        output_price: 2
         supports_function_calling: true
-      - name: deepseek-reasoner
-        max_input_tokens: 128000
-        input_price: 2
-        output_price: 3
-        supports_function_calling: false
+      - name: deepseek-v4-pro
+        max_input_tokens: 1000000
+        max_output_tokens: 384000
+        input_price: 12
+        output_price: 24
+        supports_function_calling: true
 
   - type: openai-compatible
     name: minimax
