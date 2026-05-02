@@ -114,7 +114,9 @@ global {
 # Support to give the subscription a tag, and filter nodes from a given subscription in the group section.
 subscription {
     # Add your subscription links here.
-    {{ $configData.proxy.name }}:'{{ $configData.proxy.url }}'
+    {{ range $configData.proxy }}
+    {{ .name }}:'{{ .url }}'
+    {{ end }}
 }
 
 # Nodes defined here will be merged as a part of the global node pool.
@@ -177,14 +179,16 @@ dns {
 
 # Node group (outbound).
 group {
-    {{ $configData.proxy.name }}_hongkong {
-        filter: subtag({{ $configData.proxy.name }}) && name(keyword: '香港')
+    {{ range $configData.proxy }}
+    {{ .name }}_hongkong {
+        filter: subtag({{ .name }}) && name(keyword: '香港') && !name(keyword: '直连')
         policy: min_moving_avg
     }
-    {{ $configData.proxy.name }}_us {
-        filter: subtag({{ $configData.proxy.name }}) && name(keyword: '美国')
+    {{ .name }}_us {
+        filter: subtag({{ .name }}) && name(keyword: '美国') && !name(keyword: '直连')
         policy: min_moving_avg
     }
+    {{ end }}
 }
 
 # See https://github.com/daeuniverse/dae/blob/main/docs/en/configuration/routing.md for full examples.
@@ -197,7 +201,7 @@ routing {
     pname(baidunetdisk) -> direct
     pname(qbittorrent) -> direct
     pname(pcloud) -> direct
-    #pname(pcloud) -> {{ $configData.proxy.name }}_us
+    #pname(pcloud) -> {{ $configData.default_proxy }}_us
     pname(spotify) -> direct
 
     # Put it in the front to prevent broadcast, multicast and other packets that should be sent to the LAN from being
@@ -219,11 +223,11 @@ routing {
     domain(suffix:chatanywhere.tech) -> direct
     domain(suffix:ollama.com) -> direct
     domain(suffix:baidu.com) -> direct
-    domain(suffix:rateyourmusic.com) -> {{ $configData.proxy.name }}_hongkong
+    domain(suffix:rateyourmusic.com) -> {{ $configData.default_proxy }}_hongkong
     domain(suffix:pcloud.com) -> direct
-    #domain(suffix:pcloud.com) -> {{ $configData.proxy.name }}_us
+    #domain(suffix:pcloud.com) -> {{ $configData.default_proxy }}_us
     domain(suffix:spotify.com) -> direct
     
-    #fallback: {{ $configData.proxy.name }}_hongkong
-    fallback: {{ $configData.proxy.name }}_us
+    #fallback: {{ $configData.default_proxy }}_hongkong
+    fallback: {{ $configData.default_proxy }}_us
 }
