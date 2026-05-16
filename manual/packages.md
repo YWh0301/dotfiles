@@ -278,7 +278,8 @@
     - **ripgrep**
     - **ffmpegthumbnailer**
     - **zoxide**
-    - **pcloud-drive**(AUR)
+    - **resvg**
+- **pcloud-drive**(AUR)
 
 ### Input Method
 
