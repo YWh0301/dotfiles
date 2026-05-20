@@ -54,7 +54,7 @@ exec-once = pcloudcc -m $HOME/.misc/pCloudDrive -u {{ .email.default }} -d
 exec-once = env HOME="$HOME/.misc/pCloudDrive" pcloud #pcloud would mount on a folder in home directory which is ugly so i change the home and created sim links in the folder to trick pcloud. remeber to also modify the exec in desktop entry of pcloud. furthermore pcloud only take absolute path so ~/ wont work.after this just set sync folder in the app then u can use it without any trouble.
 {{- end }}
 {{- if ne .hostname "homeDesktop" }}
-exec-once = echo "Xft.dpi:192" | xrdb -merge
+# exec-once = echo "Xft.dpi:192" | xrdb -merge
 {{- end }}
 exec-once = /usr/bin/bash $HOME/.config/hypr/scripts/hyprland_ipc_hook.sh
 exec-once = /usr/bin/bash $HOME/.config/hypr/scripts/load_plugins.sh
