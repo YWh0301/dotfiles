@@ -399,7 +399,6 @@
 - **infamousplugins**
 - **drumgizmo**
 - **setbfree**
-- **musescore**
 - **polyphone**
 - **qtractor**
 - **mixxx**
@@ -408,6 +407,13 @@
     - CLI FOSS music management and tagging software
 - **quodlibet**
     - music management software and music player
+- **musescore**
+    - FOSS music sheet editor
+    - **musescore-bin**(AUR)
+    - If musescore encounter Qt bugs, use Appimage version (musescore-bin in AUR)
+- **lilypond**
+    - GNU music sheet describing language with music xml converting function
+    - **frescobaldi**
 
 ### Android Utilities
 
