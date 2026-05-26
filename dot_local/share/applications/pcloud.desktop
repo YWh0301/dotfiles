@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=pCloud
 Comment=pCloud Drive Client built using electron and node.js. Distributed with AppImage.
-Exec=env HOME="/home/pingzi/.misc/pCloudDrive" env DESKTOPINTEGRATION=false /usr/bin/pcloud
+Exec=env HOME="{{ .chezmoi.homeDir }}/.misc/pCloudDrive" env DESKTOPINTEGRATION=false /usr/bin/pcloud
 Terminal=false
 Type=Application
 Icon=pcloud
