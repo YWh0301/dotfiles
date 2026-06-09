@@ -152,6 +152,7 @@ dns {
         request {
             # Lookup China mainland domains using alidns, otherwise googledns.
             qname(suffix:pku.edu.cn) -> asis
+            qname(suffix:github.com) -> alidns
             qname(geosite:cn) -> alidns
             # fallback is also called default.
             fallback: googledns
@@ -199,7 +200,7 @@ routing {
     # WAN.
     pname(NetworkManager) -> direct
     pname(baidunetdisk) -> direct
-    pname(git) -> direct
+    #pname(git) -> direct
     pname(qbittorrent) -> direct
     pname(pcloud) -> direct
     #pname(pcloud) -> {{ $configData.default_proxy }}_us
@@ -228,6 +229,7 @@ routing {
     domain(suffix:pcloud.com) -> direct
     #domain(suffix:pcloud.com) -> {{ $configData.default_proxy }}_us
     domain(suffix:spotify.com) -> direct
+    domain(suffix:github.com) -> direct
     
     #fallback: {{ $configData.default_proxy }}_hongkong
     fallback: {{ $configData.default_proxy }}_us
