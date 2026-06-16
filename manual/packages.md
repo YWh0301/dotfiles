@@ -329,6 +329,8 @@
 - **firefox**
     - **vdhcoapp**(archlinuxcn)
 - **aichat**
+- **pi-coding-agent**(AUR)
+    - **pi-ext-web-access**(AUR)
 - **qbittorrent**
 
 ## Additional Packages
