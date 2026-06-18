@@ -16,3 +16,20 @@ font_size 16
 {{ else -}}
 font_size 12
 {{- end }}
+
+# ── Win+Ctrl → tmux C-t prefix (绕过 Super 修饰键和 IME 限制) ──
+map super+ctrl+h send_text all \x14h
+map super+ctrl+j send_text all \x14j
+map super+ctrl+k send_text all \x14k
+map super+ctrl+l send_text all \x14l
+map super+ctrl+shift+h send_text all \x14H
+map super+ctrl+shift+j send_text all \x14J
+map super+ctrl+shift+k send_text all \x14K
+map super+ctrl+shift+l send_text all \x14L
+map super+ctrl+v send_text all \x14v
+map super+ctrl+s send_text all \x14s
+map super+ctrl+x send_text all \x14x
+map super+ctrl+n send_text all \x14n
+map super+ctrl+d send_text all \x14d
+map super+ctrl+w send_text all \x14w
+map super+ctrl+r send_text all \x14r
