@@ -1,8 +1,8 @@
 {
   "lastChangelogVersion": "0.79.5",
   "theme": "dark",
-  "defaultProvider": "deepseek",
-  "defaultModel": "deepseek-v4-flash",
+  "defaultProvider": "opencode-go",
+  "defaultModel": "opencode-go/deepseek-v4-pro",
   "defaultThinkingLevel": "xhigh",
   "extensions": [
     "/usr/share/pi/extensions"
