@@ -1,0 +1,33 @@
+# Maintainer: pingzi <pingzi@archlinux>
+pkgname=pi-ext-agent-browser-native
+pkgver=0.2.53
+pkgrel=1
+pkgdesc='Native agent_browser tool for Pi — drive Chromium from your agent: navigate, click, fill, screenshot, snapshot'
+arch=('any')
+url='https://github.com/fitchmultz/pi-agent-browser-native'
+license=('MIT')
+makedepends=('npm')
+depends=('agent-browser' 'chromium')
+optdepends=(
+  'pi-coding-agent: Pi coding agent itself'
+  'pi-coding-agent-git: Pi coding agent development version'
+)
+source=(
+  "${pkgname}-${pkgver}.tgz::https://registry.npmjs.org/pi-agent-browser-native/-/pi-agent-browser-native-${pkgver}.tgz"
+)
+sha256sums=('b25fc912290958800051b4081150dc531d2ac8f4e518eb760a70c39c4b079c23')
+install=pi-ext.install
+options=('!strip' '!debug')
+
+build() {
+  cd "${srcdir}/package"
+  rm -rf node_modules 2>/dev/null || true
+}
+
+package() {
+  install -d "${pkgdir}/usr/share/pi/extensions/pi-agent-browser-native"
+  cp -a "${srcdir}/package/." "${pkgdir}/usr/share/pi/extensions/pi-agent-browser-native/"
+  rm -rf "${pkgdir}/usr/share/pi/extensions/pi-agent-browser-native/test"          "${pkgdir}/usr/share/pi/extensions/pi-agent-browser-native/tests"
+
+  install -Dm644 "${srcdir}/package/LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

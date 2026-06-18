@@ -1,0 +1,19 @@
+post_install() {
+  cat <<EOF
+==> pi-agent-browser-native 已安装。
+
+==> 使用前需先：
+      1. 确认 agent-browser 已安装（yay -S agent-browser-bin）
+      2. 确认 chromium 已安装（sudo pacman -S chromium）
+      3. 如需阻止 agent-browser 下载自己的 Chrome，设环境变量：
+         export BROWSER_EXECUTABLE_PATH=/usr/bin/chromium
+
+==> 如需 pi 自动发现系统扩展，请确保 ~/.pi/agent/settings.json 中包含：
+      { "extensions": ["/usr/share/pi/extensions"] }
+
+EOF
+}
+
+post_upgrade() {
+  post_install
+}

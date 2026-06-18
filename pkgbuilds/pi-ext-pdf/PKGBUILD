@@ -1,0 +1,35 @@
+# Maintainer: pingzi <pingzi@archlinux>
+pkgname=pi-ext-pdf
+pkgver=1.0.1
+pkgrel=1
+pkgdesc='PDF manipulation and processing toolkit for Pi coding agent — extract text/tables, merge/split, fill forms, OCR, watermark'
+arch=('any')
+url='https://github.com/joemccann/pi-pdf'
+license=('MIT')
+depends=(
+  'python-pypdf'
+  'python-pdfplumber'
+  'python-reportlab'
+)
+source=(
+  "${pkgname}-${pkgver}.tgz::https://registry.npmjs.org/@joemccann/pi-pdf/-/pi-pdf-${pkgver}.tgz"
+)
+sha256sums=('445909c6893b04338b9f54d8cd1980759db0b8f329c874fb982eab7dc42b7cfd')
+install=pi-ext.install
+options=('!strip' '!debug')
+optdepends=(
+  'pi-coding-agent: Pi coding agent itself'
+  'pi-coding-agent-git: Pi coding agent development version'
+  'python-pdf2image: PDF page to image conversion (pdf_to_images tool)'
+  'python-pytesseract: OCR for scanned PDFs'
+  'python-pypdfium2: alternative PDF rendering engine'
+  'poppler: pdfimages tool for extracting embedded images from PDFs'
+)
+
+package() {
+  install -d "${pkgdir}/usr/share/pi/extensions/pi-pdf"
+  cp -a "${srcdir}/package/." "${pkgdir}/usr/share/pi/extensions/pi-pdf/"
+  rm -rf "${pkgdir}/usr/share/pi/extensions/pi-pdf/tests"
+
+  install -Dm644 "${srcdir}/package/LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

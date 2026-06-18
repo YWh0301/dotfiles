@@ -1,0 +1,22 @@
+pkgbase = pi-ext-pdf
+	pkgdesc = PDF manipulation and processing toolkit for Pi coding agent — extract text/tables, merge/split, fill forms, OCR, watermark
+	pkgver = 1.0.1
+	pkgrel = 1
+	url = https://github.com/joemccann/pi-pdf
+	install = pi-ext.install
+	arch = any
+	license = MIT
+	makedepends = npm
+	depends = python-pypdf
+	depends = python-reportlab
+	optdepends = pi-coding-agent: Pi coding agent itself
+	optdepends = pi-coding-agent-git: Pi coding agent development version
+	optdepends = python-pdfplumber: text/table extraction with layout preservation (AUR, needs pypdfium2)
+	optdepends = python-pdf2image: PDF page to image conversion (pdf_to_images tool)
+	optdepends = python-pytesseract: OCR for scanned PDFs
+	optdepends = python-pypdfium2: alternative PDF rendering engine
+	optdepends = poppler: pdfimages tool for extracting embedded images from PDFs
+	source = pi-ext-pdf-1.0.1.tgz::https://registry.npmjs.org/@joemccann/pi-pdf/-/pi-pdf-1.0.1.tgz
+	sha256sums = 445909c6893b04338b9f54d8cd1980759db0b8f329c874fb982eab7dc42b7cfd
+
+pkgname = pi-ext-pdf

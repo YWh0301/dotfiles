@@ -1,0 +1,19 @@
+pkgbase = pi-ext-ocr
+	pkgdesc = Multi-backend OCR for Pi coding agent — MinerU (free cloud), Ollama (local GPU), Tesseract, Pix2Text
+	pkgver = 1.4.0
+	pkgrel = 1
+	url = https://github.com/astronautJack/pi-ocr
+	install = pi-ext.install
+	arch = any
+	license = MIT
+	makedepends = npm
+	optdepends = pi-coding-agent: Pi coding agent itself
+	optdepends = pi-coding-agent-git: Pi coding agent development version
+	optdepends = ollama: local GPU OCR backend (glm-ocr model)
+	optdepends = tesseract: classic OCR engine
+	optdepends = python-pix2text: local Python OCR with formula recognition
+	optdepends = poppler: pdftoppm for multi-page PDF support in Ollama backend
+	source = pi-ext-ocr-1.4.0.tgz::https://registry.npmjs.org/pi-ocr/-/pi-ocr-1.4.0.tgz
+	sha256sums = de5d68bf02f22989e33e8d7b3074b740fb670f152a4cef79f40b35e8c52e5ae1
+
+pkgname = pi-ext-ocr

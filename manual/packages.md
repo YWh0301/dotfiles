@@ -331,6 +331,13 @@
 - **aichat**
 - **pi-coding-agent**(AUR)
     - **pi-ext-web-access**(AUR)
+    - **pi-ext-multimodal-proxy**(myPKGBUILDS)
+    - **pi-ext-ocr**(myPKGBUILDS)
+    - **pi-ext-pdf**(myPKGBUILDS)
+        - **python-pdfplumber**(AUR)
+        - **python-pypdfium2**(AUR)
+    - **pi-ext-agent-browser-native**(myPKGBUILDS)
+        - **agent-browser-bin**(AUR)
 - **qbittorrent**
 
 ## Additional Packages

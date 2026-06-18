@@ -1,0 +1,15 @@
+pkgbase = pi-ext-multimodal-proxy
+	pkgdesc = Automatic image, video and audio description for any model in Pi
+	pkgver = 1.6.0
+	pkgrel = 1
+	url = https://github.com/pungggi/pi-vision-proxy
+	install = pi-ext.install
+	arch = any
+	license = MIT
+	makedepends = npm
+	optdepends = pi-coding-agent: Pi coding agent itself
+	optdepends = pi-coding-agent-git: Pi coding agent development version
+	source = pi-ext-multimodal-proxy-1.6.0.tgz::https://registry.npmjs.org/pi-multimodal-proxy/-/pi-multimodal-proxy-1.6.0.tgz
+	sha256sums = 95dac50051c107f590c0be8807441d32b5be9b46be7234af67f9ced6f8d82dea
+
+pkgname = pi-ext-multimodal-proxy

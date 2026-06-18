@@ -1,0 +1,38 @@
+# Maintainer: pingzi <pingzi@archlinux>
+pkgname=pi-ext-multimodal-proxy
+pkgver=1.6.0
+pkgrel=2
+pkgdesc='Automatic image, video and audio description for any model in Pi'
+arch=('any')
+url='https://github.com/pungggi/pi-vision-proxy'
+license=('MIT')
+makedepends=('npm')
+optdepends=(
+  'pi-coding-agent: Pi coding agent itself'
+  'pi-coding-agent-git: Pi coding agent development version'
+)
+source=(
+  "https://registry.npmjs.org/pi-multimodal-proxy/-/pi-multimodal-proxy-${pkgver}.tgz"
+  hasConsent.patch
+)
+sha256sums=('95dac50051c107f590c0be8807441d32b5be9b46be7234af67f9ced6f8d82dea'
+            '81c200742db12b1e3a28e3e90db6d0424ad791958a0889075fd47c5f6b566101')
+install=pi-ext.install
+options=('!strip' '!debug')
+
+build() {
+  cd "${srcdir}/package"
+  npm install --omit=dev --omit=peer --no-audit --no-fund
+  rm -rf node_modules/.package-lock.json
+  # Patch: add missing CUSTOM_TYPE_TOOL_CALL import (upstream bug)
+  # Only match the import line (whitespace + name + comma at line start), not code calls
+  sed -i '/^[[:space:]]*CUSTOM_TYPE_DESCRIPTION,[[:space:]]*$/a\  CUSTOM_TYPE_TOOL_CALL,' extensions/vision-proxy.ts
+  # Patch: persistent consent from ~/.pi/agent/multimodal-proxy.json
+  patch -p1 -i "${srcdir}/hasConsent.patch"
+}
+
+package() {
+  install -d "${pkgdir}/usr/share/pi/extensions/multimodal-proxy"
+  cp -a "${srcdir}/package/." "${pkgdir}/usr/share/pi/extensions/multimodal-proxy/"
+  rm -rf "${pkgdir}/usr/share/pi/extensions/multimodal-proxy/test"
+}
