@@ -1,4 +1,6 @@
 [Default Applications]
+text/html=firefox.desktop;
+text/plain=firefox.desktop;
 image/vnd.djvu=org.pwmt.zathura-djvu.desktop;
 image/vnd.djvu+multipage=org.pwmt.zathura-djvu.desktop;
 image/avif=imv-dir.desktop;
