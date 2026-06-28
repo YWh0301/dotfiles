@@ -58,6 +58,7 @@ exec-once = env HOME="$HOME/.misc/pCloudDrive" pcloud #pcloud would mount on a f
 {{- end }}
 exec-once = /usr/bin/bash $HOME/.config/hypr/scripts/hyprland_ipc_hook.sh
 exec-once = /usr/bin/bash $HOME/.config/hypr/scripts/load_plugins.sh
+exec-once = flclash
 
 #############################
 ### ENVIRONMENT VARIABLES ###
@@ -494,6 +495,7 @@ bindm = $mainMod, mouse:273, resizewindow
 windowrule = suppress_event maximize, match:class .* # You'll probably like this.
 windowrule = opacity 0.9 override 0.85,match:class ^(kitty)$
 windowrule = workspace 10 silent,match:class ^(?i)pcloud$
+windowrule = workspace 10 silent,match:class ^(?i)com.follow.clash$
 windowrule = fullscreen on,match:class ^(mpv)$
 windowrule = workspace 10 silent,match:class ^(kitty)$,match:title ^(~/pCloudDrive)$
 windowrule = float on,match:class ^(blueman-manager)$,match:title ^(Bluetooth Devices)$
