@@ -125,57 +125,22 @@ node {
 
 # See https://github.com/daeuniverse/dae/blob/main/docs/en/configuration/dns.md for full examples.
 dns {
-    # For example, if ipversion_prefer is 4 and the domain name has both type A and type AAAA records, the dae will only
-    # respond to type A queries and response empty answer to type AAAA queries.
-    #ipversion_prefer: 4
-
-    # Give a fixed ttl for domains. Zero means that dae will request to upstream every time and not cache DNS results
-    # for these domains.
-    #fixed_domain_ttl {
-    #    ddns.example.org: 10
-    #    test.example.org: 3600
-    #}
-
-    upstream {
-        # Value can be scheme://host:port, where the scheme can be tcp/udp/tcp+udp.
-        # If host is a domain and has both IPv4 and IPv6 record, dae will automatically choose
-        # IPv4 or IPv6 to use according to group policy (such as min latency policy).
-        # Please make sure DNS traffic will go through and be forwarded by dae, which is REQUIRED for domain routing.
-        # If dial_mode is "ip", the upstream DNS answer SHOULD NOT be polluted, so domestic public DNS is not recommended.
-
-        alidns: 'udp://dns.alidns.com:53'
-        googledns: 'tcp+udp://dns.google.com:53'
+  upstream {
+    googledns: 'tcp+udp://dns.google:53'
+    alidns: 'udp://dns.alidns.com:53'
+  }
+  routing {
+    request {
+      qtype(https) -> reject
+      qname(suffix:pku.edu.cn) -> asis
+      fallback: alidns
     }
-    routing {
-        # According to the request of dns query, decide to use which DNS upstream.
-        # Match rules from top to bottom.
-        request {
-            # Lookup China mainland domains using alidns, otherwise googledns.
-            qname(suffix:pku.edu.cn) -> asis
-            qname(suffix:github.com) -> alidns
-            qname(geosite:cn) -> alidns
-            # fallback is also called default.
-            fallback: googledns
-        }
+    response {
+      upstream(googledns) -> accept
+      ip(geoip:private) && !qname(geosite:cn) -> googledns
+      fallback: accept
     }
-#    routing {
-#        # According to the request of dns query, decide to use which DNS upstream.
-#        # Match rules from top to bottom.
-#        request {
-#            # fallback is also called default.
-#            fallback: alidns
-#        }
-#        # According to the response of dns query, decide to accept or re-lookup using another DNS upstream.
-#        # Match rules from top to bottom.
-#        response {
-#            # Trusted upstream. Always accept its result.
-#            upstream(googledns) -> accept
-#            # Possibly polluted, re-lookup using googledns.
-#            ip(geoip:private) && !qname(geosite:cn) -> googledns
-#            # fallback is also called default.
-#            fallback: accept
-#        }
-#    }
+  }
 }
 
 # Node group (outbound).
@@ -183,11 +148,11 @@ group {
     {{ range $configData.proxy }}
     {{ .name }}_hongkong {
         filter: subtag({{ .name }}) && name(keyword: '香港') && !name(keyword: '直连')
-        policy: min_moving_avg
+        policy: random
     }
     {{ .name }}_us {
         filter: subtag({{ .name }}) && name(keyword: '美国') && !name(keyword: '直连')
-        policy: min_moving_avg
+        policy: random
     }
     {{ end }}
 }
