@@ -179,7 +179,9 @@
     - 暂无
 - **openssh**
 - **bind**
-- **dae**(archlinuxcn)
+- **dae-git**(archlinuxcn)
+- **flclash**
+- **tailscale**
 
 #### Bluetooth
 

@@ -1,0 +1,14 @@
+{{- $encryptedFile := joinPath .chezmoi.sourceDir "dot_ssh" "encrypted_ssh.chezmoidata.toml.age" -}}
+{{- $sshData := $encryptedFile | include | decrypt | fromToml -}}
+{{- range $sshData.host -}}
+Host {{ .name }}
+    HostName {{ .hostname }}
+    User {{ .user }}
+    Port {{ .port }}
+    IdentityFile {{ .identity_file }}
+
+{{ end -}}
+Host github.com
+    Hostname ssh.github.com
+    Port 443
+    ProxyCommand socat - PROXY:127.0.0.1:%h:%p,proxyport=7890
