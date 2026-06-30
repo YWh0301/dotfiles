@@ -5,6 +5,10 @@ include current-theme.conf
 
 confirm_os_window_close 0
 
+# 允许远程控制，让 kitty @ launch 能工作（yt 脚本需要）
+allow_remote_control socket-only
+listen_on unix:/run/user/1000/kitty.sock
+
 font_family JetBrainsMonoNL Nerd Font
 {{ if eq .hostname "homeDesktop" -}}
 font_size 14
