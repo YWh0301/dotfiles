@@ -2,8 +2,7 @@
 # Gruvbox Dark
 include current-theme.conf
 # END_KITTY_THEME
-#
-# no waring when closing window
+
 confirm_os_window_close 0
 
 font_family JetBrainsMonoNL Nerd Font
@@ -17,19 +16,62 @@ font_size 16
 font_size 12
 {{- end }}
 
-# ── Win+Ctrl → tmux C-t prefix (绕过 Super 修饰键和 IME 限制) ──
+# Kitty 不支持行内 # 注释，所有注释必须独占一行或写行首
+
+# Shift+Enter 修复
+map shift+enter send_text all \x1b[13;2u
+
+# tmux 窗格导航
 map super+ctrl+h send_text all \x14h
 map super+ctrl+j send_text all \x14j
 map super+ctrl+k send_text all \x14k
 map super+ctrl+l send_text all \x14l
+
+# tmux 调整大小
 map super+ctrl+shift+h send_text all \x14H
 map super+ctrl+shift+j send_text all \x14J
 map super+ctrl+shift+k send_text all \x14K
 map super+ctrl+shift+l send_text all \x14L
+
+# tmux 分屏 / Session
 map super+ctrl+v send_text all \x14v
+map super+ctrl+b send_text all \x14b
 map super+ctrl+s send_text all \x14s
-map super+ctrl+x send_text all \x14x
+
+# tmux 窗格操作
+map super+ctrl+z send_text all \x14z
+map super+ctrl+o send_text all \x14o
+
+# tmux Session
+map super+ctrl+shift+a send_text all \x14A
+map super+ctrl+shift+n send_text all \x14N
+map super+ctrl+shift+m send_text all \x14M
+
+# tmux 窗口
+map super+ctrl+a send_text all \x14a
 map super+ctrl+n send_text all \x14n
-map super+ctrl+d send_text all \x14d
+map super+ctrl+m send_text all \x14m
 map super+ctrl+w send_text all \x14w
+map super+ctrl+comma send_text all \x14,
+map super+ctrl+period send_text all \x14.
+
+# tmux 复制粘贴
+map super+ctrl+y send_text all \x14y
+map super+ctrl+bracketleft send_text all \x14[
+map super+ctrl+bracketright send_text all \x14]
+
+# tmux 关闭 / 分离
+map super+ctrl+escape send_text all \x14\x1b
+map super+ctrl+d send_text all \x14d
+map super+ctrl+shift+d send_text all \x14D
+map super+ctrl+x send_text all \x14x
+map super+ctrl+backspace send_text all \x14\x7f
+
+# tmux 其他
+map super+ctrl+f send_text all \x14f
+map super+ctrl+p send_text all \x14p
 map super+ctrl+r send_text all \x14r
+map super+ctrl+t send_text all \x14t
+
+# Kitty 剪贴板集成
+clipboard_control write-clipboard write-primary no-append

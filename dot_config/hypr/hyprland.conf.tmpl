@@ -247,6 +247,10 @@ cursor {
 # See https://wiki.hyprland.org/Configuring/Keywords/
 $mainMod = SUPER # Sets "Windows" :ey as main modifier
 
+binds {
+    movefocus_cycles_fullscreen = 1
+}
+
 # Example binds, see https://wiki.hyprland.org/Configuring/Binds/ for more
 bind = $mainMod, Escape, killactive,
 bind = $mainMod, G, togglefloating,
@@ -433,8 +437,7 @@ bind = $mainMod CTRL, 9, exec, $HOME/.config/hypr/scripts/change_workspace_base.
 bind = $mainMod CTRL, 0, exec, $HOME/.config/hypr/scripts/change_workspace_base.sh 10
 bind = $mainMod CTRL, minus, exec, $HOME/.config/hypr/scripts/change_workspace_base.sh -
 bind = $mainMod CTRL, equal, exec, $HOME/.config/hypr/scripts/change_workspace_base.sh +
-bind = $mainMod CTRL, comma, exec, $HOME/.config/hypr/scripts/change_workspace_base.sh -
-bind = $mainMod CTRL, period, exec, $HOME/.config/hypr/scripts/change_workspace_base.sh +
+
 
 # Move all windows to different workspace base
 bind = $mainMod SHIFT CTRL, 1, exec, $HOME/.config/hypr/scripts/move_workspace_to_base_silent.sh 1
@@ -449,8 +452,7 @@ bind = $mainMod SHIFT CTRL, 9, exec, $HOME/.config/hypr/scripts/move_workspace_t
 bind = $mainMod SHIFT CTRL, 0, exec, $HOME/.config/hypr/scripts/move_workspace_to_base_silent.sh 10
 bind = $mainMod SHIFT CTRL, minus, exec, $HOME/.config/hypr/scripts/move_workspace_to_base_silent.sh -
 bind = $mainMod SHIFT CTRL, equal, exec, $HOME/.config/hypr/scripts/move_workspace_to_base_silent.sh +
-bind = $mainMod SHIFT CTRL, comma, exec, $HOME/.config/hypr/scripts/move_workspace_to_base_silent.sh -
-bind = $mainMod SHIFT CTRL, period, exec, $HOME/.config/hypr/scripts/move_workspace_to_base_silent.sh +
+
 
 # Special workspace (scratchpad)
 bind = $mainMod, tab, togglespecialworkspace,scratchpad
