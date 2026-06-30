@@ -1,0 +1,103 @@
+#!/bin/bash
+# clash-best - 并行检测匹配节点，第一个响应的直接切换
+# 用法: clash-best [代理组名称]
+#       默认代理组: FlyBit
+# 环境变量: CLASH_API (默认 http://127.0.0.1:9090)
+
+set -e
+
+API="${CLASH_API:-http://127.0.0.1:9090}"
+GROUP="${1:-FlyBit}"
+TIMEOUT=5000
+TEST_URL="http://www.gstatic.com/generate_204"
+
+# 节点匹配关键词（不区分大小写），节点名包含任一即被选中
+MATCH=(
+    美国 日本
+    🇺🇸 🇯🇵
+    US JP
+    United States
+    Japan America
+)
+
+python3 - "$API" "$GROUP" "$TIMEOUT" "$TEST_URL" "${MATCH[@]}" << 'PYEOF'
+import json, urllib.request, urllib.parse, sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
+
+api = sys.argv[1]
+group = sys.argv[2]
+timeout = int(sys.argv[3])
+test_url = sys.argv[4]
+patterns = sys.argv[5:]
+
+if not patterns:
+    print("❌ 匹配关键词为空", file=sys.stderr)
+    sys.exit(1)
+
+req = urllib.request.Request(f"{api}/proxies")
+with urllib.request.urlopen(req, timeout=10) as resp:
+    proxies = json.load(resp)["proxies"]
+
+proxy_group = proxies.get(group, {})
+all_nodes = proxy_group.get("all", [])
+
+if not all_nodes:
+    print(f"❌ 找不到代理组「{group}」或该组没有节点", file=sys.stderr)
+    sys.exit(1)
+
+def matches(name):
+    name_lower = name.lower()
+    return any(p.lower() in name_lower for p in patterns)
+
+nodes = [n for n in all_nodes if matches(n)]
+
+if not nodes:
+    print("❌ 没有匹配到节点", file=sys.stderr)
+    sys.exit(1)
+
+lock = threading.Lock()
+switched = False
+
+def test(node):
+    encoded = urllib.parse.quote(node, safe='')
+    url = f"{api}/proxies/{encoded}/delay?url={urllib.parse.quote(test_url)}&timeout={timeout}"
+    try:
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=timeout/1000 + 2) as r:
+            body = json.load(r)
+            if isinstance(body, dict) and "delay" in body:
+                d = body["delay"]
+                if 0 < d < 99999:
+                    return (d, node)
+    except:
+        pass
+    return None
+
+with ThreadPoolExecutor(max_workers=len(nodes)) as ex:
+    futures = {ex.submit(test, n): n for n in nodes}
+    for f in as_completed(futures):
+        try:
+            r = f.result()
+            if r and not switched:
+                d, n = r
+                with lock:
+                    if not switched:
+                        switched = True
+                        print(f"⚡ {n} → {d}ms")
+                        data = json.dumps({"name": n}).encode()
+                        req = urllib.request.Request(
+                            f"{api}/proxies/{urllib.parse.quote(group, safe='')}",
+                            data=data, method="PUT",
+                            headers={"Content-Type": "application/json"}
+                        )
+                        with urllib.request.urlopen(req, timeout=10):
+                            pass
+                        print(f"✅ 已切换到 {n}")
+        except:
+            pass
+
+if not switched:
+    print("❌ 所有节点超时/不可达")
+    sys.exit(1)
+PYEOF
