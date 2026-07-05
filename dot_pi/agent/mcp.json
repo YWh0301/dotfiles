@@ -13,6 +13,11 @@
       "command": "mcp-blender",
       "args": ["--port", "9876"],
       "lifecycle": "eager"
+    },
+    "freecad": {
+      "transport": "stdio",
+      "command": "freecad-mcp",
+      "lifecycle": "eager"
     }
   }
 }
