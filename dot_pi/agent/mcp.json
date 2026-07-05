@@ -1,0 +1,13 @@
+{
+  "settings": {
+    "toolPrefix": "kicad",
+    "requestTimeoutMs": 60000
+  },
+  "mcpServers": {
+    "kicad": {
+      "transport": "stdio",
+      "command": "kicad-mcp-server",
+      "lifecycle": "eager"
+    }
+  }
+}

@@ -1,0 +1,36 @@
+# Maintainer: pingzi <pingzi@archlinux>
+
+pkgname=pi-ext-mcp
+pkgver=1.5.0
+pkgrel=2
+pkgdesc='Model Context Protocol client extension for Pi coding agent — connect Pi to any MCP server (stdio, SSE, StreamableHTTP). Manage server connections, auto-discover tools, bridge MCP tools into Pi.'
+arch=('any')
+url='https://github.com/irahardianto/pi-mcp-extension'
+license=('MIT')
+depends=('pi-coding-agent')
+makedepends=('npm')
+source=(
+  "${pkgname}-${pkgver}.tgz::https://registry.npmjs.org/pi-mcp-extension/-/pi-mcp-extension-${pkgver}.tgz"
+)
+sha256sums=('4ca1af4da972f1a8a55e1e6f22757dd0de6acdc075f155e6b9c94b5c428f68ed')
+install=pi-ext-mcp.install
+options=('!strip' '!debug')
+optdepends=(
+  'pi-coding-agent: Pi coding agent itself'
+  'pi-coding-agent-git: Pi coding agent development version'
+)
+
+build() {
+  cd "${srcdir}/package"
+  rm -rf node_modules package-lock.json 2>/dev/null || true
+  npm install --ignore-scripts --no-audit --no-fund 2>&1
+}
+
+package() {
+  install -d "${pkgdir}/usr/share/pi/extensions/pi-mcp-extension"
+  cp -a "${srcdir}/package/." "${pkgdir}/usr/share/pi/extensions/pi-mcp-extension/"
+  rm -rf "${pkgdir}/usr/share/pi/extensions/pi-mcp-extension/tests" \
+         "${pkgdir}/usr/share/pi/extensions/pi-mcp-extension/test"
+
+  install -Dm644 "${srcdir}/package/LICENSE" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

@@ -1,0 +1,72 @@
+# Maintainer: pingzi <pingzi@archlinux>
+
+pkgname=kicad-mcp-server
+pkgver=2.3.0
+pkgrel=3
+pkgdesc='Model Context Protocol server for KiCAD — AI-assisted PCB design with 122 tools covering schematic capture, PCB layout, routing, export, JLCPCB integration, and FreeRouting autorouter.'
+arch=('x86_64')
+url='https://github.com/mixelpixx/KiCAD-MCP-Server'
+license=('MIT')
+depends=(
+  'kicad>=10.0'
+  'nodejs>=18'
+  'python>=3.10'
+  'python-sexpdata'
+  'python-kicad-skip'
+  'python-pillow'
+  'python-cairosvg'
+  'python-colorlog'
+  'python-pydantic'
+  'python-requests'
+  'python-dotenv'
+)
+makedepends=('npm')
+optdepends=(
+  'java-runtime: FreeRouting autorouter integration'
+  'docker: FreeRouting autorouter (Docker mode)'
+  'podman: FreeRouting autorouter (Podman mode)'
+)
+source=("${pkgname}-${pkgver}.tar.gz::https://github.com/mixelpixx/KiCAD-MCP-Server/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('c1d41481e1bf39515c3189daac4ece6fe7eee9d0314ac9431f1921e8724f9c57')
+options=('!strip' '!debug')
+
+build() {
+  cd "${srcdir}/KiCAD-MCP-Server-${pkgver}"
+
+  # Install npm dependencies using lockfile (integrity-verified) without lifecycle scripts
+  npm ci --ignore-scripts
+
+  # TypeScript compilation
+  npm run build
+}
+
+package() {
+  cd "${srcdir}/KiCAD-MCP-Server-${pkgver}"
+
+  # Main installation directory
+  install -d "${pkgdir}/opt/kicad-mcp-server"
+
+  # Copy built artifacts and runtime files
+  cp -a dist             "${pkgdir}/opt/kicad-mcp-server/"
+  cp -a python           "${pkgdir}/opt/kicad-mcp-server/"
+  cp -a node_modules     "${pkgdir}/opt/kicad-mcp-server/"
+  cp package.json        "${pkgdir}/opt/kicad-mcp-server/"
+  cp package-lock.json   "${pkgdir}/opt/kicad-mcp-server/"
+
+  # Launcher script
+  install -d "${pkgdir}/usr/bin"
+  cat > "${pkgdir}/usr/bin/kicad-mcp-server" << 'LAUNCHER'
+#!/bin/bash
+# KiCAD MCP Server launcher
+exec /usr/bin/node /opt/kicad-mcp-server/dist/index.js "$@"
+LAUNCHER
+  chmod 755 "${pkgdir}/usr/bin/kicad-mcp-server"
+
+  # Documentation
+  install -d "${pkgdir}/usr/share/doc/${pkgname}"
+  cp -a README.md CHANGELOG.md LICENSE "${pkgdir}/usr/share/doc/${pkgname}/"
+  cp -a docs/* "${pkgdir}/usr/share/doc/${pkgname}/" 2>/dev/null || true
+
+  # License
+  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
