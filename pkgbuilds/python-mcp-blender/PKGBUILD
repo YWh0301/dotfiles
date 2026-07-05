@@ -1,0 +1,64 @@
+# Maintainer: pingzi <pingzi@archlinux>
+# Contributor: MCP Blender Contributors
+
+_pkgname=mcp-blender
+pkgname=python-mcp-blender
+pkgver=0.4.0
+pkgrel=1
+pkgdesc='MCP server for Blender — AI-driven 3D modeling, materials, animation, rendering and more via Model Context Protocol'
+arch=('any')
+url='https://github.com/RFingAdam/mcp-blender'
+license=('AGPL-3.0-or-later')
+depends=(
+  'blender>=4.2'
+  'python>=3.10'
+  'python-httpx'
+  'python-mcp'
+)
+makedepends=(
+  'python-build'
+  'python-installer'
+  'python-hatchling'
+)
+optdepends=(
+  'ollama: AI self-refinement loop for iterative modeling'
+)
+source=("${_pkgname}-${pkgver}.tar.gz::https://github.com/RFingAdam/${_pkgname}/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('31823b1733d8bb31a1d1b7e7aea40cbacd3fcb1c6d11f486441c0b9edae0d0d3')
+
+build() {
+  cd "${srcdir}/${_pkgname}-${pkgver}"
+
+  # Build the Python wheel
+  python -m build --wheel --no-isolation
+}
+
+package() {
+  cd "${srcdir}/${_pkgname}-${pkgver}"
+
+  # Install the Python package (provides the mcp-blender CLI command)
+  python -m installer --destdir="${pkgdir}" dist/*.whl
+
+  # Install the Blender addon
+  # Detect Blender version
+  local _blver
+  _blver=$(blender --version 2>/dev/null | sed -n 's/.*Blender \([0-9]*\.[0-9]*\).*/\1/p')
+  if [[ -z "${_blver}" ]]; then
+    _blver=$(ls /usr/share/blender/ 2>/dev/null | sort -V | tail -1)
+  fi
+  if [[ -z "${_blver}" ]]; then
+    _blver='5.1'
+  fi
+
+  # Blender 5.x uses addons_core for system-installed addons
+  local _addon_dir="${pkgdir}/usr/share/blender/${_blver}/scripts/addons_core/blender_mcp_addon"
+  install -d "$(dirname "${_addon_dir}")"
+  cp -a addon/blender_mcp_addon "${_addon_dir}"
+
+  # Remove __pycache__ and .pyc artifacts
+  find "${_addon_dir}" -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+  find "${_addon_dir}" -name '*.pyc' -delete
+
+  # Install license
+  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

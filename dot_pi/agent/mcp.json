@@ -1,12 +1,17 @@
 {
   "settings": {
-    "toolPrefix": "kicad",
     "requestTimeoutMs": 60000
   },
   "mcpServers": {
     "kicad": {
       "transport": "stdio",
       "command": "kicad-mcp-server",
+      "lifecycle": "eager"
+    },
+    "blender": {
+      "transport": "stdio",
+      "command": "mcp-blender",
+      "args": ["--port", "9876"],
       "lifecycle": "eager"
     }
   }
