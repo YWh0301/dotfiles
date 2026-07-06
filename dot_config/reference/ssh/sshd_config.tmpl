@@ -11,7 +11,12 @@ Include /etc/ssh/sshd_config.d/*.conf
 # possible, but leave them commented.  Uncommented options override the
 # default value.
 
+
+{{- if eq .hostname "n150MiniDesktop" }}
+Port 2233
+{{- else }}
 Port 22
+{{- end }}
 AddressFamily any
 ListenAddress 0.0.0.0
 ListenAddress ::
