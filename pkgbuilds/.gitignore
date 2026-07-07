@@ -5,3 +5,4 @@ src/
 *.part
 *.tgz
 *.zst
+*.gz

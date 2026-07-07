@@ -1,0 +1,25 @@
+# Maintainer: pingzi
+# ESP-DSP 官方 DSP 库，esp-sr 的依赖
+
+pkgname=esp-dsp
+pkgver=1.8.0
+pkgrel=1
+pkgdesc="ESP-DSP: Official DSP library for Espressif SoCs"
+arch=('any')
+url="https://github.com/espressif/esp-dsp"
+license=('APACHE')
+depends=('esp-idf')
+options=('!strip')
+source=("https://github.com/espressif/esp-dsp/archive/v${pkgver}.tar.gz")
+sha256sums=('7f41e9f0ef860c5e64d14fc0b4910770f08621e84a90754daf71b07195672ea0')
+
+prepare() {
+  # 删除 idf_component.yml，避免组件管理器扫描到此文件后写 lock 文件
+  # 依赖由 PKGBUILD depends=() 保证，无需管理器介入
+  rm -f "$srcdir/esp-dsp-${pkgver}/idf_component.yml"
+}
+
+package() {
+  mkdir -p "$pkgdir/opt/espressif/esp-idf/components/esp-dsp"
+  cp -r "$srcdir/esp-dsp-${pkgver}/"* "$pkgdir/opt/espressif/esp-idf/components/esp-dsp/"
+}

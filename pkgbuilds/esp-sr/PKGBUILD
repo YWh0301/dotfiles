@@ -1,0 +1,34 @@
+# Maintainer: pingzi
+# ESP-SR 语音识别框架 (WakeNet + AEC + NS + VAD)
+# 安装到 ESP-IDF 组件目录下，idf.py build 自动找到
+#
+
+pkgname=esp-sr
+pkgver=2.4.6
+pkgrel=1
+pkgdesc="Espressif ESP-SR Speech Recognition Framework. Prebuilt libraries and models for ESP32."
+arch=('any')
+url="https://github.com/espressif/esp-sr"
+license=('APACHE')
+depends=('esp-idf' 'esp-dsp>=1.8.0' 'esp-cjson>=1.7.19' 'esp-dl-fft>=0.5.0')
+options=('!strip')
+source=("https://github.com/espressif/esp-sr/archive/7ff63a7da40e15e502681be48c4d0e78475544a3.tar.gz")
+sha256sums=('d96173d665054a5ca136eac5a900a13f8809bdcd66f707263547835b4065882f')
+
+prepare() {
+  cd "$srcdir/esp-sr-7ff63a7da40e15e502681be48c4d0e78475544a3"
+
+  # 去掉 CMakeLists.txt 中的命名空间前缀
+  # 组件仓库用 espressif__esp-dsp，系统安装后叫 esp-dsp
+  sed -i 's/espressif__//g' CMakeLists.txt
+
+  # 删除 idf_component.yml（其依赖声明由 PKGBUILD depends=() 保证）
+  # 没有 yml 文件，组件管理器不会触发依赖解析，不会写 lock 文件
+  rm -f idf_component.yml
+}
+
+package() {
+  mkdir -p "$pkgdir/opt/espressif/esp-idf/components/esp-sr"
+  cp -r "$srcdir/esp-sr-7ff63a7da40e15e502681be48c4d0e78475544a3/"* \
+        "$pkgdir/opt/espressif/esp-idf/components/esp-sr/"
+}

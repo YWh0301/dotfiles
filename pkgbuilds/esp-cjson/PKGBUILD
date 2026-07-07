@@ -1,0 +1,40 @@
+# Maintainer: pingzi
+# cJSON: Ultralightweight JSON parser (ESP-IDF component wrapper)
+# 上游源码 + ESP-IDF CMakeLists.txt 打包
+
+pkgname=esp-cjson
+pkgver=1.7.19
+pkgrel=2
+pkgdesc="cJSON: Ultralightweight JSON parser in ANSI C (ESP-IDF component)"
+arch=('any')
+url="https://github.com/DaveGamble/cJSON"
+license=('MIT')
+depends=('esp-idf')
+options=('!strip')
+source=("https://github.com/DaveGamble/cJSON/archive/v${pkgver}.tar.gz")
+sha256sums=('7fa616e3046edfa7a28a32d5f9eacfd23f92900fe1f8ccd988c1662f30454562')
+
+package() {
+  local _idf_comp="$pkgdir/opt/espressif/esp-idf/components/cjson"
+
+  mkdir -p "$_idf_comp/cJSON"
+
+  # 复制 cJSON 源码
+  cp "$srcdir/cJSON-${pkgver}/cJSON.c" "$_idf_comp/cJSON/"
+  cp "$srcdir/cJSON-${pkgver}/cJSON.h" "$_idf_comp/cJSON/"
+  cp "$srcdir/cJSON-${pkgver}/cJSON_Utils.c" "$_idf_comp/cJSON/"
+  cp "$srcdir/cJSON-${pkgver}/cJSON_Utils.h" "$_idf_comp/cJSON/"
+
+  # ESP-IDF 组件元文件
+  cat > "$_idf_comp/CMakeLists.txt" << CMAKE_EOF
+idf_component_register(SRCS "cJSON/cJSON.c"
+                            "cJSON/cJSON_Utils.c"
+                    INCLUDE_DIRS "cJSON")
+
+target_compile_definitions(\${COMPONENT_LIB} PUBLIC
+    CJSON_NESTING_LIMIT=1000
+    CJSON_CIRCULAR_LIMIT=10000)
+CMAKE_EOF
+
+  # 不创建 idf_component.yml —— 无 yml 则组件管理器不处理此组件
+}

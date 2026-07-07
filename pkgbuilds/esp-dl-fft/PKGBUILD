@@ -1,0 +1,25 @@
+# Maintainer: pingzi
+# dl_fft: lightweight FFT library，esp-sr 的依赖
+
+pkgname=esp-dl-fft
+pkgver=0.5.0
+pkgrel=1
+pkgdesc="dl_fft: lightweight FFT library for Espressif chips (ESP-IDF component)"
+arch=('any')
+url="https://github.com/espressif/esp-dl/tree/master/tools/dl_fft"
+license=('MIT')
+depends=('esp-idf')
+options=('!strip')
+source=("https://github.com/espressif/esp-dl/archive/680a1b9ea1dfff490848d9cb83684f294559ecdd.tar.gz")
+sha256sums=('28de8c78c44e4207a79fd8cf50059be8999cf470b09eab592f1240f94235a816')
+
+prepare() {
+  # 删除 idf_component.yml，避免组件管理器处理此组件
+  rm -f "$srcdir/esp-dl-680a1b9ea1dfff490848d9cb83684f294559ecdd/tools/dl_fft/idf_component.yml"
+}
+
+package() {
+  mkdir -p "$pkgdir/opt/espressif/esp-idf/components/dl_fft"
+  cp -r "$srcdir/esp-dl-680a1b9ea1dfff490848d9cb83684f294559ecdd/tools/dl_fft/"* \
+        "$pkgdir/opt/espressif/esp-idf/components/dl_fft/"
+}
