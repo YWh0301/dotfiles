@@ -1,0 +1,11 @@
+--- a/cmake/Functions.cmake
++++ b/cmake/Functions.cmake
+@@ -181,7 +181,7 @@
+ 
+ 
+     # Add the command to translate the file
+-    if( KICAD_BUILD_I18N )
++    if( FALSE )
+         add_custom_command(
+             OUTPUT ${OUT_FILE}
+             DEPENDS ${SRC_FILE}

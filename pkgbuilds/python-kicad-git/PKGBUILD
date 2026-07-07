@@ -1,0 +1,95 @@
+pkgname=python-kicad-git
+_pkgname=python-kicad
+pkgver=rd54bd62
+pkgrel=1
+pkgdesc="KiCad API Python Bindings Git Main branch"
+provides=(python-kicad kicad-python)
+conflicts=(python-kicad kicad-python)
+arch=('any')
+url="https://gitlab.com/kicad/code/kicad-python"
+license=('MIT')
+
+_pydeps=(
+    jsonschema
+    protobuf
+    typing_extensions
+    pynng
+)
+
+depends=('python' "${_pydeps[@]/#/python-}")
+makedepends=(
+    'git'
+    'curl'
+    'python-poetry'
+    'python-poetry-core'
+    'python-poetry-plugin-export'
+    'python-build'
+    'python-installer'
+    'python-setuptools'
+    'python-wheel'
+    'python-protoletariat'
+    'python-mypy-protobuf'
+)
+
+source=(
+    "${_pkgname}::git+${url}.git#branch=main"
+)
+
+sha256sums=('SKIP')
+
+pkgver() {
+    cd "${srcdir}/${_pkgname}"
+    git describe --long --tags 2>/dev/null | sed 's/\([^-]*-\)*g/r/;s/-/./g' ||
+    printf "0.8.0.r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+    git -C "${srcdir}/${_pkgname}" clean -dfx
+    cd "${srcdir}/${_pkgname}"
+
+    # python-kicad only needs KiCad's api/proto files to generate bindings.
+    # Avoid cloning/checking out the huge KiCad repository: resolve the kicad
+    # submodule commit recorded by python-kicad, then download only that path
+    # from GitLab's archive endpoint.
+    local kicad_commit
+    kicad_commit="$(git ls-tree HEAD kicad | awk '{print $3}')"
+
+    rm -rf kicad "${srcdir}/kicad-proto"
+    mkdir -p "${srcdir}/kicad-proto" kicad
+    curl -L --fail \
+        "https://gitlab.com/kicad/code/kicad/-/archive/${kicad_commit}/kicad-${kicad_commit}.tar.gz?path=api/proto" \
+        | bsdtar -xz -C "${srcdir}/kicad-proto" --strip-components=1
+    cp -a "${srcdir}/kicad-proto/api" kicad/
+
+    # build.py normally runs `git describe` inside the kicad submodule.  We are
+    # intentionally using a proto-only tree, so write the recorded submodule
+    # commit as the API version instead.
+    sed -i \
+        -e '/stream = os.popen/d' \
+        -e "s/git_description = stream.read().strip()/git_description = \"${kicad_commit}\"/" \
+        build.py
+}
+
+build() {
+    cd "${srcdir}/${_pkgname}"
+
+    # Avoid Poetry querying a locked desktop keyring for repository credentials.
+    export POETRY_KEYRING_ENABLED=false
+    export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
+
+    poetry build --format wheel
+    find dist -maxdepth 1 -type f -name '*.whl' ! -name '*-any.whl' -delete
+}
+
+package() {
+    cd "${srcdir}/${_pkgname}"
+    for whl in dist/*.whl; do
+        if echo "$whl" | grep -q "any.whl$"; then
+            python -m installer --destdir="${pkgdir}" "$whl"
+        else
+            :
+        fi
+    done
+    
+    install -Dm0644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

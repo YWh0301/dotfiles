@@ -1,0 +1,85 @@
+# Maintainer: taotieren <admin@taotieren.com>
+
+pkgname=python-kicad
+_name=${pkgname#python-}
+pkgver=0.7.1
+pkgrel=2
+_kicad_commit=2db9e5a72b7cf1e71bb8dff5257a88d4b41f812f
+pkgdesc="KiCad API Python Bindings"
+provides=(${pkgname} kicad-python)
+conflicts=(${pkgname} kicad-python)
+arch=('any')
+url="https://gitlab.com/kicad/code/kicad-python"
+_pydeps=(
+    jsonschema
+    protobuf
+    typing_extensions
+# AUR
+    pynng
+)
+depends=('python'
+    "${_pydeps[@]/#/python-}")
+makedepends=(
+    git
+    'python-poetry'
+    'python-poetry-core'
+    'python-poetry-plugin-export'
+    'python-build'
+    'python-installer'
+    'python-setuptools'
+    'python-wheel'
+# AUR
+    'python-protoletariat'
+    'python-mypy-protobuf'
+)
+optdepends=('kicad')
+license=('MIT')
+source=(
+    "${pkgname}::git+${url}.git#tag=$pkgver"
+    "kicad-proto-${_kicad_commit}.tar.gz::https://gitlab.com/kicad/code/kicad/-/archive/${_kicad_commit}/kicad-${_kicad_commit}.tar.gz?path=api/proto"
+)
+sha256sums=('SKIP'
+            'd57100e154bfc056c9686b34269f436fdb322eef4a949ff938793d06a9f25b1f')
+
+prepare() {
+    git -C "${srcdir}/${pkgname}" clean -dfx
+    cd "${srcdir}/${pkgname}"
+
+    # python-kicad only needs KiCad's api/proto files to generate bindings.
+    # Avoid cloning/checking out the huge KiCad repository: GitLab's archive
+    # endpoint can return just that path.
+    rm -rf kicad
+    mkdir -p kicad
+    cp -a "${srcdir}/kicad-${_kicad_commit}-api-proto/api" kicad/
+
+    # dist.sh normally updates the kicad submodule, and build.py normally runs
+    # `git describe` inside it.  We are intentionally using a proto-only source
+    # tree, so make both steps deterministic and offline-friendly.
+    sed -i '/git submodule update --init --recursive/d' dist.sh
+    sed -i \
+        -e '/stream = os.popen/d' \
+        -e "s/git_description = stream.read().strip()/git_description = \"${_kicad_commit}\"/" \
+        build.py
+}
+
+build() {
+    cd "${srcdir}/${pkgname}"
+
+    # Poetry may query the desktop keyring for repository credentials even
+    # though we only build a local package, which blocks unattended makepkg
+    # runs when the default keyring is locked.
+    export POETRY_KEYRING_ENABLED=false
+    export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
+
+    poetry build --format wheel
+
+    # The upstream build hook also creates a platform-specific wheel; Arch only
+    # needs the pure-python wheel.
+    find dist -maxdepth 1 -type f -name '*.whl' ! -name '*-any.whl' -delete
+}
+
+package() {
+    cd "${srcdir}/${pkgname}"
+    python -m installer --destdir="${pkgdir}" dist/*-any.whl
+    install -Dm0644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
