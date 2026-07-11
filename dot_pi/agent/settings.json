@@ -1,10 +1,17 @@
 {
-  "lastChangelogVersion": "0.79.7",
+  "lastChangelogVersion": "0.80.6",
   "theme": "dark",
-  "defaultProvider": "opencode-go",
-  "defaultModel": "deepseek-v4-pro",
-  "defaultThinkingLevel": "xhigh",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.6-sol",
+  "defaultThinkingLevel": "medium",
+  "transport": "sse",
+  "httpProxy": "http://127.0.0.1:7890",
   "extensions": [
-    "/usr/share/pi/extensions"
-  ]
+    "/usr/share/pi/extensions/pi-agent-browser-native",
+    "/usr/share/pi/extensions/pi-image-gen",
+    "/usr/share/pi/extensions/pi-mcp-extension",
+    "/usr/share/pi/extensions/pi-pdf",
+    "/usr/share/pi/extensions/web-access"
+  ],
+  "hideThinkingBlock": true
 }
