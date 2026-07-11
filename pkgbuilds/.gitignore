@@ -1,8 +1,22 @@
+# makepkg build trees (relative to each package directory)
+/*/pkg/
+/*/src/
+
+# VCS source caches and extracted source directories created beside PKGBUILD.
+# Package recipes in this repository keep their maintained inputs as files, so
+# any immediate subdirectory below pkgbuilds/<package>/ is a build artifact.
+/*/*/
+
+# Built packages and downloaded source archives
+*.pkg.tar.*
+*.src.tar.*
+*.tar
 *.tar.*
-pkg/
-src/
 *.zip
 *.part
 *.tgz
 *.zst
 *.gz
+
+# Common temporary files produced by makepkg tools
+*.log

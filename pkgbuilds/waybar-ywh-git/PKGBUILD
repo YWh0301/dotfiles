@@ -1,0 +1,109 @@
+# Based on the official Arch Linux waybar PKGBUILD.
+# Local fork: https://github.com/YWh0301/Waybar/tree/hyprland-workspacerename
+
+pkgname=waybar-ywh-git
+pkgver=0.15.0.r5246.g6d294c01
+pkgrel=1
+pkgdesc='Highly customizable Wayland bar, with YWh0301 Hyprland workspace rename fix'
+arch=('x86_64')
+url='https://github.com/YWh0301/Waybar'
+license=('MIT')
+provides=('waybar')
+conflicts=('waybar')
+depends=(
+  'atkmm'
+  'cairomm'
+  'fmt'
+  'glib2'
+  'glibc'
+  'glibmm'
+  'gpsd'
+  'gtk-layer-shell'
+  'gtk3'
+  'gtkmm3'
+  'jack'
+  'jsoncpp'
+  'libdbusmenu-gtk3'
+  'libevdev'
+  'libgcc'
+  'libinput'
+  'libmpdclient'
+  'libnl'
+  'libpipewire'
+  'libpulse'
+  'libsigc++'
+  'libstdc++'
+  'libwireplumber'
+  'libxkbcommon'
+  'playerctl'
+  'sndio'
+  'spdlog'
+  'systemd-libs'
+  'upower'
+  'wayland'
+)
+makedepends=(
+  'catch2'
+  'cmake'
+  'git'
+  'glib2-devel' # gdbus-codegen
+  'meson'
+  'scdoc'
+  'wayland-protocols'
+)
+backup=(
+  'etc/xdg/waybar/config.jsonc'
+  'etc/xdg/waybar/style.css'
+)
+optdepends=(
+  'otf-font-awesome: Icons in the default configuration'
+)
+source=('Waybar::git+https://github.com/YWh0301/Waybar.git#branch=hyprland-workspacerename')
+b2sums=('SKIP')
+
+pkgver() {
+  cd Waybar
+  # makepkg's VCS checkout may not contain upstream tags, so do not rely on
+  # `git describe`. The commit count and hash still produce a monotonic version.
+  printf '0.15.0.r%s.g%s' \
+    "$(git rev-list --count HEAD)" \
+    "$(git rev-parse --short=8 HEAD)"
+}
+
+build() {
+  local meson_options=(
+    --prefix=/usr
+    --buildtype=plain
+    --auto-features=enabled
+    --wrap-mode=nodownload
+    -Dcpp_std=c++20
+    -Dexperimental=true
+    -Dcava=disabled
+    -Dtests=enabled
+  )
+
+  meson setup Waybar build "${meson_options[@]}"
+  meson compile -C build
+}
+
+check() {
+  meson test -C build --print-errorlogs --no-rebuild --suite waybar
+}
+
+package() {
+  depends+=(
+    'libatkmm-1.6.so'
+    'libcairomm-1.0.so'
+    'libgtk-3.so'
+    'libjack.so'
+    'libjsoncpp.so'
+    'libpipewire-0.3.so'
+    'libsndio.so'
+    'libspdlog.so'
+    'libudev.so'
+    'libupower-glib.so'
+  )
+
+  meson install -C build --destdir "$pkgdir"
+  install -Dm644 Waybar/LICENSE -t "$pkgdir/usr/share/licenses/$pkgname/"
+}

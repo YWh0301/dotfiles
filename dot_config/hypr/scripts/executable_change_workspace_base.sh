@@ -17,6 +17,13 @@ else
     new_base=$((($1 - 1) * 10))
 fi
 
+# Re-selecting the active base must be a no-op. Otherwise the old-base branch
+# below prefixes every visible workspace name with "n", while the new-base
+# branch is skipped because it is an `elif`, making all of them disappear.
+if [[ "$new_base" -eq "$old_base" ]]; then
+    exit 0
+fi
+
 echo $new_base > /tmp/hyprland_workspace_base 
 
 hyprctl keyword animation workspaces,1,3,default,slidevert &&
