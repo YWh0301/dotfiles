@@ -33,6 +33,7 @@
 - **evtest**
 - **wev**
 - **git**
+    - **github-cli**
 - **less**
 - **tree**
 - **wget**
