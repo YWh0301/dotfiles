@@ -1,0 +1,43 @@
+#!/bin/sh
+set -eu
+
+config_dir="${HOME}/.config/chezmoi"
+key_file="${config_dir}/key.txt"
+defaults_file="${config_dir}/user.template.toml"
+user_file="${config_dir}/user.toml"
+encrypted_defaults="{{ .chezmoi.sourceDir }}/dot_config/chezmoi/encrypted_private_user.template.toml.age"
+
+mkdir -p "${config_dir}"
+chmod 700 "${config_dir}"
+
+if [ ! -f "${key_file}" ]; then
+    echo "Decrypting age private key..."
+    chezmoi age decrypt --output "${key_file}" --passphrase "{{ .chezmoi.sourceDir }}/key.txt.age"
+    chmod 600 "${key_file}"
+    echo "Private key decrypted successfully."
+fi
+
+# Refresh the defaults before stopping a first-time apply, so an interrupted
+# bootstrap can never leave the user reviewing an obsolete template.
+if [ ! -f "${defaults_file}" ] || [ ! -f "${user_file}" ]; then
+    temporary="${defaults_file}.tmp"
+    chezmoi decrypt --output "${temporary}" "${encrypted_defaults}"
+    chmod 600 "${temporary}"
+    mv "${temporary}" "${defaults_file}"
+fi
+
+if [ ! -f "${user_file}" ]; then
+    cat >&2 <<EOF
+Personal configuration has not been created.
+
+Review the encrypted defaults, then create and edit the machine-local file:
+
+  cp '${defaults_file}' '${user_file}'
+  chmod 600 '${user_file}'
+  \${EDITOR:-nvim} '${user_file}'
+  chezmoi apply
+
+The current apply was stopped deliberately. chezmoi will never overwrite user.toml.
+EOF
+    exit 1
+fi

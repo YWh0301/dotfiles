@@ -1,6 +1,7 @@
+{{- $userConfig := includeTemplate "user-config.toml" . | fromToml -}}
 [user]
-	email = {{ .email.school }}
-	name = pingzi
+	email = {{ $userConfig.git.email }}
+	name = {{ $userConfig.identity.name }}
 
 [core]
     editor = nvim
@@ -32,7 +33,6 @@
     defaultBranch = main    # git init 时默认创建 main 分支
 
 [push]
-    default = simple        # 只推送当前分支（安全选项）
     autoSetupRemote = true
     default = current
 
@@ -46,7 +46,7 @@
     prune = true            # fetch 时自动 prune 已删除的远程分支
 
 [rerere]
-    enabled = true          # 复用以前的冲突解决，简化重复冲突处理
+    enabled = true          # 复用以前的冲突解决，简化重复冲突
 
 [url "git@github.com:"]
     insteadOf = https://github.com/  # SSH 替代 HTTPS

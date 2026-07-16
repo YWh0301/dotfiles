@@ -12,6 +12,7 @@ fi
 client_ip="${SSH_CLIENT%% *}"
 server_ip="$(echo "$SSH_CONNECTION" | awk '{print $3}')"
 remote_host="$(hostname -s)"
+remote_user="$(id -un)"
 
 path_hash="$(echo "$cwd" | md5sum | cut -c1-8)"
 local_mount_point="/tmp/remote-${remote_host}-${path_hash}"
@@ -20,10 +21,10 @@ local_commands="
 xdr=\"\${XDG_RUNTIME_DIR:-/run/user/\$(id -u)}\"
 kitty_socket=\$(ls \"\$xdr\"/kitty.sock-* 2>/dev/null | head -1)
 if [ -n \"\$kitty_socket\" ]; then
-    kitty @ --to \"unix:\${kitty_socket}\" launch --type=os-window --no-response env RMOUNT='${local_mount_point}' RCWD='${cwd}' RSERVER='${server_ip}' zsh -i -c 'mkdir -p \"\$RMOUNT\" && ( mountpoint -q \"\$RMOUNT\" || sshfs pingzi@\$RSERVER:\"\$RCWD\" \"\$RMOUNT\" -o reconnect,ServerAliveInterval=15 ) && y \"\$RMOUNT\"; exec zsh'
+    kitty @ --to \"unix:\${kitty_socket}\" launch --type=os-window --no-response env RMOUNT='${local_mount_point}' RCWD='${cwd}' RSERVER='${server_ip}' zsh -i -c 'mkdir -p \"\$RMOUNT\" && ( mountpoint -q \"\$RMOUNT\" || sshfs ${remote_user}@\$RSERVER:\"\$RCWD\" \"\$RMOUNT\" -o reconnect,ServerAliveInterval=15 ) && y \"\$RMOUNT\"; exec zsh'
 fi
 "
 
-if ssh -o ConnectTimeout=3 -o BatchMode=yes "pingzi@${client_ip}" true 2>/dev/null; then
-    ssh -o ConnectTimeout=5 "pingzi@${client_ip}" "$local_commands"
+if ssh -o ConnectTimeout=3 -o BatchMode=yes "${remote_user}@${client_ip}" true 2>/dev/null; then
+    ssh -o ConnectTimeout=5 "${remote_user}@${client_ip}" "$local_commands"
 fi

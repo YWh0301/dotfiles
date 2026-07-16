@@ -1,10 +1,15 @@
+{{- $userConfigPath := joinPath .chezmoi.homeDir ".config/chezmoi/user.toml" -}}
+{{- $userConfig := dict -}}
+{{- if stat $userConfigPath -}}
+{{-   $userConfig = include $userConfigPath | fromToml -}}
+{{- end }}
 scripts/
 manual/
 pkgbuilds/
 key.txt.age
-{{- if not .wayvnc.enable }}
+{{- if not (dig "features" "wayvnc" false $userConfig) }}
 .config/wayvnc
-{{- end }} 
-{{- if not .sshd.enable }}
+{{- end }}
+{{- if not (dig "features" "sshd" false $userConfig) }}
 .config/reference/ssh
-{{- end }} 
+{{- end }}

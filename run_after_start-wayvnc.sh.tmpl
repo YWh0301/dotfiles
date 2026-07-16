@@ -1,10 +1,10 @@
 #!/bin/sh
+{{- $userConfig := includeTemplate "user-config.toml" . | fromToml }}
 
-{{- if .wayvnc.enable }}
-wayvnc_status=$(systemctl --user is-active wayvnc)
-if [ "$wayvnc_status" = "inactive" ]; then
+{{- if $userConfig.features.wayvnc }}
+if ! systemctl --user is-active --quiet wayvnc; then
     systemctl --user enable --now wayvnc
 fi
 {{- else }}
-systemctl --user disable --now wayvnc
-{{- end }} 
+systemctl --user disable --now wayvnc 2>/dev/null || true
+{{- end }}

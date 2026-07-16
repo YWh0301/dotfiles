@@ -1,3 +1,4 @@
+{{- $userConfig := includeTemplate "user-config.toml" . | fromToml }}
 # Include drop-in configurations
 Include /etc/ssh/sshd_config.d/*.conf
 
@@ -12,11 +13,7 @@ Include /etc/ssh/sshd_config.d/*.conf
 # default value.
 
 
-{{- if eq .hostname "n150MiniDesktop" }}
-Port 2233
-{{- else }}
-Port 22
-{{- end }}
+Port {{ $userConfig.sshd.port }}
 AddressFamily any
 ListenAddress 0.0.0.0
 ListenAddress ::

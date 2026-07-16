@@ -1,0 +1,33 @@
+#!/usr/bin/env python3
+{{- $userConfig := includeTemplate "user-config.toml" . | fromToml }}
+import json
+import sys
+
+raw = sys.stdin.read().strip()
+settings = json.loads(raw) if raw else {}
+
+# Preserve application-owned and unknown fields, while converging the settings
+# that are intentional parts of this dotfiles setup.
+settings.update({
+    "theme": "dark",
+    "defaultProvider": "openai-codex",
+    "defaultModel": "gpt-5.6-sol",
+    "defaultThinkingLevel": "medium",
+    "transport": "sse",
+    "extensions": [
+        "/usr/share/pi/extensions/pi-agent-browser-native",
+        "/usr/share/pi/extensions/pi-image-gen",
+        "/usr/share/pi/extensions/pi-mcp-extension",
+        "/usr/share/pi/extensions/pi-pdf",
+        "/usr/share/pi/extensions/web-access",
+    ],
+    "hideThinkingBlock": True,
+})
+
+{{- if eq $userConfig.proxy.backend "flclash" }}
+settings["httpProxy"] = "http://127.0.0.1:{{ $userConfig.proxy.flclash_http_port }}"
+{{- else }}
+settings.pop("httpProxy", None)
+{{- end }}
+
+print(json.dumps(settings, ensure_ascii=False, indent=2))

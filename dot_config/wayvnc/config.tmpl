@@ -1,11 +1,9 @@
-{{- $encryptedFile := joinPath .chezmoi.sourceDir "dot_config" "wayvnc" "encrypted_wayvnc.chezmoidata.toml.age" -}}
-{{- $configData := $encryptedFile | include | decrypt | fromToml -}}
-
+{{- $userConfig := includeTemplate "user-config.toml" . | fromToml -}}
 use_relative_paths=true
 address=0.0.0.0
 enable_auth=true
-port={{ $configData.port }}
-username={{ $configData.username }}
-password={{ $configData.password }}
+port={{ $userConfig.wayvnc.port }}
+username={{ $userConfig.wayvnc.username }}
+password={{ $userConfig.wayvnc.password }}
 private_key_file=tls_key.pem
 certificate_file=tls_cert.pem

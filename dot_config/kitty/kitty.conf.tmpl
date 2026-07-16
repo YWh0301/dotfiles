@@ -1,3 +1,4 @@
+{{- $userConfig := includeTemplate "user-config.toml" . | fromToml }}
 # BEGIN_KITTY_THEME
 # Gruvbox Dark
 include current-theme.conf
@@ -10,15 +11,7 @@ allow_remote_control socket-only
 listen_on unix:/run/user/1000/kitty.sock
 
 font_family JetBrainsMonoNL Nerd Font
-{{ if eq .hostname "homeDesktop" -}}
-font_size 14
-{{ else if eq .hostname "n150MiniDesktop" -}}
-font_size 12
-{{ else if eq .hostname "rogLaptop" -}}
-font_size 16
-{{ else -}}
-font_size 12
-{{- end }}
+font_size {{ $userConfig.kitty.font_size }}
 
 # Kitty 不支持行内 # 注释，所有注释必须独占一行或写行首
 

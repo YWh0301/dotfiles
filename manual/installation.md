@@ -106,10 +106,7 @@
 - chroot到新系统中：`arch-chroot /mnt`；
 - 查看并设置时区：`ls /usr/share/zoneinfo`而后`ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime`，并且`hwclock --systohc`；
 - 使用*neovim*编辑*locale*文件，`nvim /etc/locale.gen`将所有想要使用的locale设定前的注释删除。一般而言是`en_US.UTF-8 UTF-8`与`zh_CN.UTF-8 UTF-8`两项。而后运行`locale-gen`并向`/etc/locale.conf`加入`echo "LANG=en_US.UTF-8" >> /etc/locale.conf`设置*console*环境语言。
-- 向`/etc/hostname`写入该机器的*hostname*：`echo "yourhostname" >> /etc/hostname`。其中，*hostname*应当和此台机器的硬件相关联，因为系统用户配置文件使用*chezmoi*管理，其中的模板根据机器的*hostname*生成每台机器特定的配置文件；
-    - 如果此台机器为笔记本电脑，其*hostname*应当以`Laptop`结尾；
-    - 如果此台机器为台式机，其*hostname*应当以`Desktop`结尾；
-    - 如果需要更改*hostname*：`sudo hostnamectl set-hostname "your_new_hostname"`；
+- 使用`hostnamectl set-hostname "yourhostname"`设置便于识别的主机名。配置策略不得依赖主机名；可复用意图写入`user.toml`，纯本机差异写入对应应用的`local.conf`；
 - 设置*root*用户的密码`passwd`；
 
 ### 安装Bootloader
@@ -316,8 +313,8 @@
     - Yazi中选择文件后按`Shift+L`发送；Thunar可通过自定义动作调用`localsend %F`
     - 若启用防火墙，仅对局域网允许TCP和UDP端口`53317`
 - 如果需要，启用*wayvnc*服务器：
-    - 将`$HOME/.local/share/chezmoi/.chezmoi.toml.tmpl`中针对本机的`data.wayvnc.enable`设置为`true`
-    - `chezmoi init`后`chezmoi apply`，自动在59900端口开启wayvnc服务
+    - 在`~/.config/chezmoi/user.toml`中设置`features.wayvnc = true`，并检查`[wayvnc]`凭据与端口
+    - 运行`chezmoi apply`生成配置、TLS证书并启用用户服务
 - 如果需要，启动*ssh*服务器：
-    - `sudo cp $HOME/.config/reference/ssh/sshd_config /etc/ssh/sshd_config`；按照默认的规则，应当仅允许密钥连接
-    - `sudo systemctl enable --now sshd`
+    - 在`user.toml`中设置`features.sshd = true`并检查`sshd.port`
+    - 系统级SSH drop-in和服务最终由pyinfra管理；`~/.config/reference/ssh/sshd_config`仅作为过渡参考

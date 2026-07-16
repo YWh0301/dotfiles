@@ -6,6 +6,8 @@
 {{- $localSendFeature := dig "features" "localsend" false $personalConfig }}
 {{- $localSendAutostart := dig "localsend" "autostart" false $personalConfig }}
 {{- $proxyBackend := dig "proxy" "backend" "dae" $personalConfig }}
+{{- $machineKind := dig "machine" "kind" "desktop" $personalConfig }}
+{{- $idleAutostart := dig "hyprland" "autostart_idle" true $personalConfig }}
 {{- $localSendEnabled := and $localSendFeature (lookPath "localsend") }}
 
 ################
@@ -13,12 +15,7 @@
 ################
 # See https://wiki.hyprland.org/Configuring/Monitors/
 source = ~/.config/hypr/monitors.conf #used with nwg-displays
-{{- if eq .hostname "homeDesktop" }}
-# 家中台式机默认复制显示
-monitor=,preferred,auto,auto,mirror,HDMI-A-1
-{{- else }}
 monitor=,preferred,auto,auto
-{{- end }}
 
 ##################
 ### WORKSPACES ###
@@ -55,13 +52,10 @@ exec-once = waybar # panel
 exec-once = fcitx5 # input method support
 exec-once = wl-paste --watch cliphist store # clipboard manager
 exec-once = /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 #polkit gui interface
-{{- if ne .hostname "n150MiniDesktop" }}
+{{- if $idleAutostart }}
 exec-once = hypridle # idle detector
 {{- end }}
 exec-once = env HOME="$HOME/.misc/pCloudDrive" pcloud # pCloud Drive uses a separate HOME so its mount point and application state stay out of the normal home directory.
-{{- if ne .hostname "homeDesktop" }}
-# exec-once = echo "Xft.dpi:192" | xrdb -merge
-{{- end }}
 exec-once = /usr/bin/bash $HOME/.config/hypr/scripts/hyprland_ipc_hook.sh
 exec-once = /usr/bin/bash $HOME/.config/hypr/scripts/load_plugins.sh
 {{- if and (eq $proxyBackend "flclash") (lookPath "flclash") }}
@@ -83,20 +77,6 @@ env = QT_QPA_PLATFORMTHEME,qt6ct
 
 # cursors
 env = XCURSOR_SIZE,24
-{{- if or (eq .hostname "homeDesktop") (eq .hostname "rogLaptop") }}
-env = HYPRCURSOR_SIZE,24
-env = HYPRCURSOR_THEME,rose-pine-hyprcursor
-{{- end }}
-
-{{- if eq .hostname "homeDesktop" }}
-# nvidia support
-# See https://wiki.hyprland.org/Nvidia
-# since im tring to use amd gpu for hyprland ill comment these out:https://wiki.hyprland.org/Configuring/Multi-GPU/
-# with hyprland using amdgpu as default and runtime d3 power saving for nvidia enabled, most of the time the nvidia graphic card would be in low power mode. use "cat /proc/driver/nvidia/gpus/0000:01:00.0/power" to check if runtime d3 is enabled and set at fine-grained mode. dont use nvidia-smi or nvtop to check power usage as those apps awake the nvidia gpu and keep it running so the power usage would be inaccurate.instead, use "watch -n1 -d -t cat /sys/bus/pci/devices/0000:01:00.0/power/runtime_status" to create a monitor of nvidia gpu status. if it works well, an 8h battery life can be expected with light weight tasks.
-env = LIBVA_DRIVER_NAME,nvidia
-env = GBM_BACKEND,nvidia-drm
-env = __GLX_VENDOR_LIBRARY_NAME,nvidia
-{{- end }}
 
 # tell apps to use wayland
 env = GDK_BACKEND,wayland,x11,*
@@ -284,16 +264,13 @@ bind = $mainMod Shift, P, exec, grim -g "$(slurp -d)" - | wl-copy
 bind =         , Print, exec, grim -g "$(slurp)" - | swappy -f -
 bind = Shift   , Print, exec, grim -g "$(slurp -d)" - | wl-copy
 bind = $mainMod,Backspace, exec,hyprlock
-{{- if contains "Laptop" .hostname }}
+{{- if eq $machineKind "laptop" }}
 binde =         ,XF86MonBrightnessUp, exec,brightnessctl s +10%
 binde =         ,XF86MonBrightnessDown, exec,brightnessctl s 10%-
 {{- end }}
 binde =         ,XF86AudioRaiseVolume, exec ,pactl set-sink-volume @DEFAULT_SINK@ +5%
 binde =         ,XF86AudioLowerVolume, exec ,pactl set-sink-volume @DEFAULT_SINK@ -5%
 binde =         ,XF86AudioMute, exec ,pactl set-sink-mute @DEFAULT_SINK@ toggle
-{{- if eq .hostname "rogLaptop" }}
-bind =          ,XF86Launch1,exec,notify-send "每年都有很多海狸被自己啃倒的瓶子砸死" # for 海狸
-{{- end }}
 bind = $mainMod, Delete, exec,wlogout -b 2
 bind = $mainMod, Backspace, exec,hyprlock
 bind = $mainMod Shift, Backspace, exec,hyprctl dispatcher exit

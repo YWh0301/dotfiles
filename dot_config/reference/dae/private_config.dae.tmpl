@@ -1,5 +1,4 @@
-{{- $encryptedFile := joinPath .chezmoi.sourceDir "dot_config" "reference" "dae" "encrypted_dae.chezmoidata.toml.age" -}}
-{{- $configData := $encryptedFile | include | decrypt | fromToml -}}
+{{- $userConfig := includeTemplate "user-config.toml" . | fromToml -}}
 global {
     ##### Software options.
 
@@ -114,8 +113,10 @@ global {
 # Support to give the subscription a tag, and filter nodes from a given subscription in the group section.
 subscription {
     # Add your subscription links here.
-    {{ range $configData.proxy }}
+    {{ range $userConfig.proxy.providers }}
+    {{- if .enabled }}
     {{ .name }}:'{{ .url }}'
+    {{- end }}
     {{ end }}
 }
 
@@ -145,7 +146,8 @@ dns {
 
 # Node group (outbound).
 group {
-    {{ range $configData.proxy }}
+    {{ range $userConfig.proxy.providers }}
+    {{- if .enabled }}
     {{ .name }}_hongkong {
         filter: subtag({{ .name }}) && name(keyword: '香港') && !name(keyword: '直连')
         policy: random
@@ -154,6 +156,7 @@ group {
         filter: subtag({{ .name }}) && name(keyword: '美国') && !name(keyword: '直连')
         policy: random
     }
+    {{- end }}
     {{ end }}
 }
 
@@ -168,7 +171,7 @@ routing {
     #pname(git) -> direct
     pname(qbittorrent) -> direct
     pname(pcloud) -> direct
-    #pname(pcloud) -> {{ $configData.default_proxy }}_us
+    #pname(pcloud) -> {{ $userConfig.proxy.default_provider }}_us
     pname(spotify) -> direct
 
     # Put it in the front to prevent broadcast, multicast and other packets that should be sent to the LAN from being
@@ -190,12 +193,12 @@ routing {
     domain(suffix:chatanywhere.tech) -> direct
     domain(suffix:ollama.com) -> direct
     domain(suffix:baidu.com) -> direct
-    domain(suffix:rateyourmusic.com) -> {{ $configData.default_proxy }}_hongkong
+    domain(suffix:rateyourmusic.com) -> {{ $userConfig.proxy.default_provider }}_hongkong
     domain(suffix:pcloud.com) -> direct
-    #domain(suffix:pcloud.com) -> {{ $configData.default_proxy }}_us
+    #domain(suffix:pcloud.com) -> {{ $userConfig.proxy.default_provider }}_us
     domain(suffix:spotify.com) -> direct
     domain(suffix:github.com) -> direct
     
-    #fallback: {{ $configData.default_proxy }}_hongkong
-    fallback: {{ $configData.default_proxy }}_us
+    #fallback: {{ $userConfig.proxy.default_provider }}_hongkong
+    fallback: {{ $userConfig.proxy.default_provider }}_us
 }
