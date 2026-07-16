@@ -1,0 +1,5 @@
+{{- $personalConfig := includeTemplate "user-config.toml" . | fromToml }}
+{{- if eq $personalConfig.proxy.backend "flclash" }}
+export HTTP_PROXY='http://127.0.0.1:{{ $personalConfig.proxy.flclash_http_port }}'
+export HTTPS_PROXY='http://127.0.0.1:{{ $personalConfig.proxy.flclash_http_port }}'
+{{- end }}

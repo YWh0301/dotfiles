@@ -1,0 +1,6 @@
+{{- $userConfig := includeTemplate "user-config.toml" . | fromToml -}}
+{{- $config := dict
+    "apiKeys" (dict "aliyun" $userConfig.api_keys.bailian)
+    "defaultModel" "qwen-image-2.0-pro-2026-04-22"
+-}}
+{{ $config | toPrettyJson }}

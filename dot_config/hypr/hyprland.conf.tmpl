@@ -1,3 +1,13 @@
+{{- $personalConfigPath := joinPath .chezmoi.homeDir ".config/chezmoi/user.toml" }}
+{{- $personalConfig := dict }}
+{{- if stat $personalConfigPath }}
+{{-   $personalConfig = include $personalConfigPath | fromToml }}
+{{- end }}
+{{- $localSendFeature := dig "features" "localsend" false $personalConfig }}
+{{- $localSendAutostart := dig "localsend" "autostart" false $personalConfig }}
+{{- $proxyBackend := dig "proxy" "backend" "dae" $personalConfig }}
+{{- $localSendEnabled := and $localSendFeature (lookPath "localsend") }}
+
 ################
 ### MONITORS ###
 ################
@@ -48,17 +58,18 @@ exec-once = /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 #polkit gu
 {{- if ne .hostname "n150MiniDesktop" }}
 exec-once = hypridle # idle detector
 {{- end }}
-{{- if eq .pcloud.client "pcloudcc" }}
-exec-once = pcloudcc -m $HOME/.misc/pCloudDrive -u {{ .email.default }} -d
-{{- else }}
-exec-once = env HOME="$HOME/.misc/pCloudDrive" pcloud #pcloud would mount on a folder in home directory which is ugly so i change the home and created sim links in the folder to trick pcloud. remeber to also modify the exec in desktop entry of pcloud. furthermore pcloud only take absolute path so ~/ wont work.after this just set sync folder in the app then u can use it without any trouble.
-{{- end }}
+exec-once = env HOME="$HOME/.misc/pCloudDrive" pcloud # pCloud Drive uses a separate HOME so its mount point and application state stay out of the normal home directory.
 {{- if ne .hostname "homeDesktop" }}
 # exec-once = echo "Xft.dpi:192" | xrdb -merge
 {{- end }}
 exec-once = /usr/bin/bash $HOME/.config/hypr/scripts/hyprland_ipc_hook.sh
 exec-once = /usr/bin/bash $HOME/.config/hypr/scripts/load_plugins.sh
+{{- if and (eq $proxyBackend "flclash") (lookPath "flclash") }}
 exec-once = flclash
+{{- end }}
+{{- if and $localSendEnabled $localSendAutostart }}
+exec-once = localsend --hidden
+{{- end }}
 
 #############################
 ### ENVIRONMENT VARIABLES ###
@@ -498,6 +509,9 @@ windowrule = suppress_event maximize, match:class .* # You'll probably like this
 windowrule = opacity 0.9 override 0.85,match:class ^(kitty)$
 windowrule = workspace 10 silent,match:class ^(?i)pcloud$
 windowrule = workspace 10 silent,match:class ^(?i)com.follow.clash$
+{{- if $localSendEnabled }}
+windowrule = float on,match:class ^(localsend)$
+{{- end }}
 windowrule = fullscreen on,match:class ^(mpv)$
 windowrule = workspace 10 silent,match:class ^(kitty)$,match:title ^(~/pCloudDrive)$
 windowrule = float on,match:class ^(blueman-manager)$,match:title ^(Bluetooth Devices)$
@@ -524,3 +538,7 @@ plugin:dynamic-cursors {
     enable = true
     mode = none
 }
+
+# Optional machine-local overrides. The file is created once when missing and
+# its contents are not managed by chezmoi.
+source = ~/.config/hypr/local.conf

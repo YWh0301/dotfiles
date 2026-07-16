@@ -1,3 +1,14 @@
 [[mgr.prepend_keymap]]
 on   = "<S-t>"
 run  = "shell --orphan '{{ .chezmoi.homeDir }}/.local/share/chezmoi/scripts/yt {cwd}'"
+
+{{- $personalConfigPath := joinPath .chezmoi.homeDir ".config/chezmoi/user.toml" }}
+{{- if stat $personalConfigPath }}
+{{-   $personalConfig := include $personalConfigPath | fromToml }}
+{{-   if and $personalConfig.features.localsend (lookPath "localsend") }}
+[[mgr.prepend_keymap]]
+on   = "<S-l>"
+run  = "shell --orphan -- localsend %s"
+desc = "Send selected files via LocalSend"
+{{-   end }}
+{{- end }}

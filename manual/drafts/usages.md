@@ -160,7 +160,7 @@ See [archwiki](https://wiki.archlinux.org/title/Xorg#Driver_installation) for mo
 
 ### thunar
 
-Install *thunar*, *gvfs*, *gvfs-mtp*,  *thunar-archive-plugin*, *thunar-media-plugin*, *thunar-shares-plugin*, *thunar-volman*.
+Install *thunar*, *gvfs*, *gvfs-mtp*, *thunar-archive-plugin*, *thunar-media-plugin*, and *thunar-volman*.
 
 ### xwayland
 

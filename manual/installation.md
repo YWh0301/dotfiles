@@ -266,15 +266,10 @@
         - `cd && rm-rf yay-bin`清理文件；
 - 所需的软件包
     - 可以参考`($chezmoi source-path)/manual/installation.md`与`($chezmoi source-path)/manual/packages.md`进行安装；也可以使用`($chezmoi source-path)/scripts/installation.sh`脚本化必要包安装过程；
-    - `sudo pacman -S --needed dkms evtest wev less tree wget lsof strace ltrace usbutils sshfs samba pacman-contrib iwd  bind exfatprogs btrfs-progs snapper acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt5ct qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-shares-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs gvfs-smb 7zip jq fd fzf ripgrep resvg ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb cmake ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
+    - `sudo pacman -S --needed dkms evtest wev less tree wget lsof strace ltrace usbutils sshfs pacman-contrib iwd  bind exfatprogs btrfs-progs snapper acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt5ct qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs 7zip jq fd fzf ripgrep resvg ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb cmake ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
     - 如果使用笔记本，安装相应软件包`pacman -S brightnessctl powertop thermald auto-cpufreq`；
-    - `yay -S antigen  nvim-lazy vivify wps-office-cn wps-office-mui-zh-cn ttf-wps-fonts`；
-    - 安装*pCloud*客户端
-        - 如果使用*pcloudcc*则安装`yay -S pcloudcc-lneely`，并在`($chezmoi source-path)/.chezmoi.toml.tmpl`中根据*hostname*配置*data.pcloud.client*参数为*pcloudcc*；
-        - 如果使用*pcloud-drive*则安装`yay -S pcloud-drive`，并在`($chezmoi source-path)/.chezmoi.toml.tmpl`中根据*hostname*配置*data.pcloud.client*参数为*pcloud-drive*；
-        - 修改`chezmoi.toml.tmpl`之后：
-            - `chezmoi init --apply`
-            - `git add .`、`git commit`、`git push`推到上游仓库
+    - `yay -S antigen nvim-lazy vivify wps-office-cn wps-office-mui-zh-cn ttf-wps-fonts localsend-bin`；
+    - 安装*pCloud Drive*客户端：`yay -S pcloud-drive`
     - 如果使用systemd-boot作为bootloader，则`yay -S systemd-boot-pacman-hook`；
     - 安装所需的GPU驱动
         - 详情参见[ArchWiki](https://wiki.archlinux.org/title/Xorg#Driver_installation)。
@@ -292,10 +287,7 @@
     - 为*github.com*添加*ssh*公钥
         - 拷贝已经由*chezmoi*脚本创建好的公钥：`echo ~/.ssh/id_ed25519.pub | wl-copy`
         - 按下默认`Alt_L+w`快捷键启动*firefox*，登录*github.com*（需要Authenticator给出2FA TOPT token），在设置 -> SSH and GPG keys -> New SSH key粘贴新机器的公钥；
-- 若使用*pcloudcc*，需要主动输入密码并配置：`pcloudcc -u youremail@mail.com -m $HOME/.misc/pCloudDrive -s`并输入密码；
-    - 使用`-d`参数后台运行*pcloudcc*，而后使用`-k`参数进入REPL配置同步文件夹；
-    - 其中，同步文件夹的`<remote-path>`为`$HOME/.misc/pCloudDrive`起始的路径；
-- 若使用*pcloud-drive*：
+- 配置*pCloud Drive*：
     - 手动登录，注意登录过程需要为*pcloud*开启代理，并提前准备好账号、密码以及2FA代码快速输入，否则可能登录超时导致失败
     - 将`$HOME/.config/reference/pcloud/sync_exclusion.txt`中的内容复制到*pcloud-drive*应用中的*Settings -> Exclusions*中排除文件的位置，点击*Apply*
 
@@ -317,13 +309,12 @@
         - `sudo mkdir /.snapshots`
         - `sudo chmod 750 /.snapshots`
         - `sudo mount /.snapshots`
-- 如果需要启用*samba*服务器：
-    - 将`$HOME/.local/share/chezmoi/.chezmoi.toml.tmpl`中针对本机的`data.samba.enable`设置为`true`
-    - `sudo cp $HOME/.config/reference/samba/smb.conf /etc/samba/smb.conf`；如果处在开放的网络环境，应当编辑*chezmoi*的参考配置文件采用强制加密的*SMB3*以上协议
-    - `sudo smbpasswd -a yourusername`，把当前用户同时也添加到*smb*用户并设定*smb*密码；建议使用存储在*Bitwarden*中的强密码
-    - `sudo systemctl enable --now smb nmb`
-    - `smbclient //localhost/HomeShare -U yourusername`测试本地访问是否可行
-    - 使用*HomeShare*为共享名，*yourusername*为用户名连接
+- 使用*LocalSend*与iOS和Android设备进行局域网文件互传：
+    - 在代理或私人Arch仓库可用后安装`localsend-bin`；它不应阻塞基础系统Bootstrap
+    - 移动端安装LocalSend，并允许iOS“本地网络”等必要权限
+    - 接收目录默认使用`$HOME/Downloads`
+    - Yazi中选择文件后按`Shift+L`发送；Thunar可通过自定义动作调用`localsend %F`
+    - 若启用防火墙，仅对局域网允许TCP和UDP端口`53317`
 - 如果需要，启用*wayvnc*服务器：
     - 将`$HOME/.local/share/chezmoi/.chezmoi.toml.tmpl`中针对本机的`data.wayvnc.enable`设置为`true`
     - `chezmoi init`后`chezmoi apply`，自动在59900端口开启wayvnc服务

@@ -32,25 +32,6 @@ encryption = "age"
     default = "2490224285@qq.com"
     school = "yuwenhao@stu.pku.edu.cn"
 
-[data.pcloud]
-{{- if or (eq $hostname "homeDesktop") (eq $hostname "rogLaptop") (eq $hostname "t460Laptop") (eq $hostname "n150MiniDesktop") }}
-    client = "pcloud-drive"
-{{- else }}
-    client = "pcloudcc"
-{{- end }}
-
-[data.samba]
-{{- if contains "Desktop" $hostname }}
-    enable = true
-{{- else }}
-    enable = false
-{{- end }}
-{{- if eq "homeDesktop" $hostname }}
-    sambadir = true
-{{- else }}
-    sambadir = false
-{{- end }}
-
 [data.wayvnc]
 {{- if contains "Desktop" $hostname }}
     enable = false

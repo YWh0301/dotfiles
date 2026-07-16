@@ -94,7 +94,6 @@
 #### File System Utilities
 
 - **sshfs**
-- **samba**
 - **exfatprogs**
 - **btrfs-progs**
     - btrfs中的子卷概念
@@ -266,12 +265,10 @@
     - **thunar-archive-plugin**
     - **xarchiver**
     - **thunar-media-tags-plugin**
-    - **thunar-shares-plugin**
     - **thunar-volman**
     - **gvfs**
     - **gvfs-mtp**
     - **gvfs-nfs**
-    - **gvfs-smb**
 - **yazi**
     - 使用TUI的多功能文件管理器
     - **7zip**
@@ -282,6 +279,9 @@
     - **ffmpegthumbnailer**
     - **zoxide**
     - **resvg**
+- **localsend-bin**(AUR)
+    - 与iOS和Android设备进行局域网双向文件传输
+    - Yazi通过`Shift+L`发送选中文件
 - **pcloud-drive**(AUR)
 
 ### Input Method

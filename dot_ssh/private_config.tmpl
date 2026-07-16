@@ -1,5 +1,6 @@
 {{- $encryptedFile := joinPath .chezmoi.sourceDir "dot_ssh" "encrypted_ssh.chezmoidata.toml.age" -}}
 {{- $sshData := $encryptedFile | include | decrypt | fromToml -}}
+{{- $personalConfig := includeTemplate "user-config.toml" . | fromToml -}}
 {{- range $sshData.host -}}
 Host {{ .name }}
     HostName {{ .hostname }}
@@ -11,4 +12,6 @@ Host {{ .name }}
 Host github.com
     Hostname ssh.github.com
     Port 443
-    ProxyCommand socat - PROXY:127.0.0.1:%h:%p,proxyport=7890
+{{- if eq $personalConfig.proxy.backend "flclash" }}
+    ProxyCommand socat - PROXY:127.0.0.1:%h:%p,proxyport={{ $personalConfig.proxy.flclash_http_port }}
+{{- end }}

@@ -2,16 +2,6 @@ scripts/
 manual/
 pkgbuilds/
 key.txt.age
-{{- if eq .pcloud.client "pcloudcc" }}
-.local/share/applications/pcloud.desktop
-.config/reference/pcloud
-{{- end }} 
-{{- if not .samba.enable }}
-.config/reference/samba
-{{- end }} 
-{{- if not .samba.sambadir }}
-samba
-{{- end }} 
 {{- if not .wayvnc.enable }}
 .config/wayvnc
 {{- end }} 

@@ -1,3 +1,4 @@
+{{- $personalConfig := includeTemplate "user-config.toml" . | fromToml }}
 source /usr/share/zsh/share/antigen.zsh
 
 antigen use oh-my-zsh
@@ -12,8 +13,10 @@ antigen bundle zsh-users/zsh-syntax-highlighting
 
 antigen theme consolemaverick/zsh2000
 export ZSH_2000_DISABLE_RVM='true'
-export HTTP_PROXY='http://127.0.0.1:7890'
-export HTTPS_PROXY='http://127.0.0.1:7890'
+{{- if eq $personalConfig.proxy.backend "flclash" }}
+export HTTP_PROXY='http://127.0.0.1:{{ $personalConfig.proxy.flclash_http_port }}'
+export HTTPS_PROXY='http://127.0.0.1:{{ $personalConfig.proxy.flclash_http_port }}'
+{{- end }}
 
 antigen apply
 

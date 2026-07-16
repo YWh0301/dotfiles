@@ -1,0 +1,1 @@
+{{- include (joinPath .chezmoi.homeDir ".config/chezmoi/user.toml") -}}
