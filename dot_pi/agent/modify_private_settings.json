@@ -1,0 +1,25 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $userConfig := includeTemplate "user-config.toml" . | fromToml -}}
+{{- $settings := dict -}}
+{{- if .chezmoi.stdin -}}
+{{-   $settings = .chezmoi.stdin | fromJson -}}
+{{- end -}}
+{{- $_ := set $settings "theme" "dark" -}}
+{{- $_ = set $settings "defaultProvider" "openai-codex" -}}
+{{- $_ = set $settings "defaultModel" "gpt-5.6-sol" -}}
+{{- $_ = set $settings "defaultThinkingLevel" "medium" -}}
+{{- $_ = set $settings "transport" "sse" -}}
+{{- $_ = set $settings "extensions" (list
+    "/usr/share/pi/extensions/pi-agent-browser-native"
+    "/usr/share/pi/extensions/pi-image-gen"
+    "/usr/share/pi/extensions/pi-mcp-extension"
+    "/usr/share/pi/extensions/pi-pdf"
+    "/usr/share/pi/extensions/web-access"
+) -}}
+{{- $_ = set $settings "hideThinkingBlock" true -}}
+{{- if eq $userConfig.proxy.backend "flclash" -}}
+{{-   $_ = set $settings "httpProxy" (printf "http://127.0.0.1:%v" $userConfig.proxy.flclash_http_port) -}}
+{{- else -}}
+{{-   $_ = unset $settings "httpProxy" -}}
+{{- end -}}
+{{ $settings | toPrettyJson }}

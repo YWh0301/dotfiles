@@ -1,0 +1,10 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- $userConfig := includeTemplate "user-config.toml" . | fromToml -}}
+{{- $auth := dict -}}
+{{- if .chezmoi.stdin -}}
+{{-   $auth = .chezmoi.stdin | fromJson -}}
+{{- end -}}
+{{- $_ := set $auth "bailian" (dict "type" "api_key" "key" $userConfig.api_keys.bailian) -}}
+{{- $_ = set $auth "opencode-go" (dict "type" "api_key" "key" $userConfig.api_keys.opencode_go) -}}
+{{- $_ = set $auth "deepseek" (dict "type" "api_key" "key" $userConfig.api_keys.deepseek) -}}
+{{ $auth | toPrettyJson }}

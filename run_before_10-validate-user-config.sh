@@ -18,8 +18,8 @@ def require(condition: bool, message: str) -> None:
 require(config.get("schema_version") == 1, "schema_version must be 1")
 require(config.get("machine", {}).get("kind") in {"laptop", "desktop"},
         "machine.kind must be laptop or desktop")
-require(config.get("proxy", {}).get("backend") in {"flclash", "dae", "daed"},
-        "proxy.backend must be flclash, dae, or daed")
+require(config.get("proxy", {}).get("backend") in {"flclash", "dae"},
+        "proxy.backend must be flclash or dae")
 
 for section, key in (("kitty", "font_size"), ("sshd", "port"), ("wayvnc", "port")):
     value = config.get(section, {}).get(key)
@@ -33,15 +33,14 @@ providers = config.get("proxy", {}).get("providers", [])
 provider_names = [provider.get("name") for provider in providers]
 require(len(provider_names) == len(set(provider_names)), "proxy provider names must be unique")
 default_provider = config.get("proxy", {}).get("default_provider")
-enabled_names = {provider.get("name") for provider in providers if provider.get("enabled") is True}
-require(default_provider in enabled_names, "proxy.default_provider must name an enabled provider")
+require(default_provider in set(provider_names), "proxy.default_provider must name an existing provider")
 
 hosts = config.get("ssh", {}).get("hosts", [])
 host_names = [host.get("name") for host in hosts]
 require(len(host_names) == len(set(host_names)), "ssh host aliases must be unique")
 
 for dotted in (
-    "identity.name", "git.email", "ssh.key_comment", "wayvnc.username", "wayvnc.password",
+    "identity.name", "git.email", "wayvnc.username", "wayvnc.password",
     "api_keys.deepseek", "api_keys.opencode_go", "api_keys.bailian",
 ):
     section, key = dotted.split(".", 1)

@@ -4,6 +4,7 @@
 {{-   $personalConfig = include $personalConfigPath | fromToml }}
 {{- end }}
 {{- $localSendFeature := dig "features" "localsend" false $personalConfig }}
+{{- $wayVNCFeature := dig "features" "wayvnc" false $personalConfig }}
 {{- $localSendAutostart := dig "localsend" "autostart" false $personalConfig }}
 {{- $proxyBackend := dig "proxy" "backend" "dae" $personalConfig }}
 {{- $machineKind := dig "machine" "kind" "desktop" $personalConfig }}
@@ -56,13 +57,15 @@ exec-once = /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 #polkit gu
 exec-once = hypridle # idle detector
 {{- end }}
 exec-once = env HOME="$HOME/.misc/pCloudDrive" pcloud # pCloud Drive uses a separate HOME so its mount point and application state stay out of the normal home directory.
-exec-once = /usr/bin/bash $HOME/.config/hypr/scripts/hyprland_ipc_hook.sh
 exec-once = /usr/bin/bash $HOME/.config/hypr/scripts/load_plugins.sh
 {{- if and (eq $proxyBackend "flclash") (lookPath "flclash") }}
 exec-once = flclash
 {{- end }}
 {{- if and $localSendEnabled $localSendAutostart }}
 exec-once = localsend --hidden
+{{- end }}
+{{- if and $wayVNCFeature (lookPath "wayvnc") }}
+exec-once = systemctl --user start wayvnc
 {{- end }}
 
 #############################
@@ -518,4 +521,4 @@ plugin:dynamic-cursors {
 
 # Optional machine-local overrides. The file is created once when missing and
 # its contents are not managed by chezmoi.
-source = ~/.config/hypr/local.conf
+source = ~/.config/hypr/hyprland/local.conf

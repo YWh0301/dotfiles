@@ -5,7 +5,7 @@ config_dir="${HOME}/.config/chezmoi"
 key_file="${config_dir}/key.txt"
 defaults_file="${config_dir}/user.template.toml"
 user_file="${config_dir}/user.toml"
-encrypted_defaults="{{ .chezmoi.sourceDir }}/dot_config/chezmoi/encrypted_private_user.template.toml.age"
+encrypted_defaults="{{ .chezmoi.sourceDir }}/dot_config/private_chezmoi/encrypted_private_user.template.toml.age"
 
 mkdir -p "${config_dir}"
 chmod 700 "${config_dir}"
@@ -27,13 +27,14 @@ if [ ! -f "${defaults_file}" ] || [ ! -f "${user_file}" ]; then
 fi
 
 if [ ! -f "${user_file}" ]; then
+    install -m 600 "${defaults_file}" "${user_file}"
     cat >&2 <<EOF
-Personal configuration has not been created.
+A machine-local personal configuration was created with mode 0600:
 
-Review the encrypted defaults, then create and edit the machine-local file:
+  ${user_file}
 
-  cp '${defaults_file}' '${user_file}'
-  chmod 600 '${user_file}'
+Review and edit it, then apply again:
+
   \${EDITOR:-nvim} '${user_file}'
   chezmoi apply
 

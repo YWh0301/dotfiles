@@ -114,9 +114,7 @@ global {
 subscription {
     # Add your subscription links here.
     {{ range $userConfig.proxy.providers }}
-    {{- if .enabled }}
     {{ .name }}:'{{ .url }}'
-    {{- end }}
     {{ end }}
 }
 
@@ -147,7 +145,6 @@ dns {
 # Node group (outbound).
 group {
     {{ range $userConfig.proxy.providers }}
-    {{- if .enabled }}
     {{ .name }}_hongkong {
         filter: subtag({{ .name }}) && name(keyword: '香港') && !name(keyword: '直连')
         policy: random
@@ -156,7 +153,6 @@ group {
         filter: subtag({{ .name }}) && name(keyword: '美国') && !name(keyword: '直连')
         policy: random
     }
-    {{- end }}
     {{ end }}
 }
 
