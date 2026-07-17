@@ -15,6 +15,13 @@ sudo pacman -S --needed uv
 The project uses the PyPI mirror from `user.toml`, a committed `uv.lock`, and a
 Git-ignored virtual environment at `system/.venv`.
 
+For a new machine, `manual/installation.md` defines a one-reboot flow. After a
+minimal pacstrap and manual user/sudo creation, run chezmoi directly inside
+`arch-chroot`. `/run/archiso` (or `PERSONAL_SYSTEM_CHROOT=1`) selects offline
+mode: packages, locale, hostname, GRUB, validated configs, and service enablement
+are applied, while all service start/reload actions are deferred until the first
+boot and its follow-up apply.
+
 ## Review and apply
 
 Run an unprivileged plan:
@@ -48,25 +55,30 @@ pyinfra plan/confirmation flow.
 - strict parsing of the invisible `<!-- pyinfra: ... -->` selectors attached
   to human-readable package entries in `manual/packages.md`;
 - selectors for always-installed, manual, feature-, runtime hardware-, machine-,
-  and explicit profile-owned packages; selected AUR/myPKGBUILDS packages are
-  reported but not installed;
+  and explicit profile-owned packages;
 - package satisfaction checked through `pacman -T`, preserving installed
   provider packages such as `waybar-ywh-git`; Pacman groups are expanded and
   considered satisfied only when every member is installed;
 - runtime CPU, multi-GPU, root-filesystem, and installed-kernel detection;
-  kernels remain a pacstrap/manual decision, while NVIDIA prebuilt/LTS/DKMS
-  modules follow the kernels already installed and fail if DKMS headers are missing;
+  kernels remain a pacstrap/manual decision, while matching Headers and NVIDIA
+  prebuilt/LTS/DKMS modules follow the kernels already installed;
 - full `pacman -Syu` only when a selected package is missing, with the
   ArchLinuxCN keyring installed before repository packages;
 - DAE configuration deployed to `/etc/dae/config.dae`, validated on change, and
   enabled/started only when `proxy.backend = "dae"`;
 - reviewed, Git-metadata-free PKGBUILDs under `pkgbuilds/`, built as the normal
-  user in an explicit dependency order only after the selected proxy/network is
-  reachable; every `makepkg -si` invocation includes `--needed`;
-- Tailscale systemd service state;
+  user in an explicit dependency order; each build first uses the selected
+  network path, then retries through a temporary DAE, and defers without aborting
+  the base install if both fail; every `makepkg -si` invocation includes `--needed`;
+- managed fstab generation, locale, timezone, hostname, login shell, tty1
+  autologin, and first-boot GRUB installation/config validation in ArchISO chroot mode;
+- NetworkManager, time sync, Bluetooth, CUPS, Tailscale, a managed UFW policy,
+  periodic trim/cache maintenance, laptop power management, and global
+  PipeWire/WirePlumber user-unit enablement;
 - preflight validation of the local SSH certificate followed by CA-only OpenSSH
   trust, principals, port, service state, validation, and reload;
-- no AUR dependency during base bootstrap.
+- vendored always-AUR and myPKGBUILDS are a reviewed second transaction after
+  the signed Pacman base and proxy configuration have converged.
 
 Package entries are ordinary Markdown bullets such as
 `- **git** <!-- pyinfra: always -->`. Supported selectors are `always`, `manual`,
@@ -75,9 +87,8 @@ Profile names are
 selected through `[packages].profiles` in `user.toml`. Every bold package bullet
 must carry exactly one selector; malformed or conflicting entries fail closed.
 
-LocalSend is intentionally reported but not installed until an AUR or private
-repository is available. Snapper and autologin configuration will be added in
-later modules.
+`features.snapper` currently controls package installation only. Snapper
+subvolume/configuration policy remains a manual step and later module.
 
 ## Trust boundary
 

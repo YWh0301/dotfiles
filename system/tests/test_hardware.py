@@ -28,10 +28,16 @@ class NvidiaKernelCompatibilityTest(unittest.TestCase):
         with self.installed("linux", "linux-headers", "linux-zen", "linux-zen-headers"):
             self.assertEqual(hardware._nvidia_module_selector(), "gpu_nvidia_open_dkms")
 
-    def test_dkms_fails_closed_without_headers(self) -> None:
+    def test_known_kernel_headers_can_be_installed_with_dkms(self) -> None:
         with self.installed("linux-zen"):
-            with self.assertRaisesRegex(RuntimeError, "linux-zen-headers"):
-                hardware._nvidia_module_selector()
+            self.assertEqual(hardware._nvidia_module_selector(), "gpu_nvidia_open_dkms")
+
+    def test_unknown_kernel_fails_closed_without_headers(self) -> None:
+        with self.installed():
+            with patch("hardware.subprocess.check_output", return_value="custom-kernel\n"):
+                with patch("hardware.Path.exists", return_value=False):
+                    with self.assertRaisesRegex(RuntimeError, "custom-kernel"):
+                        hardware._nvidia_module_selector()
 
 
 if __name__ == "__main__":

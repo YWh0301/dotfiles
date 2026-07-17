@@ -22,6 +22,9 @@ SUPPORTED_HARDWARE = {
     "gpu_nvidia_open_dkms",
     "gpu_nvidia_open_lts",
     "gpu_open",
+    "kernel_linux",
+    "kernel_lts",
+    "kernel_zen",
 }
 SUPPORTED_MACHINE_KINDS = {"desktop", "laptop"}
 

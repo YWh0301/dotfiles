@@ -17,10 +17,16 @@
 
 ### Basic Arch Linux System
 
-- **linux-zen** <!-- pyinfra: manual -->
-- **linux-zen-headers** <!-- pyinfra: manual -->
+- 内核由 pacstrap/人工选择；pyinfra 只为已安装内核补齐 Headers
+    - **linux** <!-- pyinfra: manual -->
+    - **linux-headers** <!-- pyinfra: hardware=kernel_linux -->
+    - **linux-lts** <!-- pyinfra: manual -->
+    - **linux-lts-headers** <!-- pyinfra: hardware=kernel_lts -->
+    - **linux-zen** <!-- pyinfra: manual -->
+    - **linux-zen-headers** <!-- pyinfra: hardware=kernel_zen -->
 - **base** <!-- pyinfra: always -->
 - **base-devel** <!-- pyinfra: always -->
+- **arch-install-scripts** <!-- pyinfra: always -->
 - **linux-firmware** <!-- pyinfra: always -->
 - 根据所使用的CPU制造商决定微码软件包
     - **intel-ucode** <!-- pyinfra: hardware=cpu_intel -->
@@ -42,6 +48,7 @@
     - **github-cli** <!-- pyinfra: always -->
 - **less** <!-- pyinfra: always -->
 - **tree** <!-- pyinfra: always -->
+- **tree-sitter-cli** <!-- pyinfra: always -->
 - **wget** <!-- pyinfra: always -->
 - **curl** <!-- pyinfra: always -->
 - **lsof** <!-- pyinfra: always -->
@@ -121,7 +128,7 @@
         - 快照指针对子卷，不能针对目录和文件
         - 嵌套子卷不会被父子卷的快照保留
         - 快照默认与原子卷相同权限，但原子卷权限缩紧后快照不会自动变更，可能导致**安全问题**
-- **snapper** <!-- pyinfra: hardware=fs_btrfs -->
+- **snapper** <!-- pyinfra: feature=snapper -->
     - 用于自动生成btrfs快照，默认生成只读快照
     - 添加新的快照设置：`snapper -c your_config_label create-config /path/to/subvolume`
         - 会在需要快照的子卷下生成名称为`.snapshots`的子卷用来存储快照

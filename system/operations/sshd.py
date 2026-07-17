@@ -10,7 +10,7 @@ import subprocess
 from pyinfra.operations import files, server, systemd
 from pyinfra.operations.util import any_changed
 
-from runtime import SUDO
+from runtime import IS_CHROOT, SUDO
 from user_config import UserConfig
 
 
@@ -66,7 +66,7 @@ def configure_sshd(settings: UserConfig) -> None:
         systemd.service(
             name="Disable the OpenSSH daemon",
             service="sshd.service",
-            running=False,
+            running=None if IS_CHROOT else False,
             enabled=False,
             _sudo=SUDO,
         )
@@ -118,7 +118,16 @@ def configure_sshd(settings: UserConfig) -> None:
         _sudo=SUDO,
     )
 
-    ssh_files_changed = any_changed(principals_directory, ca_key, principal_file, dropin)
+    changed_operations = [principals_directory, ca_key, principal_file, dropin]
+    if IS_CHROOT and not Path("/etc/ssh/ssh_host_ed25519_key").exists():
+        host_keys = server.shell(
+            name="Generate SSH host keys for first boot",
+            commands=["/usr/bin/ssh-keygen -A"],
+            _sudo=SUDO,
+        )
+        changed_operations.append(host_keys)
+
+    ssh_files_changed = any_changed(*changed_operations)
     validation = server.shell(
         name="Validate sshd configuration after trust changes",
         commands=["/usr/bin/sshd -t"],
@@ -127,16 +136,17 @@ def configure_sshd(settings: UserConfig) -> None:
     )
 
     service = systemd.service(
-        name="Enable and start the OpenSSH daemon",
+        name=("Enable OpenSSH for first boot" if IS_CHROOT else "Enable and start the OpenSSH daemon"),
         service="sshd.service",
-        running=True,
+        running=None if IS_CHROOT else True,
         enabled=True,
         _sudo=SUDO,
     )
-    systemd.service(
-        name="Reload OpenSSH after validated configuration changes",
-        service="sshd.service",
-        reloaded=True,
-        _sudo=SUDO,
-        _if=[ssh_files_changed, validation.did_succeed, service.did_succeed],
-    )
+    if not IS_CHROOT:
+        systemd.service(
+            name="Reload OpenSSH after validated configuration changes",
+            service="sshd.service",
+            reloaded=True,
+            _sudo=SUDO,
+            _if=[ssh_files_changed, validation.did_succeed, service.did_succeed],
+        )

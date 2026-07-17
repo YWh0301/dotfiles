@@ -25,6 +25,14 @@ class Identity:
 @dataclass(frozen=True)
 class Machine:
     kind: str
+    hostname: str
+
+
+@dataclass(frozen=True)
+class SystemSettings:
+    timezone: str
+    default_locale: str
+    locales: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -61,6 +69,7 @@ class Mirrors:
 class UserConfig:
     identity: Identity
     machine: Machine
+    system: SystemSettings
     features: Features
     proxy: Proxy
     sshd: Sshd
@@ -89,7 +98,12 @@ def load_user_config(path: Path | None = None) -> UserConfig:
     )
     sshd = Sshd(port=raw["sshd"]["port"])
     identity = Identity(name=raw["identity"]["name"])
-    machine = Machine(kind=raw["machine"]["kind"])
+    machine = Machine(**raw["machine"])
+    system = SystemSettings(
+        timezone=raw["system"]["timezone"],
+        default_locale=raw["system"]["default_locale"],
+        locales=tuple(raw["system"]["locales"]),
+    )
     pacman = Pacman(
         repositories=tuple(raw["pacman"]["repositories"]),
         parallel_downloads=raw["pacman"]["parallel_downloads"],
@@ -104,6 +118,10 @@ def load_user_config(path: Path | None = None) -> UserConfig:
 
     if machine.kind not in {"laptop", "desktop"}:
         raise ValueError(f"{path}: unsupported machine.kind {machine.kind!r}")
+    if not machine.hostname or any(character.isspace() for character in machine.hostname):
+        raise ValueError(f"{path}: machine.hostname must be a non-empty DNS-style name")
+    if system.default_locale not in system.locales:
+        raise ValueError(f"{path}: system.default_locale must be included in system.locales")
     if proxy.backend not in {"flclash", "dae"}:
         raise ValueError(f"{path}: unsupported proxy.backend {proxy.backend!r}")
     if not 1 <= proxy.flclash_http_port <= 65535:
@@ -125,6 +143,7 @@ def load_user_config(path: Path | None = None) -> UserConfig:
     return UserConfig(
         identity=identity,
         machine=machine,
+        system=system,
         features=features,
         proxy=proxy,
         sshd=sshd,

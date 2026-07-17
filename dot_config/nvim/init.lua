@@ -41,7 +41,28 @@ vim.keymap.set('o', 'gk', 'k', { noremap = true })
 
 require("lazy").setup({
   -- 插件列表
-  { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" },
+  {
+    "nvim-treesitter/nvim-treesitter",
+    branch = "main",
+    lazy = false,
+    build = ":TSUpdate",
+    config = function()
+      local treesitter = require("nvim-treesitter")
+      treesitter.setup({})
+      treesitter.install({
+        "bash",
+        "c",
+        "cmake",
+        "cpp",
+        "json",
+        "lua",
+        "markdown",
+        "markdown_inline",
+        "python",
+        "rust",
+      })
+    end,
+  },
   { "neovim/nvim-lspconfig" },
   { "cdelledonne/vim-cmake" },
   { "yamatsum/nvim-cursorline" },
@@ -54,15 +75,16 @@ require("lazy").setup({
 })
 --]]
 
----[[ treesitter 配置
-require("nvim-treesitter.configs").setup({
-  ensure_installed = {"c","cpp", "python","markdown","lua","bash", "json", "cmake","rust"},
-  highlight = { enable = true },
-  fold = { enable = true },
+---[[ treesitter 配置（nvim-treesitter main / Neovim 0.12）
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "c", "cmake", "cpp", "json", "lua", "markdown", "python", "rust", "sh" },
+  callback = function()
+    pcall(vim.treesitter.start)
+    vim.wo.foldmethod = "expr"
+    vim.wo.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+    vim.wo.foldenable = false
+  end,
 })
-vim.opt.foldmethod = 'expr'  -- 使用表达式控制折叠
-vim.opt.foldexpr = 'v:lua.vim.treesitter.foldexpr()'  -- Treesitter 提供的折叠表达式
-vim.opt.foldenable = false
 --]]
 
 ---[[ 启用 lspconfig 并配置

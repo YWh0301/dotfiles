@@ -43,18 +43,9 @@ def _nvidia_module_selector() -> str:
 
     # Zen, multiple kernels, and unrecognised custom kernels require DKMS. Do
     # not install/remove kernels here: they remain a pacstrap/manual decision.
-    if installed_kernels:
-        missing_headers = {
-            KNOWN_KERNELS[kernel]
-            for kernel in installed_kernels
-            if not _package_installed(KNOWN_KERNELS[kernel])
-        }
-        if missing_headers:
-            raise RuntimeError(
-                "NVIDIA DKMS support requires headers for every installed kernel; missing: "
-                + ", ".join(sorted(missing_headers)),
-            )
-    else:
+    # Headers for known kernels are selected in detect_hardware_selectors and
+    # installed in the same Pacman transaction as the DKMS module.
+    if not installed_kernels:
         running_release = subprocess.check_output(["/usr/bin/uname", "-r"], text=True).strip()
         if not (Path("/usr/lib/modules") / running_release / "build").exists():
             raise RuntimeError(
@@ -66,6 +57,16 @@ def _nvidia_module_selector() -> str:
 
 def detect_hardware_selectors() -> set[str]:
     selectors: set[str] = set()
+
+    for kernel in KNOWN_KERNELS:
+        if _package_installed(kernel):
+            selectors.add(
+                {
+                    "linux": "kernel_linux",
+                    "linux-lts": "kernel_lts",
+                    "linux-zen": "kernel_zen",
+                }[kernel],
+            )
 
     root_filesystem = subprocess.run(
         ["/usr/bin/findmnt", "--noheadings", "--output", "FSTYPE", "/"],

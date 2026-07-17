@@ -1,0 +1,11 @@
+[Unit]
+Description=Apply powertop automatic power-saving tunables
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/powertop --auto-tune
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

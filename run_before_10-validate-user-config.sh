@@ -19,6 +19,17 @@ def require(condition: bool, message: str) -> None:
 require(config.get("schema_version") == 1, "schema_version must be 1")
 require(config.get("machine", {}).get("kind") in {"laptop", "desktop"},
         "machine.kind must be laptop or desktop")
+hostname = config.get("machine", {}).get("hostname")
+require(isinstance(hostname, str) and bool(hostname) and not any(c.isspace() for c in hostname),
+        "machine.hostname must be a non-empty DNS-style name")
+system = config.get("system", {})
+locales = system.get("locales", [])
+require(isinstance(locales, list) and bool(locales) and all(isinstance(x, str) for x in locales),
+        "system.locales must be a non-empty string list")
+require(system.get("default_locale") in locales,
+        "system.default_locale must be included in system.locales")
+require(isinstance(system.get("timezone"), str) and bool(system.get("timezone")),
+        "system.timezone must be a non-empty string")
 require(config.get("proxy", {}).get("backend") in {"flclash", "dae"},
         "proxy.backend must be flclash or dae")
 

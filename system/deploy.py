@@ -3,12 +3,16 @@ from __future__ import annotations
 from pyinfra import config, host, logger
 from pyinfra.facts.server import LinuxName
 
+from operations.base_system import configure_base_system
+from operations.bootloader import configure_bootloader
 from operations.dae import configure_dae
 from operations.external_packages import configure_external_packages
+from operations.firewall import configure_firewall
 from operations.packages import configure_packages
 from operations.repositories import configure_repositories
 from operations.services import configure_services
 from operations.sshd import configure_sshd
+from runtime import IS_CHROOT
 from user_config import config_path, load_user_config
 
 
@@ -22,9 +26,13 @@ if "arch" not in linux_name.lower():
 logger.info("Loaded machine intent from %s", config_path())
 logger.info("Detected operating system: %s", linux_name)
 logger.info("Selected proxy backend: %s", settings.proxy.backend)
+logger.info("Execution mode: %s", "ArchISO chroot/offline" if IS_CHROOT else "booted system")
 
 configure_repositories(settings)
-configure_packages(settings)
+package_change = configure_packages(settings)
+configure_base_system(settings)
+configure_bootloader(package_change)
+configure_firewall(settings)
 configure_dae(settings)
 configure_external_packages(settings)
 configure_sshd(settings)

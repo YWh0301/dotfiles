@@ -97,183 +97,41 @@
 ### 拉取软件包
 
 - 使用*vim*编辑镜像列表备份文件`vim /etc/pacman.d/mirrorlist.back`，找到THU清华镜像源后放到最顶部，并覆盖*mirrorlist*文件`:w! /etc/pacman.d/mirrorlist`；
-- 在新机器的磁盘当中安装基础软件包与linux-zen内核
-    - `pacstrap -K /mnt base base-devel linux-zen linux-zen-headers linux-firmware (intel/amd)-ucode efibootmgr networkmanager git bash zsh openssh yazi neovim chezmoi dialog`；
+- 在目标磁盘中只安装可进入 chroot 并运行 chezmoi/pyinfra 的最小系统。内核仍由人在 pacstrap 阶段选择；以下示例使用 linux-zen。`nvim`用于编辑首次生成的机器配置和`visudo`：
+    - `pacstrap -K /mnt base linux-zen linux-firmware sudo git openssh chezmoi uv python neovim`；
 
-### 新系统设置
+### 在 chroot 中由 chezmoi 与 pyinfra 完成系统
 
-- 为*init*进程生成磁盘挂载指示文件*fstab*：`genfstab -U /mnt >>/mnt/etc/fstab`；
-- chroot到新系统中：`arch-chroot /mnt`；
-- 查看并设置时区：`ls /usr/share/zoneinfo`而后`ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime`，并且`hwclock --systohc`；
-- 使用*neovim*编辑*locale*文件，`nvim /etc/locale.gen`将所有想要使用的locale设定前的注释删除。一般而言是`en_US.UTF-8 UTF-8`与`zh_CN.UTF-8 UTF-8`两项。而后运行`locale-gen`并向`/etc/locale.conf`加入`echo "LANG=en_US.UTF-8" >> /etc/locale.conf`设置*console*环境语言。
-- 使用`hostnamectl set-hostname "yourhostname"`设置便于识别的主机名。配置策略不得依赖主机名；可复用意图写入`user.toml`，纯本机差异写入对应应用的`local.conf`；
-- 设置*root*用户的密码`passwd`；
-
-### 安装Bootloader
-
-#### 选择一：使用GRUB2
-
-- `pacman -S grub`；
-    - 如果安装双系统，安装*os-prober* `pacman -S os-prober`；
-- `grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB`；
-- 编辑`/etc/default/grub`中有价值的内容
-    - `GRUB_DEFAULT=0`仅一个*Linux*启动项情况下默认*Linux*启动
-    - `GRUB_TIMEOUT=0`可以设置GRUB按照最短时间启动
-        - 设置`GRUB_TIMEOUT_STYLE=menu`
-        - 在`/etc/grub.d/40_cunstom`文件的末尾加入
-            ```
-            if keystatus --ctrl ; then
-                set timeout=-1
-            fi
-            ```
-        - 这种配置使得开机过程中长按*Ctrl*键即可显示菜单，否则菜单默认关闭
-    - `GRUB_CMDLINE_LINUX_DEFAULT="rootflags=subvol=@ rw quiet splash loglevel=3 vt.global_cursor_default=0 systemd.show_status=0"`设置常用内核启动参数与根子卷
-    - 如果安装Windows双系统，将其中`GRUB_DISABLE_OS_PROBER=false`一行前的注释去除；
-        - 一种双系统的良好实践是判断启动时键盘的*Shift*有没有被按下决定是否启动Windows；
-        - 先运行一次`grub-mkconfig -o /boot/grub/grub.cfg`；
-        - 而后查看生成的配置文件中Windows条目的ID：`grep "Windows" /boot/grub/grub.cfg | grep -o "osprober-efi-[^']*"`，返回应该类似于“osprober-efi-8202-EB9C”；
-        - 在`/etc/grub.d/40_cunstom`文件的末尾加入，其中“osprober”部分替换为获得的Windows条目ID
-            ```
-            if keystatus --shift ; then
-                set default="osprober-efi-8202-EB9C"
-            else
-                set default="0"
-            fi
-            ```
-        - 重新生成GRUB的配置文件：`grub-mkconfig -o /boot/grub/grub.cfg`；
-        - 此后双系统默认进入Linux系统，在开机启动过程中若长按*Shift*键则进入Windows系统
-- 生成GRUB的配置文件：`grub-mkconfig -o /boot/grub/grub.cfg`；
-- 退出*chroot*环境`exit`，卸载所有挂载的磁盘`umount -R /mnt`后重启`reboot`并拔下U盘，完成基本安装。
-
-#### 选择二：使用systemd-boot
-
-- 使用`ls /sys/firmware/efi/efivars`并确认目录存在来确定使用了UEFI启动；
-- 运行`bootctl install`；
-- 编辑`nvim /boot/loader/loader.conf`，比如设置
+- 进入目标系统：`arch-chroot /mnt`；
+- 设置root密码，以便进行本机维护和故障恢复：`passwd`；
+- 创建临时使用Bash的普通用户并设置密码：
+    ```sh
+    useradd -m -G wheel -s /bin/bash pingzi
+    passwd pingzi
     ```
-    default  zen_arch.conf
-    timeout  0
+- 使用原生`visudo`开启wheel组的sudo权限：
+    ```sh
+    ln -sf /usr/bin/nvim /usr/bin/vi
+    visudo
     ```
-- 编辑`nvim /boot/loader/entries/zen_arch.conf`，并加入：
+    找到`%wheel ALL=(ALL:ALL) ALL`并删除行首注释。
+- 切换到普通用户并拉取、应用配置：
+    ```sh
+    su - pingzi
+    chezmoi init --apply https://github.com/YWh0301/dotfiles.git
     ```
-    title   Zen Arch Linux
-    linux   /vmlinuz-linux-zen
-    initrd  /initramfs-linux-zen.img
-    ```
-- 获取根分区UUID并加入条目配置：`echo "options root=UUID=$(blkid -s UUID -o value $(findmnt -no SOURCE /)) rootflags=subvol=@ rw quiet splash loglevel=3 vt.global_cursor_default=0 systemd.show_status=0" | tee -a /boot/loader/entries/zen_arch.conf`；
-    - 注意，由于我们使用的根位于单独子卷，且并不是*root*设备的默认子卷，因此在条目中需要加入`rootflags=subvol=@`这一*option*
-- 运行`bootctl`检查配置文件正确性；
-- 退出*chroot*环境`exit`，卸载所有挂载的磁盘`umount -R /mnt`后重启`reboot`并拔下U盘，完成基本安装。
-
-## 安装后操作
-
-- 如果安装了Windows双系统，将Windows系统时间设置[调整到与Linux的方式相同](https://wiki.archlinux.org/title/Dual_boot_with_Windows#Time_standard)；
-
-### 创建新用户
-
-- `useradd -m -G wheel -s /usr/bin/zsh yourusername`;
-- `passwd yourusername`设置密码；
-- `ln -s /usr/bin/nvim /usr/bin/vi`；
-- `visudo`找到`%wheel ALL=(ALL:ALL) ALL`一行把注释去掉。
-
-### 设置自动登录
-
-- 创建目录`mkdir /etc/systemd/system/getty@tty1.service.d/`；
-- 编辑文件`nvim /etc/systemd/system/getty@tty1.service.d/autologin.conf`：
-    ```
-    [Service]
-    ExecStart=
-    ExecStart=-/sbin/agetty --skip-login --nonewline --noissue --autologin yourusername --noreset --noclear - ${TERM}
+- 首次运行会创建`~/.config/chezmoi/user.toml`并中止。使用`nvim ~/.config/chezmoi/user.toml`检查hostname、机器类型、时区、locale、Feature、代理与软件包Profile，然后再次运行`chezmoi apply`。
+- 完成后退出并重启：
+    ```sh
+    exit
+    exit
+    umount -R /mnt
+    reboot
     ```
 
-### 连接网络与代理
+## 第一次正常启动后
 
-- 连接网络
-    - 启用*NetworkManager*`systemctl enable --now NetworkManager`
-    - `nmcli d wifi connect "WiFiSSID" password "WiFiPassword"`
-- 添加*archlinuxcn*仓库
-    - 参考[清华源指南](https://mirrors.tuna.tsinghua.edu.cn/help/archlinuxcn/)；
-    - 在`/etc/pacman.conf`末尾加入
-        ```
-        [archlinuxcn]
-        Server = https://mirrors.tuna.tsinghua.edu.cn/archlinuxcn/$arch
-        ```
-    - 运行`pacman -Sy archlinuxcn-keyring`加载密钥；
-- 安装*dae*实现透明代理
-    - 从archlinuxcn仓库安装*dae*`pacman -S dae`；
-    - 可以先尝试直接进行下一步的加载用户配置从*Github*拉取*chezmoi*仓库，如果成功则可以在`$HOME/.config/reference/dae`中找到*dae*的参考配置
-        - `sudo cp $HOME/.config/reference/dae/config.dae /etc/dae/config.dae`
-        - `sudo chown root /etc/dae/config.dae`
-        - `sudo chmod 0600 /etc/dae/config.dae`
-    - 编辑`cp /etc/dae/config.dae.example /etc/dae/config.dae`后`nvim /etc/dae/config.dae`；
-        - 主要编辑*subscription*、*group*和*routing*部分；
-        - group示例如下：
-            ```
-            group {
-              hongkong {
-                filter: name(keyword: '香港')
-                policy: min_moving_avg
-              }
-              us {
-                filter: name(keyword: '美国')
-                policy: min_moving_avg
-              }
-            }
-            ```
-        - 对于终端无法中文输入‘香港’与‘美国’，使用在nvim输入模式下先按`Ctrl+V`，再按顺序按`u9999`重复`Ctrl+V`后`u6e2f`来输入‘香港’两个字与使用`u7f8e`和`u56fd`输入‘美国’的方法输入；
-        - routing的示例如下：
-            ```
-            routing {
-              pname(NetworkManager) -> direct
-              pname(pcloud) -> direct
-              pname(spotify) -> direct
-              dip(224.0.0.0/3, 'ff00::/8') -> direct
-              l4proto(udp) && dport(443) -> block
-              dip(geoip:private) -> direct
-              dip(geoip:cn) -> direct
-              domain(geosite:cn) -> direct
-              domain(suffix:pku.edu.cn) -> direct
-              domain(suffix:pcloud.com) -> direct
-              domain(suffix:spotify.com) -> direct
-
-              fallback: us
-            }
-            ```
-    - `systemctl enable --now dae`；
-    - 检测网络连接`ping pornhub.com`
-
-### 加载用户配置
-
-- `su yourusername`以用户身份登录，按`q`忽略zsh提示，`cd`切换到家目录
-- `chezmoi init https://github.com/YWh0301/dotfiles.git`，输入*chezmoi*配置仓库密码；
-- `chezmoi apply`将配置仓库应用到本台计算机
-    - 可以预先对配置仓库中*.tmpl*结尾模板文件中分机器配置的项目进行检查
-    - 可选使用`chezmoi apply --interactive`交互式地应用配置文件
-
-### 安装软件包
-
-- 安装yay
-    1. archlinuxcn中维护了yay二进制包，可以直接`pacman -S yay`
-    2. 如果需要从AUR安装yay，可以安装二进制*yay-bin*：
-        - `su yourusername`切换到普通用户执行命令，按`q`跳过*zsh*初始化的提示；
-        - `cd`；
-        - `git clone https://aur.archlinux.org/yay-bin.git`；
-        - `cd yay-bin`；
-        - `makepkg -si`;
-        - `cd && rm-rf yay-bin`清理文件；
-- 所需的软件包
-    - 可以参考`($chezmoi source-path)/manual/installation.md`与`($chezmoi source-path)/manual/packages.md`进行安装；也可以使用`($chezmoi source-path)/scripts/installation.sh`脚本化必要包安装过程；
-    - `sudo pacman -S --needed dkms evtest wev less tree wget lsof strace ltrace usbutils sshfs pacman-contrib iwd  bind exfatprogs btrfs-progs snapper acpi btop cups pipewire pipewire-alsa pipewire-audio pipewire-jack pipewire-pulse alsa-utils ufw socat bluez bluez-utils hyprland qt5-wayland qt6-wayland qt5ct qt6ct xdg-desktop-portal-hyprland polkit-gnome xdg-user-dirs hypridle hyprlock hyprpaper rofi waybar hyprpicker swaync grim slurp swappy cliphist nwg-displays nwg-look blueman pavucontrol network-manager-applet kitty tmux wqy-microhei wqy-zenhei awesome-terminal-fonts ttf-jetbrains-mono-nerd thunar noto-fonts thunar-archive-plugin xarchiver thunar-media-tags-plugin thunar-volman gvfs gvfs-mtp gvfs-nfs 7zip jq fd fzf ripgrep resvg ffmpegthumbnailer zoxide fcitx5 fcitx5-chinese-addons fcitx5-configtool fcitx5-gtk fcitx5-qt bat picocom screen uv rustup python gdb cmake ncmpcpp imv mpv zathura zathura-cb zathura-djvu zathura-pdf-poppler poppler imagemagick pandoc-bin libtiff5 calibre libreoffice-fresh firefox aichat vdhcoapp`；
-    - 如果使用笔记本，安装相应软件包`pacman -S brightnessctl powertop thermald auto-cpufreq`；
-    - `yay -S antigen nvim-lazy vivify wps-office-cn wps-office-mui-zh-cn ttf-wps-fonts localsend-bin`；
-    - 安装*pCloud Drive*客户端：`yay -S pcloud-drive`
-    - 如果使用systemd-boot作为bootloader，则`yay -S systemd-boot-pacman-hook`；
-    - 安装所需的GPU驱动
-        - 详情参见[ArchWiki](https://wiki.archlinux.org/title/Xorg#Driver_installation)。
-        - 针对Nvidia的新款显卡，`sudo pacman -S nvidia-dkms nvidia-utils nvtop nvidia-prime egl-wayland libva-nvidia-driver libva-utils libvdpau-va-gl`；
-        - 针对Intel或者AMD的显卡，安装`sudo pacman -S mesa mesa-utils vulkan-tools libva-utils libvdpau-va-gl`，然后分别安装`sudo pacman -S vulkan-intel intel-media-driver libvpl vpl-gpu-rt`、`sudo pacman -S vulkan-radeon`；
-    - 安装*hyprland*相关插件
-        - 将`$HOME/.local/chezmoi/pkgbuilds/`目录下的*hyprland*插件相关安装脚本复制到临时目录，并分别运行`makepkg -si`
+- 为保险起见，可以登录后再运行一次`chezmoi apply`检查并补齐配置。
 
 ### 针对应用进行用户空间设置
 
@@ -288,14 +146,10 @@
     - 手动登录，注意登录过程需要为*pcloud*开启代理，并提前准备好账号、密码以及2FA代码快速输入，否则可能登录超时导致失败
     - 将`$HOME/.config/reference/pcloud/sync_exclusion.txt`中的内容复制到*pcloud-drive*应用中的*Settings -> Exclusions*中排除文件的位置，点击*Apply*
 
-### 进行系统级别设置
+### 尚未由pyinfra管理的Snapper设置
 
-- 开启自动时间校准：`sudo timedatectl set-ntp true`；
-- 开启蓝牙服务：`sudo systemctl enable --now bluetooth`；
-- 如果电脑为笔记本，需要电源管理：
-    - 添加*systemd* service执行`powertop --auto-tune`；
-    - 添加*systemd* service执行`auto-cpufreq`；
-    - 添加*systemd* service执行`thermald`；
+`features.snapper`目前只控制`snapper`软件包是否安装，以下Btrfs快照配置仍需手动完成：
+
 - 使用*snapper*与*btrfs*快照进行系统自动备份设置：
     - 先确保`/.snapshots`不存在，使得*snapper*新配置不冲突：
         - `sudo umount /.snapshots`
@@ -306,15 +160,3 @@
         - `sudo mkdir /.snapshots`
         - `sudo chmod 750 /.snapshots`
         - `sudo mount /.snapshots`
-- 使用*LocalSend*与iOS和Android设备进行局域网文件互传：
-    - 在代理或私人Arch仓库可用后安装`localsend-bin`；它不应阻塞基础系统Bootstrap
-    - 移动端安装LocalSend，并允许iOS“本地网络”等必要权限
-    - 接收目录默认使用`$HOME/Downloads`
-    - Yazi中选择文件后按`Shift+L`发送；Thunar可通过自定义动作调用`localsend %F`
-    - 若启用防火墙，仅对局域网允许TCP和UDP端口`53317`
-- 如果需要，启用*wayvnc*服务器：
-    - 在`~/.config/chezmoi/user.toml`中设置`features.wayvnc = true`，并检查`[wayvnc]`凭据与端口
-    - 运行`chezmoi apply`生成配置、TLS证书并启用用户服务
-- 如果需要，启动*ssh*服务器：
-    - 在`user.toml`中设置`features.sshd = true`并检查`sshd.port`
-    - 系统级SSH drop-in和服务最终由pyinfra管理；`~/.config/reference/ssh/sshd_config`仅作为过渡参考

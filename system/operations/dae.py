@@ -5,7 +5,7 @@ import subprocess
 
 from pyinfra.operations import files, server, systemd
 
-from runtime import SUDO
+from runtime import IS_CHROOT, SUDO
 from user_config import UserConfig
 
 
@@ -20,12 +20,16 @@ def configure_dae(settings: UserConfig) -> None:
         )
 
     # Reject a broken rendered user configuration before replacing the last
-    # known-good system copy. The post-install check additionally verifies the
-    # final path with its system ownership and mode.
-    subprocess.run(
-        ["/usr/bin/dae", "validate", "-c", str(DAE_SOURCE)],
-        check=True,
-    )
+    # known-good system copy when dae already exists. In a minimal chroot dae is
+    # installed by the preceding Pacman operation, so validation is deferred to
+    # the ordered post-install operation below.
+    if Path("/usr/bin/dae").is_file():
+        subprocess.run(
+            ["/usr/bin/dae", "validate", "-c", str(DAE_SOURCE)],
+            check=True,
+        )
+    elif not IS_CHROOT:
+        raise RuntimeError("dae is selected but /usr/bin/dae is not installed")
 
     files.directory(
         name="Create the DAE configuration directory",
@@ -53,14 +57,14 @@ def configure_dae(settings: UserConfig) -> None:
 
     dae_active = settings.proxy.backend == "dae"
     service = systemd.service(
-        name="Converge DAE transparent-proxy service",
+        name=("Set DAE service state for first boot" if IS_CHROOT else "Converge DAE transparent-proxy service"),
         service="dae.service",
-        running=dae_active,
+        running=None if IS_CHROOT else dae_active,
         enabled=dae_active,
         _sudo=SUDO,
         _if=validation.did_succeed,
     )
-    if dae_active:
+    if dae_active and not IS_CHROOT:
         systemd.service(
             name="Reload DAE after validated configuration changes",
             service="dae.service",

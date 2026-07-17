@@ -9,7 +9,7 @@ if [ ! -f "${HOME}/.config/wayvnc/tls_key.pem" ]; then
         -days 3650 -nodes \
         -keyout "${HOME}/.config/wayvnc/tls_key.pem" \
         -out "${HOME}/.config/wayvnc/tls_cert.pem" \
-        -subj "/CN=$(hostnamectl hostname)"
+        -subj "/CN={{ $userConfig.machine.hostname }}"
     chmod 600 "${HOME}/.config/wayvnc/tls_key.pem"
     echo "sha1 of cert is: $(openssl x509 -in "${HOME}/.config/wayvnc/tls_cert.pem" -fingerprint -sha1 -noout)"
 fi

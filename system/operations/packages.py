@@ -9,7 +9,7 @@ from pyinfra.operations import server
 
 from hardware import detect_hardware_selectors
 from package_manifest import parse_package_document, select_packages
-from runtime import SUDO
+from runtime import IS_CHROOT, SUDO
 from user_config import UserConfig
 
 
@@ -94,7 +94,7 @@ def _synchronized_package_names(groups: dict[str, set[str]]) -> set[str]:
     return set(output.splitlines()) | set(groups)
 
 
-def configure_packages(settings: UserConfig) -> None:
+def configure_packages(settings: UserConfig):
     entries = parse_package_document()
     hardware = detect_hardware_selectors()
     pacman_packages, aur_packages, mypkgbuilds_packages, selected_profiles = select_packages(
@@ -118,13 +118,17 @@ def configure_packages(settings: UserConfig) -> None:
     missing = _unmet_packages(pacman_packages, groups)
     synchronized = _synchronized_package_names(groups)
     unavailable = missing - synchronized
-    if unavailable:
+    if unavailable and not IS_CHROOT:
         raise RuntimeError(
             "selected packages are unavailable from configured pacman repositories: "
             + ", ".join(sorted(unavailable)),
         )
-    installable = missing & synchronized
+    # A fresh chroot is planned against the pacstrap repository database, before
+    # the managed ArchLinuxCN/Pro Audio config and databases exist. Pacman will
+    # resolve the full selected set after the first -Syu operation.
+    installable = missing if IS_CHROOT else missing & synchronized
 
+    package_change = None
     if installable:
         logger.info(
             "Missing selected pacman packages (%d): %s",
@@ -156,7 +160,7 @@ def configure_packages(settings: UserConfig) -> None:
                     ", ".join(sorted(installed_nvidia)),
                     ", ".join(sorted(selected_nvidia)),
                 )
-            server.shell(
+            package_change = server.shell(
                 name=(
                     "Install selected packages and switch the NVIDIA module family"
                     if nvidia_transition
@@ -172,6 +176,8 @@ def configure_packages(settings: UserConfig) -> None:
                 _sudo=SUDO,
                 _if=keyring.did_succeed,
             )
+        else:
+            package_change = keyring
 
     missing_aur = _pacman_unmet(aur_packages)
     if missing_aur:
@@ -185,3 +191,4 @@ def configure_packages(settings: UserConfig) -> None:
             "Selected myPKGBUILDS packages are not installed and remain a second-stage task: %s",
             ", ".join(sorted(missing_mypkgbuilds)),
         )
+    return package_change

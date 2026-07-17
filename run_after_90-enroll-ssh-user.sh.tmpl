@@ -10,7 +10,7 @@ ca_dir="${HOME}/.local/share/ssh-ca"
 ca_private="${ca_dir}/user_ca"
 ca_public="${ca_private}.pub"
 principal="$(id -un)"
-key_id="{{ $userConfig.identity.name }}@$(hostname -s)-$(date -u +%Y%m%d)"
+key_id="{{ $userConfig.identity.name }}@{{ $userConfig.machine.hostname }}-$(date -u +%Y%m%d)"
 certificate_enabled={{ if $userConfig.features.ssh_user_cert }}true{{ else }}false{{ end }}
 
 mkdir -p "${ssh_dir}"
@@ -20,7 +20,7 @@ chmod 700 "${ssh_dir}"
 # enrollment is toggled.
 if [ ! -f "${private_key}" ]; then
     /usr/bin/ssh-keygen -t ed25519 -f "${private_key}" \
-        -C "{{ $userConfig.identity.name }}@$(hostname -s)" -N ""
+        -C "{{ $userConfig.identity.name }}@{{ $userConfig.machine.hostname }}" -N ""
 fi
 if [ ! -f "${public_key}" ]; then
     /usr/bin/ssh-keygen -y -f "${private_key}" > "${public_key}"
