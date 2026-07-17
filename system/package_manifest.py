@@ -42,14 +42,12 @@ def _parse_selector(raw: str, *, line: int) -> tuple[str, str | None]:
     if "=" not in raw:
         raise ValueError(f"{PACKAGE_DOCUMENT}:{line}: invalid pyinfra selector {raw!r}")
     selector, value = (part.strip() for part in raw.split("=", 1))
-    if selector not in {"feature", "hardware", "kernel", "machine", "profile"}:
+    if selector not in {"feature", "hardware", "machine", "profile"}:
         raise ValueError(f"{PACKAGE_DOCUMENT}:{line}: unknown pyinfra selector {selector!r}")
     if not VALID_VALUE.fullmatch(value):
         raise ValueError(f"{PACKAGE_DOCUMENT}:{line}: invalid selector value {value!r}")
     if selector == "hardware" and value not in SUPPORTED_HARDWARE:
         raise ValueError(f"{PACKAGE_DOCUMENT}:{line}: unsupported hardware selector {value!r}")
-    if selector == "kernel" and value not in {"linux", "lts", "zen"}:
-        raise ValueError(f"{PACKAGE_DOCUMENT}:{line}: unsupported kernel selector {value!r}")
     if selector == "machine" and value not in SUPPORTED_MACHINE_KINDS:
         raise ValueError(f"{PACKAGE_DOCUMENT}:{line}: unsupported machine selector {value!r}")
     return selector, value
@@ -106,7 +104,6 @@ def select_packages(
     entries: list[PackageEntry],
     *,
     machine_kind: str,
-    kernel_flavor: str,
     features: dict[str, bool],
     hardware: set[str],
     profiles: set[str],
@@ -129,7 +126,6 @@ def select_packages(
     for entry in entries:
         selected = (
             entry.selector == "always"
-            or (entry.selector == "kernel" and entry.value == kernel_flavor)
             or (entry.selector == "machine" and entry.value == machine_kind)
             or (entry.selector == "feature" and features.get(entry.value or "", False))
             or (entry.selector == "hardware" and entry.value in hardware)

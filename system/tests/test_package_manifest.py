@@ -19,7 +19,6 @@ class PackageManifestTest(unittest.TestCase):
             """
 - **base-tool** <!-- pyinfra: always -->
 - **laptop-tool** <!-- pyinfra: machine=laptop -->
-- **kernel-tool** <!-- pyinfra: kernel=linux -->
 - **service-tool**(archlinuxcn) <!-- pyinfra: feature=service -->
 - **gpu-tool** <!-- pyinfra: hardware=gpu_amd -->
 - **editor-tool** <!-- pyinfra: profile=editing -->
@@ -31,14 +30,13 @@ class PackageManifestTest(unittest.TestCase):
         pacman, aur, mypkgbuilds, profiles = select_packages(
             entries,
             machine_kind="laptop",
-            kernel_flavor="linux",
             features={"service": True},
             hardware={"gpu_amd", "gpu_any", "gpu_open"},
             profiles={"editing"},
         )
         self.assertEqual(
             pacman,
-            {"base-tool", "laptop-tool", "kernel-tool", "service-tool", "gpu-tool", "editor-tool"},
+            {"base-tool", "laptop-tool", "service-tool", "gpu-tool", "editor-tool"},
         )
         self.assertEqual(aur, {"aur-tool"})
         self.assertEqual(mypkgbuilds, {"custom-tool"})
@@ -54,7 +52,6 @@ class PackageManifestTest(unittest.TestCase):
             select_packages(
                 entries,
                 machine_kind="desktop",
-                kernel_flavor="linux",
                 features={},
                 hardware=set(),
                 profiles={"missing"},

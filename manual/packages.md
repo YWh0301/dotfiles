@@ -6,7 +6,6 @@
 - `<!-- pyinfra: manual -->`：仅作记录，不由 pyinfra 安装；
 - `<!-- pyinfra: feature=名称 -->`：对应 `user.toml` 中的 Feature 为 `true` 时安装；
 - `<!-- pyinfra: hardware=名称 -->`：运行时检测到对应 CPU/GPU 或根文件系统时安装；
-- `<!-- pyinfra: kernel=linux|lts|zen -->`：匹配 `user.toml` 的内核选择时安装；
 - `<!-- pyinfra: machine=laptop -->`或`machine=desktop`：匹配机器角色时安装；
 - `<!-- pyinfra: profile=名称 -->`：名称出现在 `user.toml` 的 `packages.profiles`时安装。
 
@@ -18,14 +17,10 @@
 
 ### Basic Arch Linux System
 
+- **linux-zen** <!-- pyinfra: manual -->
+- **linux-zen-headers** <!-- pyinfra: manual -->
 - **base** <!-- pyinfra: always -->
 - **base-devel** <!-- pyinfra: always -->
-- **linux** <!-- pyinfra: kernel=linux -->
-- **linux-headers** <!-- pyinfra: kernel=linux -->
-- **linux-lts** <!-- pyinfra: kernel=lts -->
-- **linux-lts-headers** <!-- pyinfra: kernel=lts -->
-- **linux-zen** <!-- pyinfra: kernel=zen -->
-- **linux-zen-headers** <!-- pyinfra: kernel=zen -->
 - **linux-firmware** <!-- pyinfra: always -->
 - 根据所使用的CPU制造商决定微码软件包
     - **intel-ucode** <!-- pyinfra: hardware=cpu_intel -->

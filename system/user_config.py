@@ -28,11 +28,6 @@ class Machine:
 
 
 @dataclass(frozen=True)
-class Kernel:
-    flavor: str
-
-
-@dataclass(frozen=True)
 class Proxy:
     backend: str
     flclash_http_port: int
@@ -66,7 +61,6 @@ class Mirrors:
 class UserConfig:
     identity: Identity
     machine: Machine
-    kernel: Kernel
     features: Features
     proxy: Proxy
     sshd: Sshd
@@ -96,7 +90,6 @@ def load_user_config(path: Path | None = None) -> UserConfig:
     sshd = Sshd(port=raw["sshd"]["port"])
     identity = Identity(name=raw["identity"]["name"])
     machine = Machine(kind=raw["machine"]["kind"])
-    kernel = Kernel(flavor=raw["kernel"]["flavor"])
     pacman = Pacman(
         repositories=tuple(raw["pacman"]["repositories"]),
         parallel_downloads=raw["pacman"]["parallel_downloads"],
@@ -111,8 +104,6 @@ def load_user_config(path: Path | None = None) -> UserConfig:
 
     if machine.kind not in {"laptop", "desktop"}:
         raise ValueError(f"{path}: unsupported machine.kind {machine.kind!r}")
-    if kernel.flavor not in {"linux", "lts", "zen"}:
-        raise ValueError(f"{path}: unsupported kernel.flavor {kernel.flavor!r}")
     if proxy.backend not in {"flclash", "dae"}:
         raise ValueError(f"{path}: unsupported proxy.backend {proxy.backend!r}")
     if not 1 <= proxy.flclash_http_port <= 65535:
@@ -134,7 +125,6 @@ def load_user_config(path: Path | None = None) -> UserConfig:
     return UserConfig(
         identity=identity,
         machine=machine,
-        kernel=kernel,
         features=features,
         proxy=proxy,
         sshd=sshd,

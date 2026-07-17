@@ -96,11 +96,10 @@ def _synchronized_package_names(groups: dict[str, set[str]]) -> set[str]:
 
 def configure_packages(settings: UserConfig) -> None:
     entries = parse_package_document()
-    hardware = detect_hardware_selectors(settings.kernel.flavor)
+    hardware = detect_hardware_selectors()
     pacman_packages, aur_packages, mypkgbuilds_packages, selected_profiles = select_packages(
         entries,
         machine_kind=settings.machine.kind,
-        kernel_flavor=settings.kernel.flavor,
         features=asdict(settings.features),
         hardware=hardware,
         profiles=set(settings.packages.profiles),

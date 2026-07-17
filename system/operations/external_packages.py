@@ -77,11 +77,10 @@ def _needs_build(package: str, desired: str) -> bool:
 
 def configure_external_packages(settings: UserConfig) -> None:
     entries = parse_package_document()
-    hardware = detect_hardware_selectors(settings.kernel.flavor)
+    hardware = detect_hardware_selectors()
     _, _, selected_mypkgbuilds, _ = select_packages(
         entries,
         machine_kind=settings.machine.kind,
-        kernel_flavor=settings.kernel.flavor,
         features=asdict(settings.features),
         hardware=hardware,
         profiles=set(settings.packages.profiles),

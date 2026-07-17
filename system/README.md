@@ -53,9 +53,9 @@ pyinfra plan/confirmation flow.
 - package satisfaction checked through `pacman -T`, preserving installed
   provider packages such as `waybar-ywh-git`; Pacman groups are expanded and
   considered satisfied only when every member is installed;
-- runtime CPU, multi-GPU, and root-filesystem detection, plus an explicit
-  `kernel.flavor` (`linux`, `lts`, or `zen`) that selects matching headers and
-  NVIDIA open/DKMS modules;
+- runtime CPU, multi-GPU, root-filesystem, and installed-kernel detection;
+  kernels remain a pacstrap/manual decision, while NVIDIA prebuilt/LTS/DKMS
+  modules follow the kernels already installed and fail if DKMS headers are missing;
 - full `pacman -Syu` only when a selected package is missing, with the
   ArchLinuxCN keyring installed before repository packages;
 - DAE configuration deployed to `/etc/dae/config.dae`, validated on change, and
@@ -70,8 +70,8 @@ pyinfra plan/confirmation flow.
 
 Package entries are ordinary Markdown bullets such as
 `- **git** <!-- pyinfra: always -->`. Supported selectors are `always`, `manual`,
-`feature=name`, `hardware=name`, `kernel=linux|lts|zen`,
-`machine=laptop|desktop`, and `profile=name`. Profile names are
+`feature=name`, `hardware=name`, `machine=laptop|desktop`, and `profile=name`.
+Profile names are
 selected through `[packages].profiles` in `user.toml`. Every bold package bullet
 must carry exactly one selector; malformed or conflicting entries fail closed.
 

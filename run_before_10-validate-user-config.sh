@@ -19,8 +19,6 @@ def require(condition: bool, message: str) -> None:
 require(config.get("schema_version") == 1, "schema_version must be 1")
 require(config.get("machine", {}).get("kind") in {"laptop", "desktop"},
         "machine.kind must be laptop or desktop")
-require(config.get("kernel", {}).get("flavor") in {"linux", "lts", "zen"},
-        "kernel.flavor must be linux, lts, or zen")
 require(config.get("proxy", {}).get("backend") in {"flclash", "dae"},
         "proxy.backend must be flclash or dae")
 
