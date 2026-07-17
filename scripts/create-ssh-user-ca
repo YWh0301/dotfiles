@@ -1,0 +1,56 @@
+#!/bin/sh
+set -eu
+
+ca_dir="${HOME}/.local/share/ssh-ca"
+ca_private="${ca_dir}/user_ca"
+ca_public="${ca_private}.pub"
+source_dir="$(chezmoi source-path)/dot_local/share/private_ssh-ca"
+source_private="${source_dir}/encrypted_private_user_ca.age"
+source_public="${source_dir}/user_ca.pub"
+
+if [ -e "${ca_private}" ] || [ -e "${ca_public}" ]; then
+    echo "Refusing to overwrite an existing User CA in ${ca_dir}." >&2
+    exit 1
+fi
+
+mkdir -p "${ca_dir}"
+chmod 700 "${ca_dir}"
+
+cat <<'EOF'
+Creating the personal OpenSSH User CA.
+
+Use a new, high-entropy CA-specific passphrase from Bitwarden.
+The passphrase must never be stored in chezmoi or user.toml.
+EOF
+
+/usr/bin/ssh-keygen -t ed25519 -f "${ca_private}" -C "personal-user-ca"
+chmod 600 "${ca_private}"
+chmod 644 "${ca_public}"
+
+# Refuse an accidentally unencrypted CA private key.
+if /usr/bin/ssh-keygen -y -P "" -f "${ca_private}" >/dev/null 2>&1; then
+    rm -f "${ca_private}" "${ca_public}"
+    echo "The User CA had an empty passphrase and was deleted. Try again with a strong passphrase." >&2
+    exit 1
+fi
+
+mkdir -p "${source_dir}"
+chezmoi encrypt --output "${source_private}" "${ca_private}"
+install -m 644 "${ca_public}" "${source_public}"
+
+cat <<EOF
+
+User CA created and added to the chezmoi source state.
+
+Private target: ${ca_private}
+Private source: ${source_private}
+Public key:    ${ca_public}
+Fingerprint:
+EOF
+/usr/bin/ssh-keygen -lf "${ca_public}"
+
+cat <<'EOF'
+
+Review the new encrypted source, set features.ssh_user_cert = true in
+user.toml, and run chezmoi apply to issue this machine's certificate.
+EOF

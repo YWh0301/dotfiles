@@ -1,4 +1,0 @@
-{{- $userConfig := includeTemplate "user-config.toml" . | fromToml -}}
-{{ range $userConfig.ssh.authorized_keys -}}
-{{ . }}
-{{ end -}}

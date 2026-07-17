@@ -26,7 +26,7 @@ for section, key in (("kitty", "font_size"), ("sshd", "port"), ("wayvnc", "port"
     require(isinstance(value, int) and value > 0, f"{section}.{key} must be a positive integer")
 
 features = config.get("features", {})
-for key in ("localsend", "sshd", "wayvnc", "tailscale", "snapper", "autologin"):
+for key in ("localsend", "sshd", "ssh_user_cert", "wayvnc", "tailscale", "snapper", "autologin"):
     require(isinstance(features.get(key), bool), f"features.{key} must be boolean")
 
 providers = config.get("proxy", {}).get("providers", [])

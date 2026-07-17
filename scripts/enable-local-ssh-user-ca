@@ -1,0 +1,94 @@
+#!/bin/sh
+set -eu
+
+ca_public="${HOME}/.local/share/ssh-ca/user_ca.pub"
+private_key="${HOME}/.ssh/id_ed25519"
+certificate="${HOME}/.ssh/id_ed25519-cert.pub"
+principal="$(id -un)"
+config_path="${HOME}/.config/chezmoi/user.toml"
+dropin="/etc/ssh/sshd_config.d/90-personal-user-ca.conf"
+
+for file in "${ca_public}" "${private_key}" "${certificate}"; do
+    if [ ! -f "${file}" ]; then
+        echo "Required file is missing: ${file}" >&2
+        exit 1
+    fi
+done
+
+port="$(/usr/bin/python - "${config_path}" <<'PY'
+import sys, tomllib
+with open(sys.argv[1], 'rb') as file:
+    print(tomllib.load(file)['sshd']['port'])
+PY
+)"
+
+workdir="$(mktemp -d)"
+trap 'rm -rf "${workdir}"' EXIT HUP INT TERM
+stage1="${workdir}/stage1.conf"
+stage2="${workdir}/stage2.conf"
+log="${workdir}/ssh.log"
+
+cat >"${stage1}" <<EOF
+# Managed initially by the personal SSH CA migration workflow.
+PubkeyAuthentication yes
+TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem
+AuthorizedPrincipalsFile /etc/ssh/auth-principals/%u
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+EOF
+cat "${stage1}" >"${stage2}"
+echo 'AuthorizedKeysFile none' >>"${stage2}"
+
+sudo install -m 644 "${ca_public}" /etc/ssh/trusted-user-ca-keys.pem
+sudo install -d -m 755 /etc/ssh/auth-principals
+printf '%s\n' "${principal}" | sudo tee "/etc/ssh/auth-principals/${principal}" >/dev/null
+sudo chmod 644 "/etc/ssh/auth-principals/${principal}"
+sudo install -m 644 "${stage1}" "${dropin}"
+sudo /usr/bin/sshd -t
+sudo systemctl reload sshd
+
+if ! /usr/bin/ssh -vvv \
+    -p "${port}" \
+    -o BatchMode=yes \
+    -o PasswordAuthentication=no \
+    -o KbdInteractiveAuthentication=no \
+    -o IdentitiesOnly=yes \
+    -o IdentityFile="${private_key}" \
+    -o CertificateFile="${certificate}" \
+    -o StrictHostKeyChecking=accept-new \
+    "${principal}@localhost" true 2>"${log}"; then
+    echo "CA authentication test failed; raw authorized_keys remains enabled." >&2
+    exit 1
+fi
+if ! grep -Eq 'Server accepts key: .*ED25519-CERT|Server accepts key: .*certificate' "${log}"; then
+    echo "SSH connected, but the log did not prove certificate acceptance." >&2
+    echo "Raw authorized_keys remains enabled." >&2
+    exit 1
+fi
+
+sudo install -m 644 "${stage2}" "${dropin}"
+if ! sudo /usr/bin/sshd -t; then
+    sudo install -m 644 "${stage1}" "${dropin}"
+    sudo systemctl reload sshd
+    echo "CA-only sshd configuration was invalid and has been rolled back." >&2
+    exit 1
+fi
+sudo systemctl reload sshd
+
+if ! /usr/bin/ssh \
+    -p "${port}" \
+    -o BatchMode=yes \
+    -o PasswordAuthentication=no \
+    -o KbdInteractiveAuthentication=no \
+    -o IdentitiesOnly=yes \
+    -o IdentityFile="${private_key}" \
+    -o CertificateFile="${certificate}" \
+    "${principal}@localhost" true; then
+    sudo install -m 644 "${stage1}" "${dropin}"
+    sudo systemctl reload sshd
+    echo "Final CA-only test failed; raw authorized_keys has been restored." >&2
+    exit 1
+fi
+
+rm -f "${HOME}/.ssh/authorized_keys"
+echo "Local sshd now accepts this User CA and ignores raw authorized_keys."

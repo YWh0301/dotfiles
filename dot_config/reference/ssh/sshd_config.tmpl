@@ -38,13 +38,13 @@ StrictModes yes
 MaxAuthTries 6
 #MaxSessions 10
 
+# OpenSSH user certificates are implemented by the public-key authentication
+# subsystem, so this must remain enabled even though raw authorized_keys are
+# disabled below.
 PubkeyAuthentication yes
-
-# The default is to check both .ssh/authorized_keys and .ssh/authorized_keys2
-# but this is overridden so installations will only check .ssh/authorized_keys
-AuthorizedKeysFile	.ssh/authorized_keys
-
-#AuthorizedPrincipalsFile none
+TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem
+AuthorizedPrincipalsFile /etc/ssh/auth-principals/%u
+AuthorizedKeysFile none
 
 #AuthorizedKeysCommand none
 #AuthorizedKeysCommandUser nobody
