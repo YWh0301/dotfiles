@@ -1,3 +1,7 @@
+[Unit]
+# A kernel upgrade removes the running kernel's old module tree until reboot.
+ConditionPathExists=/usr/lib/modules/%v
+
 [Service]
 # Validate the complete UFW framework in an isolated network namespace before
 # allowing ufw-init to touch the host firewall.

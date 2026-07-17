@@ -41,6 +41,7 @@ class FirewallTest(unittest.TestCase):
 
     def test_service_preflight_uses_an_isolated_network_namespace(self) -> None:
         text = UFW_PREFLIGHT.read_text(encoding="utf-8")
+        self.assertIn("ConditionPathExists=/usr/lib/modules/%v", text)
         self.assertIn("ExecStartPre=/usr/bin/unshare --net --", text)
         self.assertIn("/usr/lib/ufw/ufw-init start", text)
 
