@@ -9,6 +9,17 @@ dae_config=/etc/dae/config.dae
 
 /usr/bin/install -d "${BUILDDIR}" "${LOGDEST}" "${PKGDEST}" "${SRCDEST}"
 
+install_cached_package() {
+    local file
+    local -a files
+    mapfile -t files < <(/usr/bin/makepkg --packagelist)
+    (( ${#files[@]} )) || return 1
+    for file in "${files[@]}"; do
+        [[ -f ${file} ]] || return 1
+    done
+    sudo -n /usr/bin/pacman -U --needed --noconfirm -- "${files[@]}"
+}
+
 build_package() {
     /usr/bin/makepkg \
         --syncdeps \
@@ -19,9 +30,10 @@ build_package() {
         --clean
 }
 
+install_cached_package && exit 0
 build_package
 status=$?
-if (( status == 0 )); then
+if (( status == 0 )) || install_cached_package; then
     exit 0
 fi
 
@@ -67,6 +79,9 @@ fi
 
 build_package
 status=$?
+if (( status != 0 )) && install_cached_package; then
+    status=0
+fi
 cleanup_dae
 trap - EXIT INT TERM
 if (( status != 0 )); then

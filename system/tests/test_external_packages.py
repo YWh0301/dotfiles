@@ -22,6 +22,7 @@ class ExternalPackageHelperTest(unittest.TestCase):
     def test_build_helper_keeps_needed_and_cleanup_guards(self) -> None:
         text = BUILD_HELPER.read_text(encoding="utf-8")
         self.assertIn("--needed", text)
+        self.assertIn("install_cached_package", text)
         self.assertIn("trap cleanup_dae", text)
         self.assertIn("deferring ${package}", text)
 

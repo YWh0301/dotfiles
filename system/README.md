@@ -36,8 +36,9 @@ Apply only after reviewing the generated operations:
 ./system/apply
 ```
 
-`system/apply` primes the normal sudo timestamp once. The password is handled by
-sudo and is never passed to pyinfra.
+`system/apply` primes the normal sudo timestamp and refreshes it once per minute
+only while that apply process is alive, so long source builds cannot expire it.
+The password is handled by sudo and is never passed to pyinfra.
 
 `system/check` emits a machine-readable dry plan and exits with status 10 when
 direct drift exists. Pyinfra's conditional-only plan entries are potential
@@ -79,8 +80,10 @@ kept in a standalone auditable shell helper rather than embedded Python strings.
   ArchLinuxCN keyring installed before repository packages;
 - DAE configuration deployed to `/etc/dae/config.dae`, validated on change, and
   enabled/started only when `proxy.backend = "dae"`;
-- reviewed, Git-metadata-free PKGBUILDs under `pkgbuilds/`, built as the normal
-  user in an explicit dependency order; each build first uses the selected
+- reviewed, Git-metadata-free PKGBUILDs under `pkgbuilds/`, built and installed
+  one at a time as the normal user in an explicit dependency order; reusable
+  sources and package artifacts live under `~/.cache/personal-system/makepkg/`;
+  each build first uses the selected
   network path, then retries through a temporary DAE, and defers without aborting
   the base install if both fail; every `makepkg -si` invocation includes `--needed`;
 - managed fstab generation, locale, timezone, hostname, login shell, tty1

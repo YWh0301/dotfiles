@@ -24,11 +24,36 @@ PY
 export UV_DEFAULT_INDEX="${UV_DEFAULT_INDEX:-${pypi_index}}"
 export PERSONAL_USER_CONFIG="${user_config}"
 
-# Prime sudo once in the user's terminal. pyinfra never receives or stores the
-# password; subsequent sudo commands use the normal timestamp credential.
-if [ "${PERSONAL_SYSTEM_PLAN:-0}" != 1 ] && ! sudo -n true 2>/dev/null; then
-    sudo -v
+# Prime sudo in the user's terminal and keep its timestamp alive only for this
+# apply process. Long source builds must not fail merely because the normal sudo
+# timeout elapsed; the password is still handled exclusively by sudo.
+keepalive_pid=""
+cleanup() {
+    if [ -n "${keepalive_pid}" ]; then
+        kill "${keepalive_pid}" 2>/dev/null || true
+        wait "${keepalive_pid}" 2>/dev/null || true
+        keepalive_pid=""
+    fi
+}
+trap cleanup EXIT HUP INT TERM
+
+if [ "${PERSONAL_SYSTEM_PLAN:-0}" != 1 ]; then
+    if ! sudo -n true 2>/dev/null; then
+        sudo -v
+    fi
+    (
+        while sleep 60; do
+            sudo -n -v 2>/dev/null || exit
+        done
+    ) &
+    keepalive_pid=$!
 fi
 
 cd "${project_dir}"
-exec uv run --frozen pyinfra "$@" @local deploy.py
+set +e
+uv run --frozen pyinfra "$@" @local deploy.py
+status=$?
+set -e
+cleanup
+trap - EXIT HUP INT TERM
+exit "${status}"
