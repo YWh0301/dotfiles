@@ -19,6 +19,10 @@ NVIDIA_MODULE_PACKAGES = {
     "nvidia-open-dkms",
     "nvidia-open-lts",
 }
+KNOWN_PACKAGE_TRANSITIONS = {
+    "exfatprogs": "exfat-utils",
+    "pandoc-bin": "pandoc-cli",
+}
 
 
 def _install_command(
@@ -132,23 +136,26 @@ def configure_packages(selection: PackageSelection):
         remaining = installable - {ARCHLINUXCN_KEYRING}
         prerequisite = keyring
 
-        # exfat-utils was superseded by exfatprogs. Scope automatic conflict
-        # acceptance to this one-package transaction rather than the full
-        # package set, so unrelated removals can never be accepted silently.
-        if "exfatprogs" in remaining and "exfat-utils" in _installed({"exfat-utils"}):
+        # Scope conflict acceptance to one reviewed replacement at a time; the
+        # main transaction can never approve unrelated removals silently.
+        installed_obsolete = _installed(set(KNOWN_PACKAGE_TRANSITIONS.values()))
+        for replacement, obsolete in KNOWN_PACKAGE_TRANSITIONS.items():
+            if replacement not in remaining or obsolete not in installed_obsolete:
+                continue
+            previous = prerequisite
             prerequisite = server.shell(
-                name="Replace obsolete exfat-utils with exfatprogs",
+                name=f"Replace obsolete {obsolete} with {replacement}",
                 commands=[
                     _install_command(
-                        {"exfatprogs"},
+                        {replacement},
                         refresh_and_upgrade=False,
                         accept_known_conflict=True,
                     ),
                 ],
                 _sudo=SUDO,
-                _if=keyring.did_succeed,
+                _if=previous.did_succeed,
             )
-            remaining.remove("exfatprogs")
+            remaining.remove(replacement)
 
         if remaining:
             selected_nvidia = pacman_packages & NVIDIA_MODULE_PACKAGES
