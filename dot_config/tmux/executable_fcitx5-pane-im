@@ -1,0 +1,44 @@
+#!/bin/sh
+# 为每个 tmux pane 保存/恢复 fcitx5 的启用状态及输入法。
+
+pane=${2:-}
+case "$pane" in
+  %*) ;;
+  *) exit 0 ;;
+esac
+
+command -v fcitx5-remote >/dev/null 2>&1 || exit 0
+
+case "${1:-}" in
+  save)
+    status=$(fcitx5-remote 2>/dev/null) || exit 0
+    case "$status" in
+      2)
+        method=$(fcitx5-remote -n 2>/dev/null) || exit 0
+        [ -n "$method" ] || exit 0
+        state="active:$method"
+        ;;
+      1) state=inactive ;;
+      *) exit 0 ;;
+    esac
+    tmux set-option -p -t "$pane" @fcitx5_im_state "$state"
+    ;;
+
+  restore)
+    state=$(tmux show-option -pqv -t "$pane" @fcitx5_im_state 2>/dev/null)
+    case "$state" in
+      active:*)
+        method=${state#active:}
+        [ -n "$method" ] && fcitx5-remote -s "$method" >/dev/null 2>&1
+        ;;
+      inactive)
+        fcitx5-remote -c >/dev/null 2>&1
+        ;;
+      *)
+        # 新 pane 默认使用英文；同时建立其独立状态，避免继承前一 pane 的输入法。
+        tmux set-option -p -t "$pane" @fcitx5_im_state inactive
+        fcitx5-remote -c >/dev/null 2>&1
+        ;;
+    esac
+    ;;
+esac
