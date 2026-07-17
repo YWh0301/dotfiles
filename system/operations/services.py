@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pyinfra.operations import files, server, systemd
 
-from hardware import detect_hardware_selectors
 from runtime import IS_CHROOT, SUDO
 from user_config import UserConfig
 
@@ -61,7 +60,10 @@ def _configure_pipewire_user_units() -> None:
         )
 
 
-def _configure_laptop_power_services(settings: UserConfig) -> None:
+def _configure_laptop_power_services(
+    settings: UserConfig,
+    hardware: frozenset[str],
+) -> None:
     if settings.machine.kind != "laptop":
         return
 
@@ -88,14 +90,14 @@ def _configure_laptop_power_services(settings: UserConfig) -> None:
         name="Enable automatic CPU frequency management",
         service="auto-cpufreq.service",
     )
-    if "cpu_intel" in detect_hardware_selectors():
+    if "cpu_intel" in hardware:
         _system_service(
             name="Enable Intel thermal management",
             service="thermald.service",
         )
 
 
-def configure_services(settings: UserConfig) -> None:
+def configure_services(settings: UserConfig, hardware: frozenset[str]) -> None:
     _system_service(name="Enable NetworkManager", service="NetworkManager.service")
     _system_service(name="Enable system time synchronization", service="systemd-timesyncd.service")
     _system_service(name="Enable Bluetooth", service="bluetooth.service")
@@ -109,4 +111,4 @@ def configure_services(settings: UserConfig) -> None:
         enabled=settings.features.tailscale,
     )
     _configure_pipewire_user_units()
-    _configure_laptop_power_services(settings)
+    _configure_laptop_power_services(settings, hardware)

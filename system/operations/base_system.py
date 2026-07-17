@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from io import StringIO
-from pathlib import Path
 import getpass
 
 from pyinfra.operations import files, server
@@ -12,24 +11,6 @@ from user_config import UserConfig
 
 
 def configure_base_system(settings: UserConfig) -> None:
-    fstab_path = Path("/etc/fstab")
-    fstab_configured = fstab_path.is_file() and any(
-        line.strip() and not line.lstrip().startswith("#")
-        for line in fstab_path.read_text(encoding="utf-8").splitlines()
-    )
-    if not fstab_configured:
-        fstab = server.shell(
-            name="Generate the persistent filesystem table",
-            commands=["/usr/bin/genfstab -U / > /etc/fstab"],
-            _sudo=SUDO,
-        )
-        server.shell(
-            name="Validate the generated filesystem table",
-            commands=["/usr/bin/findmnt --verify --tab-file /etc/fstab"],
-            _sudo=SUDO,
-            _if=fstab.did_change,
-        )
-
     locale_gen = files.put(
         name="Install managed locale generation list",
         src=StringIO("".join(f"{locale} UTF-8\n" for locale in settings.system.locales)),

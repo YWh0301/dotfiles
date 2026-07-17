@@ -1,0 +1,75 @@
+#!/usr/bin/bash
+# Build one reviewed PKGBUILD without allowing external network failure to abort
+# the signed base-system transaction. The caller sets makepkg cache variables
+# and the current directory.
+set +e
+
+package=${1:?package name is required}
+dae_config=/etc/dae/config.dae
+
+/usr/bin/install -d "${BUILDDIR}" "${LOGDEST}" "${PKGDEST}" "${SRCDEST}"
+
+build_package() {
+    /usr/bin/makepkg \
+        --syncdeps \
+        --install \
+        --needed \
+        --noconfirm \
+        --cleanbuild \
+        --clean
+}
+
+build_package
+status=$?
+if (( status == 0 )); then
+    exit 0
+fi
+
+printf '%s\n' "WARNING: direct/selected-proxy build failed for ${package}; trying DAE fallback" >&2
+unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY
+if ! sudo -n /usr/bin/dae validate -c "${dae_config}" >/dev/null 2>&1; then
+    printf '%s\n' "WARNING: DAE is unavailable or invalid; deferring ${package}" >&2
+    exit 0
+fi
+
+started_dae=0
+dae_pid=
+dae_launcher=
+cleanup_dae() {
+    if (( started_dae == 1 )); then
+        if [[ -n ${dae_pid} ]]; then
+            sudo -n /usr/bin/kill "${dae_pid}" >/dev/null 2>&1 || true
+        elif [[ -n ${dae_launcher} ]]; then
+            /usr/bin/kill "${dae_launcher}" >/dev/null 2>&1 || true
+        fi
+        [[ -z ${dae_launcher} ]] || wait "${dae_launcher}" >/dev/null 2>&1 || true
+        sudo -n /usr/bin/rm -f /run/dae.pid
+        started_dae=0
+    fi
+}
+trap cleanup_dae EXIT INT TERM
+
+if ! sudo -n /usr/bin/systemctl is-active --quiet dae.service 2>/dev/null; then
+    sudo -n /usr/bin/rm -f /run/dae.pid
+    sudo -n /usr/bin/dae run -c "${dae_config}" --disable-sudo \
+        --logfile /tmp/personal-system-dae.log >/dev/null 2>&1 &
+    dae_launcher=$!
+    started_dae=1
+    for _ in $(seq 1 20); do
+        /usr/bin/curl --fail --silent --location --head --max-time 3 \
+            https://aur.archlinux.org/ >/dev/null 2>&1 && break
+        sleep 1
+    done
+    if sudo -n /usr/bin/test -s /run/dae.pid; then
+        dae_pid=$(sudo -n /usr/bin/cat /run/dae.pid)
+    fi
+fi
+
+build_package
+status=$?
+cleanup_dae
+trap - EXIT INT TERM
+if (( status != 0 )); then
+    printf '%s\n' "WARNING: DAE fallback also failed; deferring ${package} until a later apply" >&2
+fi
+exit 0

@@ -62,7 +62,6 @@ def configure_dae(settings: UserConfig) -> None:
         running=None if IS_CHROOT else dae_active,
         enabled=dae_active,
         _sudo=SUDO,
-        _if=validation.did_succeed,
     )
     if dae_active and not IS_CHROOT:
         systemd.service(

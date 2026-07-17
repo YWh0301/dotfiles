@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from io import StringIO
 
-from pyinfra.operations import files, systemd
+from pyinfra.operations import files, server, systemd
+from pyinfra.operations.util import any_changed
 
 from runtime import IS_CHROOT, SUDO
 from user_config import UserConfig
@@ -86,7 +87,7 @@ def _rules_v6(settings: UserConfig) -> str:
 
 
 def configure_firewall(settings: UserConfig) -> None:
-    files.put(
+    ufw_config = files.put(
         name="Enable the managed UFW policy",
         src=StringIO("ENABLED=yes\nLOGLEVEL=low\n"),
         dest="/etc/ufw/ufw.conf",
@@ -95,7 +96,7 @@ def configure_firewall(settings: UserConfig) -> None:
         mode="644",
         _sudo=SUDO,
     )
-    files.put(
+    ipv4_rules = files.put(
         name="Install managed IPv4 firewall rules",
         src=StringIO(_rules_v4(settings)),
         dest="/etc/ufw/user.rules",
@@ -104,7 +105,7 @@ def configure_firewall(settings: UserConfig) -> None:
         mode="644",
         _sudo=SUDO,
     )
-    files.put(
+    ipv6_rules = files.put(
         name="Install managed IPv6 firewall rules",
         src=StringIO(_rules_v6(settings)),
         dest="/etc/ufw/user6.rules",
@@ -112,6 +113,15 @@ def configure_firewall(settings: UserConfig) -> None:
         group="root",
         mode="644",
         _sudo=SUDO,
+    )
+    server.shell(
+        name="Validate managed firewall rules",
+        commands=[
+            "/usr/bin/iptables-restore --test /etc/ufw/user.rules",
+            "/usr/bin/ip6tables-restore --test /etc/ufw/user6.rules",
+        ],
+        _sudo=SUDO,
+        _if=any_changed(ufw_config, ipv4_rules, ipv6_rules),
     )
     systemd.service(
         name="Enable the managed firewall",

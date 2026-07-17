@@ -47,6 +47,19 @@ when there is no drift it does not request sudo. In an interactive terminal,
 detected drift crosses the sudo boundary, then enters the normal detailed
 pyinfra plan/confirmation flow.
 
+## Architecture
+
+`deploy.py` is intentionally only an ordered orchestration file. It loads
+`user.toml`, resolves hardware and the package manifest once through
+`package_selection.py`, then passes that immutable selection to focused modules
+under `operations/`. Controller-side code only inspects local facts and validates
+rendered inputs; privileged mutations remain explicit pyinfra operations.
+
+The split is by ownership boundary: repositories and signed Pacman packages,
+filesystem bootstrap, base OS identity, bootloader, firewall, DAE, reviewed
+external builds, SSH trust, and service state. The external build retry policy is
+kept in a standalone auditable shell helper rather than embedded Python strings.
+
 ## Current scope
 
 - managed `/etc/pacman.conf` repositories: core, extra, multilib, ArchLinuxCN,

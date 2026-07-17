@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 import shlex
 import subprocess
 
 from pyinfra import logger
 from pyinfra.operations import server
 
-from hardware import detect_hardware_selectors
-from package_manifest import parse_package_document, select_packages
+from package_selection import PackageSelection
 from runtime import IS_CHROOT, SUDO
-from user_config import UserConfig
 
 
 ARCHLINUXCN_KEYRING = "archlinuxcn-keyring"
@@ -94,24 +91,16 @@ def _synchronized_package_names(groups: dict[str, set[str]]) -> set[str]:
     return set(output.splitlines()) | set(groups)
 
 
-def configure_packages(settings: UserConfig):
-    entries = parse_package_document()
-    hardware = detect_hardware_selectors()
-    pacman_packages, aur_packages, mypkgbuilds_packages, selected_profiles = select_packages(
-        entries,
-        machine_kind=settings.machine.kind,
-        features=asdict(settings.features),
-        hardware=hardware,
-        profiles=set(settings.packages.profiles),
-    )
+def configure_packages(selection: PackageSelection):
+    pacman_packages = set(selection.pacman)
     logger.info(
         "Package manifest selected %d pacman, %d AUR, and %d myPKGBUILDS packages; "
         "profiles: %s; hardware: %s",
-        len(pacman_packages),
-        len(aur_packages),
-        len(mypkgbuilds_packages),
-        ", ".join(sorted(selected_profiles)) or "none",
-        ", ".join(sorted(hardware)) or "none",
+        len(selection.pacman),
+        len(selection.aur),
+        len(selection.mypkgbuilds),
+        ", ".join(sorted(selection.profiles)) or "none",
+        ", ".join(sorted(selection.hardware)) or "none",
     )
 
     groups = _synchronized_groups(pacman_packages)
@@ -179,16 +168,4 @@ def configure_packages(settings: UserConfig):
         else:
             package_change = keyring
 
-    missing_aur = _pacman_unmet(aur_packages)
-    if missing_aur:
-        logger.warning(
-            "Selected AUR packages are not installed and remain a second-stage task: %s",
-            ", ".join(sorted(missing_aur)),
-        )
-    missing_mypkgbuilds = _pacman_unmet(mypkgbuilds_packages)
-    if missing_mypkgbuilds:
-        logger.warning(
-            "Selected myPKGBUILDS packages are not installed and remain a second-stage task: %s",
-            ", ".join(sorted(missing_mypkgbuilds)),
-        )
     return package_change

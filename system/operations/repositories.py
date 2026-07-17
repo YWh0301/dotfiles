@@ -6,8 +6,8 @@ from runtime import SUDO
 from user_config import UserConfig
 
 
-def configure_repositories(settings: UserConfig):
-    mirrorlist = files.template(
+def configure_repositories(settings: UserConfig) -> None:
+    files.template(
         name="Install the managed Arch mirror list",
         src="files/pacman/mirrorlist.j2",
         dest="/etc/pacman.d/mirrorlist",
@@ -17,7 +17,7 @@ def configure_repositories(settings: UserConfig):
         arch_mirrors=settings.mirrors.arch,
         _sudo=SUDO,
     )
-    pacman_conf = files.template(
+    files.template(
         name="Install managed Pacman repositories and options",
         src="files/pacman/pacman.conf.j2",
         dest="/etc/pacman.conf",
@@ -30,4 +30,3 @@ def configure_repositories(settings: UserConfig):
         proaudio_mirrors=settings.mirrors.proaudio,
         _sudo=SUDO,
     )
-    return mirrorlist, pacman_conf

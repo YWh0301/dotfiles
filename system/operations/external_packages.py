@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 from pathlib import Path
 import shlex
 import subprocess
@@ -8,8 +7,7 @@ import subprocess
 from pyinfra import logger
 from pyinfra.operations import server
 
-from hardware import detect_hardware_selectors
-from package_manifest import parse_package_document, select_packages
+from package_selection import PackageSelection
 from runtime import IS_CHROOT
 from user_config import UserConfig
 
@@ -76,28 +74,25 @@ def _needs_build(package: str, desired: str) -> bool:
     return comparison < 0
 
 
-def configure_external_packages(settings: UserConfig) -> None:
-    entries = parse_package_document()
-    hardware = detect_hardware_selectors()
-    _, _, selected_mypkgbuilds, _ = select_packages(
-        entries,
-        machine_kind=settings.machine.kind,
-        features=asdict(settings.features),
-        hardware=hardware,
-        profiles=set(settings.packages.profiles),
-    )
-    always_aur = {
-        entry.name
-        for entry in entries
-        if entry.repository == "aur" and entry.selector == "always"
-    }
-    selected = always_aur | selected_mypkgbuilds
-
+def configure_external_packages(
+    settings: UserConfig,
+    selection: PackageSelection,
+) -> None:
+    selected = set(selection.external_builds)
     unknown = selected - set(BUILD_ORDER)
     if unknown:
         raise RuntimeError(
             "selected external packages have no reviewed build order: "
             + ", ".join(sorted(unknown)),
+        )
+
+    missing_deferred = {
+        package for package in selection.deferred_aur if _installed_version(package) is None
+    }
+    if missing_deferred:
+        logger.warning(
+            "Selected profile AUR packages require separate review and remain deferred: %s",
+            ", ".join(sorted(missing_deferred)),
         )
 
     builds: list[tuple[str, Path, str]] = []
@@ -135,84 +130,11 @@ def configure_external_packages(settings: UserConfig) -> None:
             HTTPS_PROXY=proxy,
         )
 
-    cache_directories = [environment[key] for key in ("BUILDDIR", "LOGDEST", "PKGDEST", "SRCDEST")]
-    prepare_cache = shlex.join(["/usr/bin/install", "-d", *cache_directories])
-    build_command = shlex.join(
-        [
-            "/usr/bin/makepkg",
-            "--syncdeps",
-            "--install",
-            "--needed",
-            "--noconfirm",
-            "--cleanbuild",
-            "--clean",
-        ],
-    )
-    dae_config = "/etc/dae/config.dae"
+    build_helper = Path(__file__).resolve().parents[1] / "files/scripts/build-external-with-dae"
     for package, directory, desired in builds:
-        # External source availability must never make the signed base-system
-        # transaction unusable. Try the selected normal path first. If it
-        # fails, retry without explicit proxy variables through the already
-        # validated DAE config, starting a temporary foreground DAE when the
-        # normal service is unavailable (as in arch-chroot). A final failure is
-        # deliberately reported but exits successfully; the next apply retries.
-        script = f"""
-set +e
-{prepare_cache}
-{build_command}
-status=$?
-if [ "$status" -eq 0 ]; then
-    exit 0
-fi
-printf '%s\\n' 'WARNING: direct/selected-proxy build failed for {package}; trying DAE fallback' >&2
-unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY
-if ! sudo -n /usr/bin/dae validate -c {dae_config} >/dev/null 2>&1; then
-    printf '%s\\n' 'WARNING: DAE is unavailable or invalid; deferring {package}' >&2
-    exit 0
-fi
-started_dae=0
-dae_pid=''
-dae_launcher=''
-cleanup_dae() {{
-    if [ "$started_dae" -eq 1 ]; then
-        if [ -n "$dae_pid" ]; then
-            sudo -n /usr/bin/kill "$dae_pid" >/dev/null 2>&1 || true
-        elif [ -n "$dae_launcher" ]; then
-            /usr/bin/kill "$dae_launcher" >/dev/null 2>&1 || true
-        fi
-        [ -z "$dae_launcher" ] || wait "$dae_launcher" >/dev/null 2>&1 || true
-        sudo -n /usr/bin/rm -f /run/dae.pid
-        started_dae=0
-    fi
-}}
-trap cleanup_dae EXIT INT TERM
-if ! sudo -n /usr/bin/systemctl is-active --quiet dae.service 2>/dev/null; then
-    sudo -n /usr/bin/rm -f /run/dae.pid
-    sudo -n /usr/bin/dae run -c {dae_config} --disable-sudo \\
-        --logfile /tmp/personal-system-dae.log >/dev/null 2>&1 &
-    dae_launcher=$!
-    started_dae=1
-    for _ in $(seq 1 20); do
-        /usr/bin/curl --fail --silent --location --head --max-time 3 \\
-            https://aur.archlinux.org/ >/dev/null 2>&1 && break
-        sleep 1
-    done
-    if sudo -n /usr/bin/test -s /run/dae.pid; then
-        dae_pid=$(sudo -n /usr/bin/cat /run/dae.pid)
-    fi
-fi
-{build_command}
-status=$?
-cleanup_dae
-trap - EXIT INT TERM
-if [ "$status" -ne 0 ]; then
-    printf '%s\\n' 'WARNING: DAE fallback also failed; deferring {package} until a later apply' >&2
-fi
-exit 0
-""".strip()
         server.shell(
             name=f"Build and install reviewed external package {package} {desired}",
-            commands=[shlex.join(["/usr/bin/bash", "-c", script])],
+            commands=[shlex.join([str(build_helper), package])],
             _chdir=str(directory),
             _env=environment,
         )
