@@ -22,6 +22,7 @@ NVIDIA_MODULE_PACKAGES = {
 KNOWN_PACKAGE_TRANSITIONS = {
     "exfatprogs": "exfat-utils",
     "pandoc-bin": "pandoc-cli",
+    "zathura-pdf-poppler": "zathura-pdf-mupdf",
 }
 
 

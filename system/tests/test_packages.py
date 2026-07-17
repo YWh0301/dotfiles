@@ -10,6 +10,10 @@ class PackageOperationTest(unittest.TestCase):
     def test_reviewed_transitions_are_explicit(self) -> None:
         self.assertEqual(KNOWN_PACKAGE_TRANSITIONS["exfatprogs"], "exfat-utils")
         self.assertEqual(KNOWN_PACKAGE_TRANSITIONS["pandoc-bin"], "pandoc-cli")
+        self.assertEqual(
+            KNOWN_PACKAGE_TRANSITIONS["zathura-pdf-poppler"],
+            "zathura-pdf-mupdf",
+        )
 
     def test_conflict_acceptance_is_scoped_command_flag(self) -> None:
         command = shlex.split(
