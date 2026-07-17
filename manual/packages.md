@@ -348,8 +348,12 @@
 - **pi-coding-agent**(AUR) <!-- pyinfra: always -->
     - **pi-ext-web-access**(AUR) <!-- pyinfra: always -->
     - **pi-ext-pdf**(myPKGBUILDS) <!-- pyinfra: always -->
+        - **python-pypdf** <!-- pyinfra: always -->
+        - **python-reportlab** <!-- pyinfra: always -->
         - **python-pdfplumber**(AUR) <!-- pyinfra: always -->
-        - **python-pypdfium2**(AUR) <!-- pyinfra: always -->
+            - **python-pdfminer** <!-- pyinfra: always -->
+            - **python-pillow** <!-- pyinfra: always -->
+            - **python-pypdfium2**(AUR) <!-- pyinfra: always -->
     - **pi-ext-agent-browser-native**(myPKGBUILDS) <!-- pyinfra: always -->
         - **agent-browser-bin**(AUR) <!-- pyinfra: always -->
     - **pi-ext-multimodal-proxy**(myPKGBUILDS) <!-- pyinfra: manual -->

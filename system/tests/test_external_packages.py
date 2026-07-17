@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import unittest
 
+from package_manifest import parse_package_document
 from operations.external_packages import (
     BUILD_DEPENDENCIES,
     _build_dependency_cleanup_command,
@@ -39,6 +40,23 @@ class ExternalPackageHelperTest(unittest.TestCase):
     def test_makepkg_never_prompts_for_sudo(self) -> None:
         text = MAKEPKG_CONFIG.read_text(encoding="utf-8")
         self.assertIn("PACMAN_AUTH=(sudo -n)", text)
+
+    def test_pdf_runtime_dependency_tree_is_selected_and_reviewed(self) -> None:
+        entries = {entry.name: entry for entry in parse_package_document()}
+        for package in ("python-pdfplumber", "python-pypdfium2"):
+            self.assertEqual(entries[package].repository, "aur")
+            self.assertEqual(entries[package].selector, "always")
+            directory = SYSTEM_ROOT.parent / "pkgbuilds" / package
+            self.assertTrue((directory / "PKGBUILD").is_file())
+            self.assertTrue((directory / ".SRCINFO").is_file())
+        for package in (
+            "python-pdfminer",
+            "python-pillow",
+            "python-pypdf",
+            "python-reportlab",
+        ):
+            self.assertEqual(entries[package].repository, "official")
+            self.assertEqual(entries[package].selector, "always")
 
     def test_reviewed_external_dependencies_are_explicit(self) -> None:
         self.assertEqual(

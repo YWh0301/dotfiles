@@ -16,6 +16,9 @@ from user_config import UserConfig
 PKGBUILDS_ROOT = Path(__file__).resolve().parents[2] / "pkgbuilds"
 # Explicit order is a security and dependency boundary. Newly selected external
 # packages fail closed until their PKGBUILD is reviewed and placed here.
+# Reviewed build edges mirrored by the human-readable indentation in
+# manual/packages.md. These are execution constraints, not inferred from
+# Markdown layout: the document remains free to be reformatted safely.
 BUILD_DEPENDENCIES = {
     "python-pdfplumber": ("python-pypdfium2",),
     "pi-ext-pdf": ("python-pdfplumber",),
