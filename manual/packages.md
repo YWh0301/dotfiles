@@ -422,6 +422,7 @@
 - **polyphone** <!-- pyinfra: profile=proaudio -->
 - **qtractor** <!-- pyinfra: profile=proaudio -->
 - **mixxx** <!-- pyinfra: profile=proaudio -->
+    - **gnome-keyring** <!-- pyinfra: profile=proaudio -->
     - FOSS digital software for djing
 - **beets** <!-- pyinfra: profile=proaudio -->
     - CLI FOSS music management and tagging software

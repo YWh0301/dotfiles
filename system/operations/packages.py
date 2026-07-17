@@ -130,6 +130,26 @@ def configure_packages(selection: PackageSelection):
             _sudo=SUDO,
         )
         remaining = installable - {ARCHLINUXCN_KEYRING}
+        prerequisite = keyring
+
+        # exfat-utils was superseded by exfatprogs. Scope automatic conflict
+        # acceptance to this one-package transaction rather than the full
+        # package set, so unrelated removals can never be accepted silently.
+        if "exfatprogs" in remaining and "exfat-utils" in _installed({"exfat-utils"}):
+            prerequisite = server.shell(
+                name="Replace obsolete exfat-utils with exfatprogs",
+                commands=[
+                    _install_command(
+                        {"exfatprogs"},
+                        refresh_and_upgrade=False,
+                        accept_known_conflict=True,
+                    ),
+                ],
+                _sudo=SUDO,
+                _if=keyring.did_succeed,
+            )
+            remaining.remove("exfatprogs")
+
         if remaining:
             selected_nvidia = pacman_packages & NVIDIA_MODULE_PACKAGES
             if len(selected_nvidia) > 1:
@@ -163,9 +183,9 @@ def configure_packages(selection: PackageSelection):
                     ),
                 ],
                 _sudo=SUDO,
-                _if=keyring.did_succeed,
+                _if=prerequisite.did_succeed,
             )
         else:
-            package_change = keyring
+            package_change = prerequisite
 
     return package_change
