@@ -328,7 +328,7 @@
 - **zathura** <!-- pyinfra: always -->
 - **zathura-cb** <!-- pyinfra: always -->
 - **zathura-djvu** <!-- pyinfra: always -->
-- **zathura-pdf-poppler** <!-- pyinfra: always -->
+- **zathura-pdf-mupdf** <!-- pyinfra: always -->
 - **poppler** <!-- pyinfra: always -->
 - **imagemagick** <!-- pyinfra: always -->
 - **pandoc-bin**(archlinuxcn) <!-- pyinfra: always -->

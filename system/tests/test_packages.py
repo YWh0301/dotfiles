@@ -11,8 +11,8 @@ class PackageOperationTest(unittest.TestCase):
         self.assertEqual(KNOWN_PACKAGE_TRANSITIONS["exfatprogs"], "exfat-utils")
         self.assertEqual(KNOWN_PACKAGE_TRANSITIONS["pandoc-bin"], "pandoc-cli")
         self.assertEqual(
-            KNOWN_PACKAGE_TRANSITIONS["zathura-pdf-poppler"],
-            "zathura-pdf-mupdf",
+            KNOWN_PACKAGE_TRANSITIONS["zathura-pdf-mupdf"],
+            "zathura-pdf-poppler",
         )
 
     def test_conflict_acceptance_is_scoped_command_flag(self) -> None:
