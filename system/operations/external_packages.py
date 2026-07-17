@@ -115,7 +115,9 @@ def configure_external_packages(
         "External packages to build in reviewed order: %s",
         ", ".join(f"{name}={version}" for name, _, version in builds),
     )
+    makepkg_config = Path(__file__).resolve().parents[1] / "files/makepkg/noninteractive.conf"
     environment = {
+        "MAKEPKG_CONFIG": str(makepkg_config),
         "BUILDDIR": str(Path.home() / ".cache/personal-system/makepkg/build"),
         "LOGDEST": str(Path.home() / ".cache/personal-system/makepkg/logs"),
         "PKGDEST": str(Path.home() / ".cache/personal-system/makepkg/packages"),

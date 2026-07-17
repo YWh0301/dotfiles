@@ -8,11 +8,15 @@ package=${1:?package name is required}
 dae_config=/etc/dae/config.dae
 
 /usr/bin/install -d "${BUILDDIR}" "${LOGDEST}" "${PKGDEST}" "${SRCDEST}"
+if ! sudo -n -v; then
+    printf '%s\n' "ERROR: sudo timestamp unavailable before building ${package}" >&2
+    exit 1
+fi
 
 install_cached_package() {
     local file
     local -a files
-    mapfile -t files < <(/usr/bin/makepkg --packagelist)
+    mapfile -t files < <(/usr/bin/makepkg --config "${MAKEPKG_CONFIG}" --packagelist)
     (( ${#files[@]} )) || return 1
     for file in "${files[@]}"; do
         [[ -f ${file} ]] || return 1
@@ -22,6 +26,7 @@ install_cached_package() {
 
 build_package() {
     /usr/bin/makepkg \
+        --config "${MAKEPKG_CONFIG}" \
         --syncdeps \
         --install \
         --needed \

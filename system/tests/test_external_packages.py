@@ -5,9 +5,9 @@ import subprocess
 import unittest
 
 
-BUILD_HELPER = (
-    Path(__file__).resolve().parents[1] / "files/scripts/build-external-with-dae"
-)
+SYSTEM_ROOT = Path(__file__).resolve().parents[1]
+BUILD_HELPER = SYSTEM_ROOT / "files/scripts/build-external-with-dae"
+MAKEPKG_CONFIG = SYSTEM_ROOT / "files/makepkg/noninteractive.conf"
 
 
 class ExternalPackageHelperTest(unittest.TestCase):
@@ -23,8 +23,14 @@ class ExternalPackageHelperTest(unittest.TestCase):
         text = BUILD_HELPER.read_text(encoding="utf-8")
         self.assertIn("--needed", text)
         self.assertIn("install_cached_package", text)
+        self.assertIn('sudo -n -v', text)
+        self.assertIn('--config "${MAKEPKG_CONFIG}"', text)
         self.assertIn("trap cleanup_dae", text)
         self.assertIn("deferring ${package}", text)
+
+    def test_makepkg_never_prompts_for_sudo(self) -> None:
+        text = MAKEPKG_CONFIG.read_text(encoding="utf-8")
+        self.assertIn("PACMAN_AUTH=(sudo -n)", text)
 
 
 if __name__ == "__main__":
