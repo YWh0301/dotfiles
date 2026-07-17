@@ -11,6 +11,7 @@ from runtime import IS_CHROOT, SUDO
 
 
 ARCHLINUXCN_KEYRING = "archlinuxcn-keyring"
+MANAGED_NONOFFICIAL_REPOSITORIES = {"archlinuxcn", "proaudio"}
 NVIDIA_MODULE_PACKAGES = {
     "nvidia",
     "nvidia-dkms",
@@ -96,6 +97,15 @@ def _synchronized_package_names(groups: dict[str, set[str]]) -> set[str]:
     return set(output.splitlines()) | set(groups)
 
 
+def _managed_repository_packages(selection: PackageSelection) -> set[str]:
+    return {
+        entry.name
+        for entry in selection.entries
+        if entry.name in selection.pacman
+        and entry.repository in MANAGED_NONOFFICIAL_REPOSITORIES
+    }
+
+
 def configure_packages(selection: PackageSelection):
     pacman_packages = set(selection.pacman)
     logger.info(
@@ -111,7 +121,12 @@ def configure_packages(selection: PackageSelection):
     groups = _synchronized_groups(pacman_packages)
     missing = _unmet_packages(pacman_packages, groups)
     synchronized = _synchronized_package_names(groups)
-    unavailable = missing - synchronized
+    # Preparation happens before repository operations execute. Packages from a
+    # selected managed repository may therefore be absent from the controller's
+    # current sync databases during first migration, but will be resolvable when
+    # the signed Pacman transaction runs after repository convergence.
+    managed_repository_packages = _managed_repository_packages(selection)
+    unavailable = missing - synchronized - managed_repository_packages
     if unavailable and not IS_CHROOT:
         raise RuntimeError(
             "selected packages are unavailable from configured pacman repositories: "
@@ -120,7 +135,11 @@ def configure_packages(selection: PackageSelection):
     # A fresh chroot is planned against the pacstrap repository database, before
     # the managed ArchLinuxCN/Pro Audio config and databases exist. Pacman will
     # resolve the full selected set after the first -Syu operation.
-    installable = missing if IS_CHROOT else missing & synchronized
+    installable = (
+        missing
+        if IS_CHROOT
+        else missing & (synchronized | managed_repository_packages)
+    )
 
     package_change = None
     if installable:
