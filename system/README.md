@@ -86,7 +86,9 @@ kept in a standalone auditable shell helper rather than embedded Python strings.
   each build first uses the selected network path, then retries through a
   temporary DAE; failures are recorded under the cache `status/` directory,
   reported after all requested builds, and never abort later pyinfra operations;
-  every `makepkg -si` invocation includes `--needed`;
+  after every requested build succeeds, declared build dependencies that are
+  still Pacman orphans are removed once as a final transaction; every
+  `makepkg -si` invocation includes `--needed`;
 - managed fstab generation, locale, timezone, hostname, login shell, tty1
   autologin, and first-boot GRUB installation/config validation in ArchISO chroot mode;
 - NetworkManager, time sync, Bluetooth, CUPS, Tailscale, an optional managed UFW policy selected by `features.firewall`,

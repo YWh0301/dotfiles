@@ -4,6 +4,11 @@ from pathlib import Path
 import subprocess
 import unittest
 
+from operations.external_packages import (
+    _build_dependency_cleanup_command,
+    _srcinfo_build_dependencies,
+)
+
 
 SYSTEM_ROOT = Path(__file__).resolve().parents[1]
 BUILD_HELPER = SYSTEM_ROOT / "files/scripts/build-external-with-dae"
@@ -40,6 +45,22 @@ class ExternalPackageHelperTest(unittest.TestCase):
         self.assertIn("_ignore_errors=True", text)
         self.assertIn("Report external package build results", text)
         self.assertIn("deployment continued", text)
+
+    def test_vivify_build_dependencies_come_from_srcinfo(self) -> None:
+        dependencies = _srcinfo_build_dependencies(
+            SYSTEM_ROOT.parent / "pkgbuilds/vivify",
+        )
+        self.assertEqual(dependencies, {"nvm", "yarn", "zip"})
+
+    def test_build_dependency_cleanup_is_success_gated_and_orphan_only(self) -> None:
+        command = _build_dependency_cleanup_command(
+            ["nvm", "yarn", "zip"],
+            [Path("/tmp/vivify.failure")],
+        )
+        subprocess.run(["/usr/bin/sh", "-n", "-c", command], check=True)
+        self.assertIn("skipping external build dependency cleanup because a build failed", command)
+        self.assertIn("pacman -Qdtq", command)
+        self.assertIn("pacman -Rns --noconfirm", command)
 
 
 if __name__ == "__main__":
