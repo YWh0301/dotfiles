@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from operations import base_system
 from operations.base_system import _enabled_locales
 
 
@@ -21,6 +22,12 @@ class BaseSystemTest(unittest.TestCase):
                 _enabled_locales(path),
                 {"en_US.UTF-8", "zh_CN.UTF-8"},
             )
+
+    def test_hosts_line_uses_regex_as_match_and_hostname_as_replacement(self) -> None:
+        text = Path(base_system.__file__).read_text(encoding="utf-8")
+        self.assertIn('line=r"^127\\.0\\.1\\.1[[:space:]]+.*$"', text)
+        self.assertIn('replace=f"127.0.1.1        {settings.machine.hostname}"', text)
+        self.assertIn("escape_regex_characters=True", text)
 
 
 if __name__ == "__main__":

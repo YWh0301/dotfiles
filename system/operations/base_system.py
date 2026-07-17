@@ -71,11 +71,23 @@ def configure_base_system(settings: UserConfig) -> None:
         mode="644",
         _sudo=SUDO,
     )
+    # A previous argument inversion appended the regex itself on every apply.
+    # Remove every literal copy before converging the actual hostname entry.
+    files.line(
+        name="Remove malformed local hostname lookup markers",
+        path="/etc/hosts",
+        line=r"^127\.0\.1\.1(?:\s+.*)?$",
+        present=False,
+        escape_regex_characters=True,
+        extended_regex=True,
+        _sudo=SUDO,
+    )
     files.line(
         name="Set the local hostname lookup",
         path="/etc/hosts",
-        line=f"127.0.1.1        {settings.machine.hostname}",
-        replace=r"^127\.0\.1\.1(?:\s+.*)?$",
+        line=r"^127\.0\.1\.1[[:space:]]+.*$",
+        replace=f"127.0.1.1        {settings.machine.hostname}",
+        extended_regex=True,
         ensure_newline=True,
         _sudo=SUDO,
     )
