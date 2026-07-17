@@ -1,0 +1,40 @@
+#!/bin/sh
+set -eu
+
+system_dir="{{ .chezmoi.sourceDir }}/system"
+
+banner() {
+    printf '\n%s\n' '========================================================================'
+    printf '  %s\n' "$1"
+    printf '%s\n\n' '========================================================================'
+}
+
+banner 'PYINFRA | user files applied; checking system configuration'
+
+if ! command -v uv >/dev/null 2>&1; then
+    echo "personal-system: uv is not installed; skipping system drift check." >&2
+    echo "Install it with: sudo pacman -S --needed uv" >&2
+    exit 0
+fi
+
+set +e
+"${system_dir}/check"
+status=$?
+set -e
+
+case "${status}" in
+    0) exit 0 ;;
+    10) ;;
+    *) exit "${status}" ;;
+esac
+
+if ! : </dev/tty 2>/dev/null; then
+    echo "personal-system: changes are pending; run ${system_dir}/plan and ${system_dir}/apply." >&2
+    exit 0
+fi
+
+# The check above is unprivileged. Only a detected change crosses the sudo
+# boundary. system/apply primes sudo, then pyinfra displays its detailed plan
+# and asks for confirmation before executing it.
+banner 'PYINFRA APPLY | system drift detected; requesting sudo'
+"${system_dir}/apply"

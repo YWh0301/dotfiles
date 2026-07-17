@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+export PERSONAL_SYSTEM_PLAN=1
+exec "$(dirname "$0")/apply" --dry "$@"

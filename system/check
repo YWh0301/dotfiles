@@ -1,0 +1,39 @@
+#!/bin/sh
+set -eu
+
+project_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+plan_json="$(mktemp)"
+plan_log="$(mktemp)"
+trap 'rm -f "${plan_json}" "${plan_log}"' EXIT HUP INT TERM
+
+if ! "${project_dir}/plan" --json >"${plan_json}" 2>"${plan_log}"; then
+    cat "${plan_log}" >&2
+    exit 1
+fi
+
+python - "${plan_json}" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as file:
+    report = json.load(file)
+
+changes = []
+for operation in report.get("plan", []):
+    # pyinfra reports every operation guarded by `_if` as a "conditional
+    # change", even when its parent operation has no change and the condition
+    # will therefore be false at execution time. Only direct changes establish
+    # drift; their dependent conditional operations will follow automatically.
+    direct = operation.get("hosts_with_change", [])
+    if direct:
+        changes.append(operation["name"])
+
+if not changes:
+    print("personal-system: no system drift detected")
+    raise SystemExit(0)
+
+print("personal-system: system drift detected")
+for name in changes:
+    print(f"  - {name}")
+raise SystemExit(10)
+PY

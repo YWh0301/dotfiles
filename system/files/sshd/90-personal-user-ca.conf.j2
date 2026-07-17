@@ -1,0 +1,10 @@
+# Managed by personal-system/pyinfra. Do not edit by hand.
+Port {{ sshd_port }}
+PermitRootLogin no
+PubkeyAuthentication yes
+TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem
+AuthorizedPrincipalsFile /etc/ssh/auth-principals/%u
+AuthorizedKeysFile none
+AuthenticationMethods publickey
+PasswordAuthentication no
+KbdInteractiveAuthentication no

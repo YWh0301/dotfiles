@@ -35,6 +35,19 @@ require(len(provider_names) == len(set(provider_names)), "proxy provider names m
 default_provider = config.get("proxy", {}).get("default_provider")
 require(default_provider in set(provider_names), "proxy.default_provider must name an existing provider")
 
+pacman = config.get("pacman", {})
+repositories = pacman.get("repositories", [])
+allowed_repositories = {"core", "extra", "multilib", "archlinuxcn", "proaudio"}
+require(isinstance(repositories, list), "pacman.repositories must be a list")
+require(set(repositories) <= allowed_repositories, "pacman.repositories contains an unsupported repository")
+require({"core", "extra", "archlinuxcn"} <= set(repositories),
+        "pacman.repositories must include core, extra, and archlinuxcn")
+require(isinstance(pacman.get("parallel_downloads"), int) and pacman["parallel_downloads"] > 0,
+        "pacman.parallel_downloads must be a positive integer")
+for key in ("arch", "archlinuxcn", "proaudio"):
+    value = config.get("mirrors", {}).get(key)
+    require(isinstance(value, list) and bool(value), f"mirrors.{key} must be a non-empty list")
+
 hosts = config.get("ssh", {}).get("hosts", [])
 host_names = [host.get("name") for host in hosts]
 require(len(host_names) == len(set(host_names)), "ssh host aliases must be unique")

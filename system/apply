@@ -1,0 +1,34 @@
+#!/bin/sh
+set -eu
+
+project_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+user_config="${PERSONAL_USER_CONFIG:-${HOME}/.config/chezmoi/user.toml}"
+
+if ! command -v uv >/dev/null 2>&1; then
+    cat >&2 <<'EOF'
+uv is required to run personal-system.
+Install the signed Arch repository package first:
+
+  sudo pacman -S --needed uv
+EOF
+    exit 127
+fi
+
+pypi_index="$(python - "${user_config}" <<'PY'
+import sys, tomllib
+with open(sys.argv[1], 'rb') as file:
+    print(tomllib.load(file)['mirrors']['pypi'])
+PY
+)"
+
+export UV_DEFAULT_INDEX="${UV_DEFAULT_INDEX:-${pypi_index}}"
+export PERSONAL_USER_CONFIG="${user_config}"
+
+# Prime sudo once in the user's terminal. pyinfra never receives or stores the
+# password; subsequent sudo commands use the normal timestamp credential.
+if [ "${PERSONAL_SYSTEM_PLAN:-0}" != 1 ] && ! sudo -n true 2>/dev/null; then
+    sudo -v
+fi
+
+cd "${project_dir}"
+exec uv run --frozen pyinfra "$@" @local deploy.py

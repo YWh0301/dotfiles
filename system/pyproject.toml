@@ -1,0 +1,11 @@
+[project]
+name = "personal-system"
+version = "0.1.0"
+description = "Declarative system configuration for personal Arch Linux machines"
+requires-python = ">=3.12,<4"
+dependencies = [
+    "pyinfra==3.9.2",
+]
+
+[tool.uv]
+package = false

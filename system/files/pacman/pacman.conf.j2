@@ -1,0 +1,24 @@
+# Managed by personal-system/pyinfra. Do not edit by hand.
+
+[options]
+HoldPkg = pacman glibc
+Architecture = auto
+CheckSpace
+ParallelDownloads = {{ parallel_downloads }}
+SigLevel = Required DatabaseOptional
+LocalFileSigLevel = Optional
+
+{% for repository in repositories %}
+[{{ repository }}]
+{% if repository in ["core", "extra", "multilib"] %}
+Include = /etc/pacman.d/mirrorlist
+{% elif repository == "archlinuxcn" %}
+{% for server in archlinuxcn_mirrors %}
+Server = {{ server }}
+{% endfor %}
+{% elif repository == "proaudio" %}
+{% for server in proaudio_mirrors %}
+Server = {{ server }}
+{% endfor %}
+{% endif %}
+{% endfor %}
