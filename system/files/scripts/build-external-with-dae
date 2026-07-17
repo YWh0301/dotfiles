@@ -8,6 +8,12 @@ package=${1:?package name is required}
 dae_config=/etc/dae/config.dae
 failure_file=${STATUSDIR:?STATUSDIR is required}/${package}.failure
 
+# pyinfra runs inside system/.venv. Never leak that controller environment into
+# makepkg: PKGBUILDs must resolve Python and all other tools from the managed
+# Arch system, where makedepends were installed by Pacman.
+unset VIRTUAL_ENV CONDA_PREFIX PYTHONHOME PYTHONPATH
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/bin
+
 /usr/bin/install -d "${BUILDDIR}" "${LOGDEST}" "${PKGDEST}" "${SRCDEST}" "${STATUSDIR}"
 record_failure() {
     local message=$1

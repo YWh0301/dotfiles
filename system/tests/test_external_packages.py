@@ -33,6 +33,8 @@ class ExternalPackageHelperTest(unittest.TestCase):
         self.assertIn("install_cached_package", text)
         self.assertIn('sudo -n -v', text)
         self.assertIn('--config "${MAKEPKG_CONFIG}"', text)
+        self.assertIn("unset VIRTUAL_ENV", text)
+        self.assertIn("export PATH=/usr/local/sbin:/usr/local/bin:/usr/bin", text)
         self.assertIn("trap cleanup_dae", text)
         self.assertIn("record_failure", text)
         self.assertIn("continuing deployment", text)
