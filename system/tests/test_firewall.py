@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 import unittest
 
 from operations.firewall import _rules_v4, _rules_v6
+
+
+UFW_PREFLIGHT = (
+    Path(__file__).resolve().parents[1] / "files/systemd/ufw-validate.conf.j2"
+)
 
 
 class FirewallTest(unittest.TestCase):
@@ -32,6 +38,11 @@ class FirewallTest(unittest.TestCase):
         self.assertNotIn("--dport 2222", ipv4)
         self.assertNotIn("--dport 53317", ipv4)
         self.assertNotIn("tailscale0", ipv4)
+
+    def test_service_preflight_uses_an_isolated_network_namespace(self) -> None:
+        text = UFW_PREFLIGHT.read_text(encoding="utf-8")
+        self.assertIn("ExecStartPre=/usr/bin/unshare --net --", text)
+        self.assertIn("/usr/lib/ufw/ufw-init start", text)
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ from __future__ import annotations
 from io import StringIO
 from pathlib import Path
 
+from pyinfra import logger
 from pyinfra.operations import files, server, systemd
 from pyinfra.operations.util import any_changed
 
@@ -87,9 +88,18 @@ def _rules_v6(settings: UserConfig) -> str:
     return "\n".join(rules)
 
 
-def configure_firewall(settings: UserConfig) -> None:
+def configure_firewall(settings: UserConfig, package_change=None) -> None:
     if not settings.features.firewall:
         if Path("/usr/lib/systemd/system/ufw.service").is_file():
+            files.put(
+                name="Disable UFW in its persistent configuration",
+                src=StringIO("ENABLED=no\nLOGLEVEL=low\n"),
+                dest="/etc/ufw/ufw.conf",
+                user="root",
+                group="root",
+                mode="644",
+                _sudo=SUDO,
+            )
             systemd.service(
                 name="Disable the managed firewall",
                 service="ufw.service",
@@ -126,19 +136,41 @@ def configure_firewall(settings: UserConfig) -> None:
         mode="644",
         _sudo=SUDO,
     )
+    validation_dropin = files.template(
+        name="Install isolated UFW preflight validation",
+        src="files/systemd/ufw-validate.conf.j2",
+        dest="/etc/systemd/system/ufw.service.d/10-validate.conf",
+        user="root",
+        group="root",
+        mode="644",
+        _sudo=SUDO,
+    )
     server.shell(
-        name="Validate managed firewall rules",
+        name="Reload systemd after installing the UFW preflight",
+        commands=["/usr/bin/systemctl daemon-reload"],
+        _sudo=SUDO,
+        _if=validation_dropin.did_change,
+    )
+    server.shell(
+        name="Validate managed firewall rules without touching the host network",
         commands=[
             "/usr/bin/iptables-restore --test /etc/ufw/user.rules",
             "/usr/bin/ip6tables-restore --test /etc/ufw/user6.rules",
+            "/usr/bin/unshare --net -- /usr/lib/ufw/ufw-init start",
         ],
         _sudo=SUDO,
-        _if=any_changed(ufw_config, ipv4_rules, ipv6_rules),
+        _if=any_changed(ufw_config, ipv4_rules, ipv6_rules, validation_dropin),
     )
+    defer_start = IS_CHROOT or package_change is not None
+    if package_change is not None and not IS_CHROOT:
+        logger.warning(
+            "Deferring UFW start because the preceding Pacman transaction may replace "
+            "the running kernel's module tree; reboot before enabling the firewall",
+        )
     systemd.service(
         name="Enable the managed firewall",
         service="ufw.service",
-        running=None if IS_CHROOT else True,
+        running=None if defer_start else True,
         enabled=True,
         _sudo=SUDO,
     )

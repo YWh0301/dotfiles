@@ -1,0 +1,4 @@
+[Service]
+# Validate the complete UFW framework in an isolated network namespace before
+# allowing ufw-init to touch the host firewall.
+ExecStartPre=/usr/bin/unshare --net -- /usr/lib/ufw/ufw-init start
