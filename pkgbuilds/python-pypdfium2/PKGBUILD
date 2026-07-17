@@ -1,7 +1,7 @@
 # Maintainer: Falko Galperin <dr (dot) asasteghof (at) gmail (dot) com>
 pkgname=python-pypdfium2
 pkgver=5.9.0
-pkgrel=1
+pkgrel=2
 # Notice should always be explicitly included in the description, according to pypdfium2's README.
 pkgdesc="An ABI-level Python 3 binding to PDFium (unofficial AUR package)"
 arch=(any)
@@ -27,7 +27,11 @@ sha256sums=("db1274bd27844db6fda17ef1dbcd0026c47d357437058d838e98060c0da9e92e"
 build() {
   echo "Building pypdfium2-specific ctypesgen..."
   cd "ctypesgen-${_ctypesgencommit}"
-  python -m build --wheel --no-isolation
+  # GitHub source archives omit the VCS metadata required by setuptools-scm.
+  # This reviewed commit is 436 commits after 1.1.1; provide a deterministic
+  # PEP 440 version instead of switching back to an unverified VCS source.
+  SETUPTOOLS_SCM_PRETEND_VERSION_FOR_CTYPESGEN='1.1.2.dev436+g062a4ed' \
+    python -m build --wheel --no-isolation
   python -m installer --destdir="$srcdir/ctypesgen-build" dist/*.whl
   cd "$srcdir/$_name-$pkgver/"
   echo "Building pypdfium2..."

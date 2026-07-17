@@ -21,6 +21,12 @@ record_success() {
     exit 0
 }
 
+for dependency in ${REQUIRED_EXTERNAL_DEPENDENCIES:-}; do
+    if [[ -s ${STATUSDIR}/${dependency}.failure ]]; then
+        record_failure "blocked by failed reviewed external dependency: ${dependency}"
+    fi
+done
+
 if ! sudo -n -v; then
     record_failure "sudo timestamp unavailable before build"
 fi

@@ -16,6 +16,10 @@ from user_config import UserConfig
 PKGBUILDS_ROOT = Path(__file__).resolve().parents[2] / "pkgbuilds"
 # Explicit order is a security and dependency boundary. Newly selected external
 # packages fail closed until their PKGBUILD is reviewed and placed here.
+BUILD_DEPENDENCIES = {
+    "python-pdfplumber": ("python-pypdfium2",),
+    "pi-ext-pdf": ("python-pdfplumber",),
+}
 BUILD_ORDER = (
     "antigen",
     "localsend-bin",
@@ -130,6 +134,20 @@ def configure_external_packages(
             "selected external packages have no reviewed build order: "
             + ", ".join(sorted(unknown)),
         )
+    order = {package: index for index, package in enumerate(BUILD_ORDER)}
+    for package, dependencies in BUILD_DEPENDENCIES.items():
+        if package not in selected:
+            continue
+        invalid = [
+            dependency
+            for dependency in dependencies
+            if dependency not in selected or order[dependency] >= order[package]
+        ]
+        if invalid:
+            raise RuntimeError(
+                f"reviewed dependencies for {package} must be selected and ordered first: "
+                + ", ".join(invalid),
+            )
 
     missing_deferred = {
         package for package in selection.deferred_aur if _installed_version(package) is None
@@ -164,7 +182,7 @@ def configure_external_packages(
     failure_files = [status_dir / f"{package}.failure" for package, _, _ in builds]
     if builds:
         makepkg_config = Path(__file__).resolve().parents[1] / "files/makepkg/noninteractive.conf"
-        environment = {
+        base_environment = {
             "MAKEPKG_CONFIG": str(makepkg_config),
             "STATUSDIR": str(status_dir),
             "BUILDDIR": str(Path.home() / ".cache/personal-system/makepkg/build"),
@@ -174,7 +192,7 @@ def configure_external_packages(
         }
         if settings.proxy.backend == "flclash" and not IS_CHROOT:
             proxy = f"http://127.0.0.1:{settings.proxy.flclash_http_port}"
-            environment.update(
+            base_environment.update(
                 http_proxy=proxy,
                 https_proxy=proxy,
                 HTTP_PROXY=proxy,
@@ -188,15 +206,20 @@ def configure_external_packages(
         )
         for package, directory, desired in builds:
             failure_file = status_dir / f"{package}.failure"
+            environment = dict(base_environment)
+            environment["REQUIRED_EXTERNAL_DEPENDENCIES"] = " ".join(
+                BUILD_DEPENDENCIES.get(package, ()),
+            )
             helper_command = shlex.join([str(build_helper), package])
             unexpected_message = f"unexpected build helper exit for {package}"
             command = (
                 f"{helper_command} || {{ "
                 f"status=$?; /usr/bin/install -d {shlex.quote(str(status_dir))}; "
+                f"if ! test -s {shlex.quote(str(failure_file))}; then "
                 f"/usr/bin/printf '%s\\n' {shlex.quote(unexpected_message)} "
-                f"> {shlex.quote(str(failure_file))}; "
-                f"/usr/bin/printf '%s\\n' "
-                f"{shlex.quote('WARNING: ' + unexpected_message + '; continuing deployment')} >&2; "
+                f"> {shlex.quote(str(failure_file))}; fi; "
+                f"/usr/bin/printf 'WARNING: %s; continuing deployment\\n' "
+                f"\"$(cat {shlex.quote(str(failure_file))})\" >&2; "
                 f"exit \"${{status}}\"; }}"
             )
             server.shell(

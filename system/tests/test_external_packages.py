@@ -5,6 +5,7 @@ import subprocess
 import unittest
 
 from operations.external_packages import (
+    BUILD_DEPENDENCIES,
     _build_dependency_cleanup_command,
     _srcinfo_build_dependencies,
 )
@@ -39,9 +40,20 @@ class ExternalPackageHelperTest(unittest.TestCase):
         text = MAKEPKG_CONFIG.read_text(encoding="utf-8")
         self.assertIn("PACMAN_AUTH=(sudo -n)", text)
 
+    def test_reviewed_external_dependencies_are_explicit(self) -> None:
+        self.assertEqual(
+            BUILD_DEPENDENCIES["python-pdfplumber"],
+            ("python-pypdfium2",),
+        )
+        self.assertEqual(
+            BUILD_DEPENDENCIES["pi-ext-pdf"],
+            ("python-pdfplumber",),
+        )
+
     def test_unexpected_helper_failure_is_reported_but_nonfatal(self) -> None:
         text = EXTERNAL_OPERATION.read_text(encoding="utf-8")
         self.assertIn("unexpected build helper exit", text)
+        self.assertIn('if ! test -s', text)
         self.assertIn("_ignore_errors=True", text)
         self.assertIn("Report external package build results", text)
         self.assertIn("deployment continued", text)
