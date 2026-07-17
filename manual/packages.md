@@ -231,7 +231,7 @@
     - 颜色提取器
 - **swaync** <!-- pyinfra: always -->
     - 通知中心
-- **wayvnc** <!-- pyinfra: always -->
+- **wayvnc** <!-- pyinfra: feature=wayvnc -->
     - vnc远程桌面
     - 通过`openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -sha384 -days 3650 -nodes -keyout tls_key.pem -out tls_cert.pem -subj /CN=$(hostnamectl hostname)`生成TLS/SSL证书，可以实现VNC服务器认证
     - 通过`openssl x509 -in tls_cert.pem -fingerprint -sha1 -noout`查看服务器公钥的SHA1；只要客户端接受到的证书公钥和机器上的公钥一致，就能确定没有被中间人攻击
