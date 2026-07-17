@@ -125,7 +125,7 @@ def configure_packages(selection: PackageSelection):
             ", ".join(sorted(installable)),
         )
         keyring = server.shell(
-            name="Synchronize Arch and update the ArchLinuxCN keyring",
+            name="Upgrade the system and refresh the ArchLinuxCN keyring",
             commands=[_install_command({ARCHLINUXCN_KEYRING}, refresh_and_upgrade=True)],
             _sudo=SUDO,
         )

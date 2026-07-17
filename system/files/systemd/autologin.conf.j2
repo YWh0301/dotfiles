@@ -1,4 +1,3 @@
-# Managed by personal-system/pyinfra.
 [Service]
 ExecStart=
-ExecStart=-/usr/bin/agetty --skip-login --nonewline --noissue --autologin {{ username }} --noreset --noclear - $TERM
+ExecStart=-/sbin/agetty -o '-p -f -- \\u' --noclear --autologin {{ username }} %I $TERM

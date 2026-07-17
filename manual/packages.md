@@ -185,7 +185,7 @@
 #### Networking
 
 - **iwd** <!-- pyinfra: always -->
-- **ufw** <!-- pyinfra: always -->
+- **ufw** <!-- pyinfra: feature=firewall -->
 - **socat** <!-- pyinfra: always -->
     - 内核防火墙配置前端
 1. 使用NetworkManager

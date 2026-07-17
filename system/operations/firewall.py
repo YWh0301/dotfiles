@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from io import StringIO
+from pathlib import Path
 
 from pyinfra.operations import files, server, systemd
 from pyinfra.operations.util import any_changed
@@ -87,6 +88,17 @@ def _rules_v6(settings: UserConfig) -> str:
 
 
 def configure_firewall(settings: UserConfig) -> None:
+    if not settings.features.firewall:
+        if Path("/usr/lib/systemd/system/ufw.service").is_file():
+            systemd.service(
+                name="Disable the managed firewall",
+                service="ufw.service",
+                running=None if IS_CHROOT else False,
+                enabled=False,
+                _sudo=SUDO,
+            )
+        return
+
     ufw_config = files.put(
         name="Enable the managed UFW policy",
         src=StringIO("ENABLED=yes\nLOGLEVEL=low\n"),

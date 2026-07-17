@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from io import StringIO
+from pathlib import Path
 import getpass
 
 from pyinfra.operations import files, server
@@ -10,16 +11,31 @@ from runtime import SUDO
 from user_config import UserConfig
 
 
+def _enabled_locales(path: Path = Path("/etc/locale.gen")) -> set[str]:
+    if not path.is_file():
+        return set()
+    return {
+        line.split()[0]
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+
+
 def configure_base_system(settings: UserConfig) -> None:
-    locale_gen = files.put(
-        name="Install managed locale generation list",
-        src=StringIO("".join(f"{locale} UTF-8\n" for locale in settings.system.locales)),
-        dest="/etc/locale.gen",
-        user="root",
-        group="root",
-        mode="644",
-        _sudo=SUDO,
-    )
+    locale_changes = []
+    configured_locales = set(settings.system.locales)
+    if _enabled_locales() != configured_locales:
+        locale_changes.append(
+            files.put(
+                name="Install managed locale generation list",
+                src=StringIO("".join(f"{locale} UTF-8\n" for locale in settings.system.locales)),
+                dest="/etc/locale.gen",
+                user="root",
+                group="root",
+                mode="644",
+                _sudo=SUDO,
+            ),
+        )
     locale_conf = files.put(
         name="Set the default system locale",
         src=StringIO(f"LANG={settings.system.default_locale}\n"),
@@ -29,11 +45,12 @@ def configure_base_system(settings: UserConfig) -> None:
         mode="644",
         _sudo=SUDO,
     )
+    locale_changes.append(locale_conf)
     server.shell(
         name="Generate configured locales",
         commands=["/usr/bin/locale-gen"],
         _sudo=SUDO,
-        _if=any_changed(locale_gen, locale_conf),
+        _if=any_changed(*locale_changes),
     )
     files.link(
         name="Set the system timezone",

@@ -85,7 +85,7 @@ kept in a standalone auditable shell helper rather than embedded Python strings.
   the base install if both fail; every `makepkg -si` invocation includes `--needed`;
 - managed fstab generation, locale, timezone, hostname, login shell, tty1
   autologin, and first-boot GRUB installation/config validation in ArchISO chroot mode;
-- NetworkManager, time sync, Bluetooth, CUPS, Tailscale, a managed UFW policy,
+- NetworkManager, time sync, Bluetooth, CUPS, Tailscale, an optional managed UFW policy selected by `features.firewall`,
   periodic trim/cache maintenance, laptop power management, and global
   PipeWire/WirePlumber user-unit enablement;
 - preflight validation of the local SSH certificate followed by CA-only OpenSSH

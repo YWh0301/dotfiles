@@ -13,6 +13,7 @@ class Features:
     ssh_user_cert: bool
     wayvnc: bool
     tailscale: bool
+    firewall: bool
     snapper: bool
     autologin: bool
 
