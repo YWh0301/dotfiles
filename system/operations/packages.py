@@ -21,6 +21,7 @@ NVIDIA_MODULE_PACKAGES = {
     "nvidia-open-lts",
 }
 KNOWN_PACKAGE_TRANSITIONS = {
+    "dae-git": "dae",
     "exfatprogs": "exfat-utils",
     "pandoc-bin": "pandoc-cli",
     "zathura-pdf-mupdf": "zathura-pdf-poppler",

@@ -14,6 +14,7 @@ from package_selection import PackageSelection
 
 class PackageOperationTest(unittest.TestCase):
     def test_reviewed_transitions_are_explicit(self) -> None:
+        self.assertEqual(KNOWN_PACKAGE_TRANSITIONS["dae-git"], "dae")
         self.assertEqual(KNOWN_PACKAGE_TRANSITIONS["exfatprogs"], "exfat-utils")
         self.assertEqual(KNOWN_PACKAGE_TRANSITIONS["pandoc-bin"], "pandoc-cli")
         self.assertEqual(
