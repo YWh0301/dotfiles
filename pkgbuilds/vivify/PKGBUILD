@@ -1,0 +1,47 @@
+# Maintainer: Tuure Piitulainen <tuure.piitulainen@gmail.com>
+
+pkgname="vivify"
+pkgver="0.14.0"
+pkgrel=1
+pkgdesc="Markdown preview tool which can be used standalone or plug into an editor like (Neo)Vim"
+arch=("x86_64")
+url="https://github.com/jannis-baum/vivify"
+license=("GPL-3.0-or-later")
+depends=("gcc-libs" "sh")
+makedepends=("yarn" "nvm" "zip")
+source=("${pkgname}-${pkgver}.tar.gz::${url}/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=("dde3fe5f14ee76d9012c920d3549ac55085aff809c1b54a151bf34156d4353d7")
+
+# Stripping 'unneeded symbols' causes vivify-server executable to break
+# (segmentation fault)
+options=(!strip)
+
+# https://wiki.archlinux.org/title/Node.js_package_guidelines#Using_nvm
+_node_version=26.5.0
+_ensure_local_nvm() {
+        which nvm >/dev/null 2>&1 && nvm deactivate && nvm unload
+        export NVM_DIR="${srcdir}/.nvm"
+        source /usr/share/nvm/init-nvm.sh || [[ $? != 1 ]]
+}
+
+build() {
+        cd "Vivify-${pkgver}"
+
+        # This package uses Node SEA, which is alpha and experimental
+        # https://nodejs.org/api/single-executable-applications.html
+        # Using system node results in a segfaulting binary
+        # As a workaround, use a reviewed, pinned Node release from nvm.
+        _ensure_local_nvm
+        nvm install "${_node_version}"
+
+        yarn install --frozen-lockfile
+        VIV_VERSION="v${pkgver}-${pkgrel}-aur" make linux
+}
+
+package() {
+        cd "Vivify-${pkgver}"
+
+        install -Dm755 ./build/linux/viv           "${pkgdir}/usr/bin/viv"
+        install -Dm755 ./build/linux/vivify-server "${pkgdir}/usr/bin/vivify-server"
+        install -Dm644 ./LICENSE                   "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

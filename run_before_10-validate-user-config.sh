@@ -3,6 +3,7 @@ set -eu
 
 python - <<'PY'
 from pathlib import Path
+import re
 import tomllib
 
 path = Path.home() / ".config/chezmoi/user.toml"
@@ -18,16 +19,24 @@ def require(condition: bool, message: str) -> None:
 require(config.get("schema_version") == 1, "schema_version must be 1")
 require(config.get("machine", {}).get("kind") in {"laptop", "desktop"},
         "machine.kind must be laptop or desktop")
+require(config.get("kernel", {}).get("flavor") in {"linux", "lts", "zen"},
+        "kernel.flavor must be linux, lts, or zen")
 require(config.get("proxy", {}).get("backend") in {"flclash", "dae"},
         "proxy.backend must be flclash or dae")
 
-for section, key in (("kitty", "font_size"), ("sshd", "port"), ("wayvnc", "port")):
+for section, key in (("kitty", "font_size"), ("sshd", "port"), ("wayvnc", "port"), ("proxy", "flclash_http_port")):
     value = config.get(section, {}).get(key)
     require(isinstance(value, int) and value > 0, f"{section}.{key} must be a positive integer")
 
 features = config.get("features", {})
 for key in ("localsend", "sshd", "ssh_user_cert", "wayvnc", "tailscale", "snapper", "autologin"):
     require(isinstance(features.get(key), bool), f"features.{key} must be boolean")
+
+package_profiles = config.get("packages", {}).get("profiles", [])
+require(isinstance(package_profiles, list), "packages.profiles must be a list")
+require(all(isinstance(value, str) and re.fullmatch(r"[a-z][a-z0-9_-]*", value)
+            for value in package_profiles), "packages.profiles contains an invalid name")
+require(len(package_profiles) == len(set(package_profiles)), "packages.profiles must be unique")
 
 providers = config.get("proxy", {}).get("providers", [])
 provider_names = [provider.get("name") for provider in providers]

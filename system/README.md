@@ -45,16 +45,35 @@ pyinfra plan/confirmation flow.
 - managed `/etc/pacman.conf` repositories: core, extra, multilib, ArchLinuxCN,
   and Pro Audio;
 - concise HTTPS Arch, ArchLinuxCN, and Pro Audio mirror lists from `user.toml`;
-- a conservative bootstrap package set while the profile manifest in
-  `manual/packages.md` is being reviewed;
-- full `pacman -Syu` only when a required package is missing, with the
+- strict parsing of the invisible `<!-- pyinfra: ... -->` selectors attached
+  to human-readable package entries in `manual/packages.md`;
+- selectors for always-installed, manual, feature-, runtime hardware-, machine-,
+  and explicit profile-owned packages; selected AUR/myPKGBUILDS packages are
+  reported but not installed;
+- package satisfaction checked through `pacman -T`, preserving installed
+  provider packages such as `waybar-ywh-git`; Pacman groups are expanded and
+  considered satisfied only when every member is installed;
+- runtime CPU, multi-GPU, and root-filesystem detection, plus an explicit
+  `kernel.flavor` (`linux`, `lts`, or `zen`) that selects matching headers and
+  NVIDIA open/DKMS modules;
+- full `pacman -Syu` only when a selected package is missing, with the
   ArchLinuxCN keyring installed before repository packages;
 - DAE configuration deployed to `/etc/dae/config.dae`, validated on change, and
   enabled/started only when `proxy.backend = "dae"`;
+- reviewed, Git-metadata-free PKGBUILDs under `pkgbuilds/`, built as the normal
+  user in an explicit dependency order only after the selected proxy/network is
+  reachable; every `makepkg -si` invocation includes `--needed`;
 - Tailscale systemd service state;
 - preflight validation of the local SSH certificate followed by CA-only OpenSSH
   trust, principals, port, service state, validation, and reload;
 - no AUR dependency during base bootstrap.
+
+Package entries are ordinary Markdown bullets such as
+`- **git** <!-- pyinfra: always -->`. Supported selectors are `always`, `manual`,
+`feature=name`, `hardware=name`, `kernel=linux|lts|zen`,
+`machine=laptop|desktop`, and `profile=name`. Profile names are
+selected through `[packages].profiles` in `user.toml`. Every bold package bullet
+must carry exactly one selector; malformed or conflicting entries fail closed.
 
 LocalSend is intentionally reported but not installed until an AUR or private
 repository is available. Snapper and autologin configuration will be added in

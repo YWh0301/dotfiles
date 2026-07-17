@@ -1,0 +1,7 @@
+pkg/
+src/
+*.tar.gz
+*.zst
+*.json
+!oldver.json
+!package-lock.json

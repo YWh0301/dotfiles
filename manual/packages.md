@@ -1,47 +1,59 @@
 # 我的GNU/Linux系统中安装的软件包
 
+本文件同时是人类可读的软件包说明和 pyinfra 的软件包清单。每个粗体软件包条目后必须有一个 HTML 标签；HTML 标签在 Markdown 渲染结果中不可见。
+
+- `<!-- pyinfra: always -->`：所有个人 Arch 机器都安装；
+- `<!-- pyinfra: manual -->`：仅作记录，不由 pyinfra 安装；
+- `<!-- pyinfra: feature=名称 -->`：对应 `user.toml` 中的 Feature 为 `true` 时安装；
+- `<!-- pyinfra: hardware=名称 -->`：运行时检测到对应 CPU/GPU 或根文件系统时安装；
+- `<!-- pyinfra: kernel=linux|lts|zen -->`：匹配 `user.toml` 的内核选择时安装；
+- `<!-- pyinfra: machine=laptop -->`或`machine=desktop`：匹配机器角色时安装；
+- `<!-- pyinfra: profile=名称 -->`：名称出现在 `user.toml` 的 `packages.profiles`时安装。
+
+普通仓库、ArchLinuxCN 和 Pro Audio 软件包由 Pacman 安装；标记为`(AUR)`或`(myPKGBUILDS)`的软件包只检查和报告，不阻塞基础恢复。没有标签、标签格式错误或重复条目冲突时，pyinfra 会停止而不是猜测。
+
 ## Basic Packages
 
 基础软件包
 
 ### Basic Arch Linux System
 
-- **base**
-    - *systemd*（包含在*base*中）
-- **base-devel**
-- **linux-zen**
-- **linux-zen-headers**
-- **linux-firmware**
+- **base** <!-- pyinfra: always -->
+- **base-devel** <!-- pyinfra: always -->
+- **linux** <!-- pyinfra: kernel=linux -->
+- **linux-headers** <!-- pyinfra: kernel=linux -->
+- **linux-lts** <!-- pyinfra: kernel=lts -->
+- **linux-lts-headers** <!-- pyinfra: kernel=lts -->
+- **linux-zen** <!-- pyinfra: kernel=zen -->
+- **linux-zen-headers** <!-- pyinfra: kernel=zen -->
+- **linux-firmware** <!-- pyinfra: always -->
 - 根据所使用的CPU制造商决定微码软件包
-    - **intel-ucode**
-    - **amd-ucode**
+    - **intel-ucode** <!-- pyinfra: hardware=cpu_intel -->
+    - **amd-ucode** <!-- pyinfra: hardware=cpu_amd -->
 
 #### Bootloader
 
-- **efibootmgr**
-1. 使用GRUB2
-    - **grub**
-    - **os-prober**
-        - 如果需要安装双系统则需要安装
-2. 使用systemd-boot
-    - **systemd-boot**
-    - **systemd-boot-pacman-hook**(AUR)
+- **efibootmgr** <!-- pyinfra: always -->
+- **grub** <!-- pyinfra: always -->
+- **os-prober** <!-- pyinfra: always -->
+    - 如果需要安装双系统则需要安装
 
 ### System Applications
 
-- **dkms**
-- **evtest**
-- **wev**
-- **git**
-    - **github-cli**
-- **less**
-- **tree**
-- **wget**
-- **lsof**
-- **strace**
-- **ltrace**
-- **usbutils**
-- **chezmoi**
+- **dkms** <!-- pyinfra: always -->
+- **evtest** <!-- pyinfra: always -->
+- **wev** <!-- pyinfra: always -->
+- **git** <!-- pyinfra: always -->
+    - **github-cli** <!-- pyinfra: always -->
+- **less** <!-- pyinfra: always -->
+- **tree** <!-- pyinfra: always -->
+- **wget** <!-- pyinfra: always -->
+- **curl** <!-- pyinfra: always -->
+- **lsof** <!-- pyinfra: always -->
+- **strace** <!-- pyinfra: always -->
+- **ltrace** <!-- pyinfra: always -->
+- **usbutils** <!-- pyinfra: always -->
+- **chezmoi** <!-- pyinfra: always -->
     - 使用密码保护公共仓库中的隐私数据
         - 在`$HOME/.local/share/chezmoi`运行`chezmoi age-keygen |tee| chezmoi age encrypt --passphrase --output=key.txt.age`创建新的加密后的密钥文件，记录下来`Public key: yourpublickey`，并`echo key.txt.age >> .chezmoiignore`
         - 创建`$HOME/.local/share/chezmoi/run_onchange_before_decrypt-private-key.sh.tmpl`实现自动提示密码解密密钥：
@@ -62,40 +74,43 @@
                 recipient = "yourpublickey"
             ```
         - 对于需要加密的data文件，运行`chezmoi add --encrpt /your/secret/file`
-- **dialog**
-- **pacman-contrib**
-- **archlinuxcn-keyring**(archlinuxcn)
-- **yay**(archlinuxcn)
+- **dialog** <!-- pyinfra: always -->
+- **pacman-contrib** <!-- pyinfra: always -->
+- **archlinux-keyring** <!-- pyinfra: always -->
+- **archlinuxcn-keyring**(archlinuxcn) <!-- pyinfra: always -->
+- **yay**(archlinuxcn) <!-- pyinfra: always -->
 
 #### GPU Drivers
 
-- **libvdpau-va-gl**
-- **libva-utils**
+- **libvdpau-va-gl** <!-- pyinfra: hardware=gpu_open -->
+- **libva-utils** <!-- pyinfra: hardware=gpu_any -->
 - 参考Arch Wiki进行安装
 - 对于AMD、Intel显卡
-    - **mesa**
-        - **mesa-utils**
-    - **vulkan-tools**
+    - **mesa** <!-- pyinfra: hardware=gpu_open -->
+        - **mesa-utils** <!-- pyinfra: hardware=gpu_open -->
+    - **vulkan-tools** <!-- pyinfra: hardware=gpu_any -->
     - Intel
-        - **vulkan-intel**
-        - **intel-media-driver**
-        - **libvpl**
-        - **vpl-gpu-rt**
+        - **vulkan-intel** <!-- pyinfra: hardware=gpu_intel -->
+        - **intel-media-driver** <!-- pyinfra: hardware=gpu_intel -->
+        - **libvpl** <!-- pyinfra: hardware=gpu_intel -->
+        - **vpl-gpu-rt** <!-- pyinfra: hardware=gpu_intel -->
     - AMD
-        - **vulkan-radeon**
+        - **vulkan-radeon** <!-- pyinfra: hardware=gpu_amd -->
 - 对于Nvidia显卡
-    - **nvidia-dkms**
-        - **nvidia-prime**
-        - **nvidia-utils**
-        - **nvtop**
-    - **egl-wayland**
-    - **libva-nvidia-driver**
+    - **nvidia-open** <!-- pyinfra: hardware=gpu_nvidia_open -->
+    - **nvidia-open-lts** <!-- pyinfra: hardware=gpu_nvidia_open_lts -->
+    - **nvidia-open-dkms** <!-- pyinfra: hardware=gpu_nvidia_open_dkms -->
+        - **nvidia-prime** <!-- pyinfra: hardware=gpu_nvidia -->
+        - **nvidia-utils** <!-- pyinfra: hardware=gpu_nvidia -->
+        - **nvtop** <!-- pyinfra: hardware=gpu_nvidia -->
+    - **egl-wayland** <!-- pyinfra: hardware=gpu_nvidia -->
+    - **libva-nvidia-driver** <!-- pyinfra: hardware=gpu_nvidia -->
 
 #### File System Utilities
 
-- **sshfs**
-- **exfatprogs**
-- **btrfs-progs**
+- **sshfs** <!-- pyinfra: always -->
+- **exfatprogs** <!-- pyinfra: always -->
+- **btrfs-progs** <!-- pyinfra: hardware=fs_btrfs -->
     - btrfs中的子卷概念
         - 可以理解为文件系统命名空间
         - 子卷可以单独挂载到不同的目录位置
@@ -111,7 +126,7 @@
         - 快照指针对子卷，不能针对目录和文件
         - 嵌套子卷不会被父子卷的快照保留
         - 快照默认与原子卷相同权限，但原子卷权限缩紧后快照不会自动变更，可能导致**安全问题**
-- **snapper**
+- **snapper** <!-- pyinfra: hardware=fs_btrfs -->
     - 用于自动生成btrfs快照，默认生成只读快照
     - 添加新的快照设置：`snapper -c your_config_label create-config /path/to/subvolume`
         - 会在需要快照的子卷下生成名称为`.snapshots`的子卷用来存储快照
@@ -146,77 +161,75 @@
 
 #### Hardware Management
 
-- **acpi**
-- **brightnessctl**
-- **btop**
+- **acpi** <!-- pyinfra: machine=laptop -->
+- **brightnessctl** <!-- pyinfra: machine=laptop -->
+- **btop** <!-- pyinfra: always -->
     - 系统监控
-- **cups**
-- **powertop**
-- **auto-cpufreq**(archlinuxcn)
-- **thermald**
+- **cups** <!-- pyinfra: always -->
+- **powertop** <!-- pyinfra: machine=laptop -->
+- **auto-cpufreq**(archlinuxcn) <!-- pyinfra: machine=laptop -->
+- **thermald** <!-- pyinfra: hardware=cpu_intel -->
 
 #### Audio
 
-- **pipewire**
-    - **pipewire-alsa**
-    - **pipewire-audio**
-    - **pipewire-jack**
-    - **pipewire-pulse**
-    - **alsa-utils**
-- **wireplumber**
-- **pavucontrol**
-- **carla**
+- **pipewire** <!-- pyinfra: always -->
+    - **pipewire-alsa** <!-- pyinfra: always -->
+    - **pipewire-audio** <!-- pyinfra: always -->
+    - **pipewire-jack** <!-- pyinfra: always -->
+    - **pipewire-pulse** <!-- pyinfra: always -->
+    - **alsa-utils** <!-- pyinfra: always -->
+- **wireplumber** <!-- pyinfra: always -->
 
 #### Networking
 
-- **iwd**
-- **ufw**
-- **socat**
+- **iwd** <!-- pyinfra: always -->
+- **ufw** <!-- pyinfra: always -->
+- **socat** <!-- pyinfra: always -->
     - 内核防火墙配置前端
 1. 使用NetworkManager
-    - **networkmanager**
+    - **networkmanager** <!-- pyinfra: always -->
 2. 使用connman
     - 暂无
-- **openssh**
-- **bind**
-- **dae-git**(archlinuxcn)
-- **flclash**
-- **tailscale**
+- **openssh** <!-- pyinfra: always -->
+- **bind** <!-- pyinfra: always -->
+- **dae-git**(archlinuxcn) <!-- pyinfra: always -->
+- **flclash**(archlinuxcn) <!-- pyinfra: always -->
+- **tailscale** <!-- pyinfra: always -->
 
 #### Bluetooth
 
-- **bluez**
-- **bluez-utils**
+- **bluez** <!-- pyinfra: always -->
+- **bluez-utils** <!-- pyinfra: always -->
 
 ### GUI
 
 #### Desktop Environment
 
 - 对于桌面环境而言，compositor、panel和launcher是最重要的三个组成部分，并且这三者的配置也会紧密结合，互相依赖
-- **hyprland**
+- **hyprland** <!-- pyinfra: always -->
     - wayland合成器
-    - **qt5-wayland**
-    - **qt6-wayland**
-    - **qt5ct**
-    - **qt6ct**
-    - **xdg-desktop-portal-hyprland**
-    - **polkit-gnome**
-- **rofi**
+    - **qt5-wayland** <!-- pyinfra: always -->
+    - **qt6-wayland** <!-- pyinfra: always -->
+    - **qt5ct** <!-- pyinfra: always -->
+    - **qt6ct** <!-- pyinfra: always -->
+    - **xdg-desktop-portal-hyprland** <!-- pyinfra: always -->
+    - **polkit-gnome** <!-- pyinfra: always -->
+- **rofi** <!-- pyinfra: always -->
     - 启动器以及多功能选择器
-- **waybar**
+- **waybar** <!-- pyinfra: always -->
     - 可自定义的panel bar
-- **xdg-user-dirs**
-- **hypridle**
+- **xdg-user-dirs** <!-- pyinfra: always -->
+- **hypridle** <!-- pyinfra: always -->
     - 闲置监控
-- **hyprlock**
+- **hyprlock** <!-- pyinfra: always -->
     - 锁屏界面
-- **hyprpaper**
+- **hyprpaper** <!-- pyinfra: always -->
     - 壁纸设置
-- **hyprpicker**
+- **hyprpicker** <!-- pyinfra: always -->
     - 颜色提取器
-- **swaync**
+- **swaync** <!-- pyinfra: always -->
     - 通知中心
-- **wayvnc**
+- **wayvnc** <!-- pyinfra: always -->
     - vnc远程桌面
     - 通过`openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -sha384 -days 3650 -nodes -keyout tls_key.pem -out tls_cert.pem -subj /CN=$(hostnamectl hostname)`生成TLS/SSL证书，可以实现VNC服务器认证
     - 通过`openssl x509 -in tls_cert.pem -fingerprint -sha1 -noout`查看服务器公钥的SHA1；只要客户端接受到的证书公钥和机器上的公钥一致，就能确定没有被中间人攻击
@@ -224,220 +237,217 @@
 
 #### Screen Shot and Clipboard Managing
 
-- **grim**
-- **slurp**
-- **swappy**
-- **cliphist**
-
+- **grim** <!-- pyinfra: always -->
+- **slurp** <!-- pyinfra: always -->
+- **swappy** <!-- pyinfra: always -->
+- **cliphist** <!-- pyinfra: always -->
 #### GUI Setting Tools
 
-- **nwg-displays**
-- **nwg-look**
-- **blueman**
-- **pavucontrol**
-
+- **nwg-displays** <!-- pyinfra: always -->
+- **nwg-look** <!-- pyinfra: always -->
+- **blueman** <!-- pyinfra: always -->
+- **pavucontrol** <!-- pyinfra: always -->
+- **carla** <!-- pyinfra: always -->
 1. 网络配置使用NetworkManager
-    - **network-manager-applet**
+    - **network-manager-applet** <!-- pyinfra: always -->
 2. 使用其他网络配置工具或者不需要applet情况
     - 暂无
 
 ### Terminal
 
-- **kitty**
-- **bash**
-- **zsh**
-- **antigen**(AUR)
+- **kitty** <!-- pyinfra: always -->
+- **bash** <!-- pyinfra: always -->
+- **zsh** <!-- pyinfra: always -->
+- **antigen**(AUR) <!-- pyinfra: always -->
     - zsh plugin manager
-- **tmux**
+- **tmux** <!-- pyinfra: always -->
     - 终端复用器
 
 ### Fonts
 
-- **noto-fonts**
-- **wqy-microhei**
-- **wqy-zenhei**
-- **awesome-terminal-fonts**
-- **ttf-jetbrains-mono-nerd**
+- **noto-fonts** <!-- pyinfra: always -->
+- **wqy-microhei** <!-- pyinfra: always -->
+- **wqy-zenhei** <!-- pyinfra: always -->
+- **awesome-terminal-fonts** <!-- pyinfra: always -->
+- **ttf-jetbrains-mono-nerd** <!-- pyinfra: always -->
 
 ### File Managing
 
-- **thunar**
-    - **thunar-archive-plugin**
-    - **xarchiver**
-    - **thunar-media-tags-plugin**
-    - **thunar-volman**
-    - **gvfs**
-    - **gvfs-mtp**
-    - **gvfs-nfs**
-- **yazi**
+- **thunar** <!-- pyinfra: always -->
+    - **thunar-archive-plugin** <!-- pyinfra: always -->
+    - **xarchiver** <!-- pyinfra: always -->
+    - **thunar-media-tags-plugin** <!-- pyinfra: always -->
+    - **thunar-volman** <!-- pyinfra: always -->
+    - **gvfs** <!-- pyinfra: always -->
+    - **gvfs-mtp** <!-- pyinfra: always -->
+    - **gvfs-nfs** <!-- pyinfra: always -->
+- **yazi** <!-- pyinfra: always -->
     - 使用TUI的多功能文件管理器
-    - **7zip**
-    - **jq**
-    - **fd**
-    - **fzf**
-    - **ripgrep**
-    - **ffmpegthumbnailer**
-    - **zoxide**
-    - **resvg**
-- **localsend-bin**(AUR)
+    - **7zip** <!-- pyinfra: always -->
+    - **jq** <!-- pyinfra: always -->
+    - **fd** <!-- pyinfra: always -->
+    - **fzf** <!-- pyinfra: always -->
+    - **ripgrep** <!-- pyinfra: always -->
+    - **ffmpegthumbnailer** <!-- pyinfra: always -->
+    - **zoxide** <!-- pyinfra: always -->
+    - **resvg** <!-- pyinfra: always -->
+- **localsend-bin**(AUR) <!-- pyinfra: always -->
     - 与iOS和Android设备进行局域网双向文件传输
     - Yazi通过`Shift+L`发送选中文件
-- **pcloud-drive**(AUR)
+- **pcloud-drive**(AUR) <!-- pyinfra: always -->
 
 ### Input Method
 
-- **fcitx5**
-- **fcitx5-chinese-addons**
-- **fcitx5-configtool**
-- **fcitx5-gtk**
-- **fcitx5-qt**
+- **fcitx5** <!-- pyinfra: always -->
+- **fcitx5-chinese-addons** <!-- pyinfra: always -->
+- **fcitx5-configtool** <!-- pyinfra: always -->
+- **fcitx5-gtk** <!-- pyinfra: always -->
+- **fcitx5-qt** <!-- pyinfra: always -->
 
 ### Text Editing and Programming
 
-- **neovim**
-- **nvim-lazy**(AUR)
-- **vivify**(AUR)
-- **bat**
-- **picocom**
-- **screen**
-- **uv**
-- **rustup**
-- **python**
-- **gdb**
-- **cmake**
+- **neovim** <!-- pyinfra: always -->
+- **nvim-lazy**(AUR) <!-- pyinfra: always -->
+- **vivify**(AUR) <!-- pyinfra: always -->
+- **bat** <!-- pyinfra: always -->
+- **picocom** <!-- pyinfra: always -->
+- **screen** <!-- pyinfra: always -->
+- **uv** <!-- pyinfra: always -->
+- **rustup** <!-- pyinfra: always -->
+- **python** <!-- pyinfra: always -->
+- **gdb** <!-- pyinfra: always -->
+- **cmake** <!-- pyinfra: always -->
 
 ### File Browsing and Editing
 
-- **ncmpcpp**
-- **imv**
-- **mpv**
-- **zathura**
-- **zathura-cb**
-- **zathura-djvu**
-- **zathura-pdf-poppler**
-- **poppler**
-- **imagemagick**
-- **pandoc-bin**(archlinuxcn)
-- **wps-office-cn**(AUR)
+- **ncmpcpp** <!-- pyinfra: always -->
+- **imv** <!-- pyinfra: always -->
+- **mpv** <!-- pyinfra: always -->
+- **zathura** <!-- pyinfra: always -->
+- **zathura-cb** <!-- pyinfra: always -->
+- **zathura-djvu** <!-- pyinfra: always -->
+- **zathura-pdf-poppler** <!-- pyinfra: always -->
+- **poppler** <!-- pyinfra: always -->
+- **imagemagick** <!-- pyinfra: always -->
+- **pandoc-bin**(archlinuxcn) <!-- pyinfra: always -->
+- **wps-office-cn**(AUR) <!-- pyinfra: manual -->
     - 对于12.1.2.22571版本，存在二进制文件中的bug，无法通过绝对路径使用CLI打开文件；
         - 在wps界面左上角“WPS Office”内设置按钮中找到“切换窗口管理模式”，选择任意项点击确定后重启即可
-    - **wps-office-mui-zh-cn**(AUR)
-    - **libtiff5**(archlinuxcn)
-    - **ttf-wps-fonts**(AUR)
-- **calibre**
-- **libreoffice-fresh**
+    - **wps-office-mui-zh-cn**(AUR) <!-- pyinfra: manual -->
+    - **libtiff5**(archlinuxcn) <!-- pyinfra: manual -->
+    - **ttf-wps-fonts**(AUR) <!-- pyinfra: manual -->
+- **calibre** <!-- pyinfra: always -->
 
 ### Others
 
-- **firefox**
-    - **vdhcoapp**(archlinuxcn)
-- **aichat**
-- **pi-coding-agent**(AUR)
-    - **pi-ext-web-access**(AUR)
-    - **pi-ext-multimodal-proxy**(myPKGBUILDS)
-    - **pi-ext-ocr**(myPKGBUILDS)
-    - **pi-ext-pdf**(myPKGBUILDS)
-        - **python-pdfplumber**(AUR)
-        - **python-pypdfium2**(AUR)
-    - **pi-ext-agent-browser-native**(myPKGBUILDS)
-        - **agent-browser-bin**(AUR)
-- **qbittorrent**
-
-## Additional Packages
+- **firefox** <!-- pyinfra: always -->
+    - **vdhcoapp**(archlinuxcn) <!-- pyinfra: always -->
+- **aichat** <!-- pyinfra: always -->
+- **pi-coding-agent**(AUR) <!-- pyinfra: always -->
+    - **pi-ext-web-access**(AUR) <!-- pyinfra: always -->
+    - **pi-ext-pdf**(myPKGBUILDS) <!-- pyinfra: always -->
+        - **python-pdfplumber**(AUR) <!-- pyinfra: always -->
+        - **python-pypdfium2**(AUR) <!-- pyinfra: always -->
+    - **pi-ext-agent-browser-native**(myPKGBUILDS) <!-- pyinfra: always -->
+        - **agent-browser-bin**(AUR) <!-- pyinfra: always -->
+    - **pi-ext-multimodal-proxy**(myPKGBUILDS) <!-- pyinfra: manual -->
+    - **pi-ext-ocr**(myPKGBUILDS) <!-- pyinfra: manual -->
+- **qbittorrent** <!-- pyinfra: always -->## Additional Packages
 
 ### Wine
 
-1. 使用pacman管理
-    - **wine**
-    - **wine-mono**
-    - **winetricks**
-2. 使用bottles管理
-    - **bottles**
+- **wine** <!-- pyinfra: profile=wine -->
+- **wine-mono** <!-- pyinfra: profile=wine -->
+- **winetricks** <!-- pyinfra: profile=wine -->
 
 #### Wine Pro Audio
 
-- **wineasio**(AUR)
-- **wineasio32**(AUR)
+- **wineasio**(AUR) <!-- pyinfra: profile=proaudio -->
+- **wineasio32**(AUR) <!-- pyinfra: profile=proaudio -->
 
 ### File Editing
 
-- **inkscape**
-- **gimp**
-- **davinci-resolve**
+- **inkscape** <!-- pyinfra: profile=multimedia -->
+- **gimp** <!-- pyinfra: profile=multimedia -->
+- **davinci-resolve** <!-- pyinfra: manual -->
 
 ### Scientific Research
 
-- **zotero**
+- **zotero** <!-- pyinfra: profile=lab -->
     - 可以在设置中手动更改本地存储文件夹位置，而后手动移动文件夹内容到新位置
-- **paraview**
-- **fiji-bin**
-- **texlive-basic**
-    - **texlive-binextra**
-    - **texlive-fontsextra**
-    - **texlive-fontsrecommended**
-    - **texlive-latex**
-    - **texlive-latexextra**
-    - **texlive-latexrecommended**
-    - **texlive-mathscience**
-    - **texlive-plaingeneric**
+- **paraview** <!-- pyinfra: manual -->
+- **fiji-bin**(AUR) <!-- pyinfra: manual -->
+- **texlive-basic** <!-- pyinfra: profile=lab -->
+    - **texlive-binextra** <!-- pyinfra: profile=lab -->
+    - **texlive-fontsextra** <!-- pyinfra: profile=lab -->
+    - **texlive-fontsrecommended** <!-- pyinfra: profile=lab -->
+    - **texlive-latex** <!-- pyinfra: profile=lab -->
+    - **texlive-latexextra** <!-- pyinfra: profile=lab -->
+    - **texlive-latexrecommended** <!-- pyinfra: profile=lab -->
+    - **texlive-mathscience** <!-- pyinfra: profile=lab -->
+    - **texlive-plaingeneric** <!-- pyinfra: profile=lab -->
 
 ### Engineering
 
-- **kicad**
-    - **kicad-library**
-    - **kicad-library-3d**
-- **freecad**
-- **wireshark**
+- **kicad** <!-- pyinfra: profile=engineering -->
+    - **kicad-library** <!-- pyinfra: profile=engineering -->
+    - **kicad-library-3d** <!-- pyinfra: profile=engineering -->
+- **freecad** <!-- pyinfra: profile=engineering -->
+- **wireshark** <!-- pyinfra: manual -->
 
 ### Audio Development
 
-- **reaper**
-    - **sws**
-    - **reapack**
-- **sox**
-- **haskell-tidal**
-- **vcvrack**(pro-audio)
-    - **vcvrack-plugins**(pro-audio)
-    - **cardinal**
-- **lsp-plugins**
-- **dragonfly-reverb**
-- **avldrums.lv2**
-- **zynaddsubfx**
-- **yoshimi**
-- **vital-synth**(AUR)
-- **surge-xt**
-- **guitarix**
-- **sfizz**
-- **infamousplugins**
-- **drumgizmo**
-- **setbfree**
-- **polyphone**
-- **qtractor**
-- **mixxx**
+- **reaper** <!-- pyinfra: profile=proaudio -->
+    - **sws** <!-- pyinfra: profile=proaudio -->
+    - **reapack** <!-- pyinfra: profile=proaudio -->
+- **sox** <!-- pyinfra: profile=proaudio -->
+- **haskell-tidal** <!-- pyinfra: profile=proaudio -->
+- **vcvrack**(pro-audio) <!-- pyinfra: profile=proaudio -->
+    - **vcvrack-plugins**(pro-audio) <!-- pyinfra: profile=proaudio -->
+    - **cardinal** <!-- pyinfra: profile=proaudio -->
+- **lsp-plugins** <!-- pyinfra: profile=proaudio -->
+- **dragonfly-reverb** <!-- pyinfra: profile=proaudio -->
+- **avldrums.lv2** <!-- pyinfra: profile=proaudio -->
+- **zynaddsubfx** <!-- pyinfra: profile=proaudio -->
+- **yoshimi** <!-- pyinfra: manual -->
+- **vital-synth**(AUR) <!-- pyinfra: profile=proaudio -->
+- **surge-xt** <!-- pyinfra: profile=proaudio -->
+- **guitarix** <!-- pyinfra: profile=proaudio -->
+- **sfizz** <!-- pyinfra: profile=proaudio -->
+- **infamousplugins** <!-- pyinfra: profile=proaudio -->
+- **drumgizmo** <!-- pyinfra: profile=proaudio -->
+- **setbfree** <!-- pyinfra: profile=proaudio -->
+- **polyphone** <!-- pyinfra: profile=proaudio -->
+- **qtractor** <!-- pyinfra: profile=proaudio -->
+- **mixxx** <!-- pyinfra: profile=proaudio -->
     - FOSS digital software for djing
-- **beets**
+- **beets** <!-- pyinfra: profile=proaudio -->
     - CLI FOSS music management and tagging software
-- **quodlibet**
+- **quodlibet** <!-- pyinfra: manual -->
     - music management software and music player
-- **musescore**
+- **musescore** <!-- pyinfra: manual -->
     - FOSS music sheet editor
-    - **musescore-bin**(AUR)
+    - **musescore-bin**(AUR) <!-- pyinfra: manual -->
     - If musescore encounter Qt bugs, use Appimage version (musescore-bin in AUR)
-- **lilypond**
+- **lilypond** <!-- pyinfra: profile=proaudio -->
     - GNU music sheet describing language with music xml converting function
-    - **frescobaldi**
+    - **frescobaldi** <!-- pyinfra: manual -->
 
 ### Android Utilities
 
-- **android-tools**
+- **android-tools** <!-- pyinfra: manual -->
+
+### Gaming
+
+- **steam** <!-- pyinfra: manual -->
 
 ### Others
 
-- **wechat**(AUR)
-- **obs-studio**
-- **wemeet-bin**(AUR)
-- **wemeet-wayland-screenshare-git**(AUR)
-- **xunlei-bin**(AUR)
-- **ollama**
+- **wechat**(AUR) <!-- pyinfra: manual -->
+- **obs-studio** <!-- pyinfra: manual -->
+- **wemeet-bin**(AUR) <!-- pyinfra: manual -->
+- **wemeet-wayland-screenshare-git**(AUR) <!-- pyinfra: manual -->
+- **xunlei-bin**(AUR) <!-- pyinfra: manual -->
+- **ollama** <!-- pyinfra: manual -->
     - 本地大语言模型运行包装
 

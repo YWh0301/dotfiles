@@ -1,0 +1,13 @@
+pkgbase = nvim-lazy
+	pkgdesc = A modern plugin manager for Neovim.
+	pkgver = v11.17.5
+	pkgrel = 1
+	epoch = 1
+	url = https://github.com/folke/lazy.nvim
+	arch = any
+	license = Apache
+	depends = neovim
+	source = https://github.com/folke/lazy.nvim/archive/refs/tags/v11.17.5.tar.gz
+	sha256sums = 54f4db00d3e0fadbe29a26ba5df9959a2331556dcab317cfd4e945d443b7c2ee
+
+pkgname = nvim-lazy

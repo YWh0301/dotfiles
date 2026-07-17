@@ -28,8 +28,14 @@ class Machine:
 
 
 @dataclass(frozen=True)
+class Kernel:
+    flavor: str
+
+
+@dataclass(frozen=True)
 class Proxy:
     backend: str
+    flclash_http_port: int
 
 
 @dataclass(frozen=True)
@@ -44,6 +50,11 @@ class Pacman:
 
 
 @dataclass(frozen=True)
+class Packages:
+    profiles: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class Mirrors:
     arch: tuple[str, ...]
     archlinuxcn: tuple[str, ...]
@@ -55,10 +66,12 @@ class Mirrors:
 class UserConfig:
     identity: Identity
     machine: Machine
+    kernel: Kernel
     features: Features
     proxy: Proxy
     sshd: Sshd
     pacman: Pacman
+    packages: Packages
     mirrors: Mirrors
 
 
@@ -76,14 +89,19 @@ def load_user_config(path: Path | None = None) -> UserConfig:
         raise ValueError(f"{path}: schema_version must be 1")
 
     features = Features(**raw["features"])
-    proxy = Proxy(backend=raw["proxy"]["backend"])
+    proxy = Proxy(
+        backend=raw["proxy"]["backend"],
+        flclash_http_port=raw["proxy"]["flclash_http_port"],
+    )
     sshd = Sshd(port=raw["sshd"]["port"])
     identity = Identity(name=raw["identity"]["name"])
     machine = Machine(kind=raw["machine"]["kind"])
+    kernel = Kernel(flavor=raw["kernel"]["flavor"])
     pacman = Pacman(
         repositories=tuple(raw["pacman"]["repositories"]),
         parallel_downloads=raw["pacman"]["parallel_downloads"],
     )
+    packages = Packages(profiles=tuple(raw.get("packages", {}).get("profiles", ())))
     mirrors = Mirrors(
         arch=tuple(raw["mirrors"]["arch"]),
         archlinuxcn=tuple(raw["mirrors"]["archlinuxcn"]),
@@ -93,8 +111,12 @@ def load_user_config(path: Path | None = None) -> UserConfig:
 
     if machine.kind not in {"laptop", "desktop"}:
         raise ValueError(f"{path}: unsupported machine.kind {machine.kind!r}")
+    if kernel.flavor not in {"linux", "lts", "zen"}:
+        raise ValueError(f"{path}: unsupported kernel.flavor {kernel.flavor!r}")
     if proxy.backend not in {"flclash", "dae"}:
         raise ValueError(f"{path}: unsupported proxy.backend {proxy.backend!r}")
+    if not 1 <= proxy.flclash_http_port <= 65535:
+        raise ValueError(f"{path}: proxy.flclash_http_port must be between 1 and 65535")
     if not 1 <= sshd.port <= 65535:
         raise ValueError(f"{path}: sshd.port must be between 1 and 65535")
     if not identity.name:
@@ -106,13 +128,17 @@ def load_user_config(path: Path | None = None) -> UserConfig:
         raise ValueError(f"{path}: core, extra, and archlinuxcn repositories are required")
     if pacman.parallel_downloads < 1:
         raise ValueError(f"{path}: pacman.parallel_downloads must be positive")
+    if len(packages.profiles) != len(set(packages.profiles)):
+        raise ValueError(f"{path}: packages.profiles must be unique")
 
     return UserConfig(
         identity=identity,
         machine=machine,
+        kernel=kernel,
         features=features,
         proxy=proxy,
         sshd=sshd,
         pacman=pacman,
+        packages=packages,
         mirrors=mirrors,
     )

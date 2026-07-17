@@ -1,90 +1,188 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 import shlex
+import subprocess
 
-from pyinfra import host, logger
-from pyinfra.facts.pacman import PacmanPackages
+from pyinfra import logger
 from pyinfra.operations import server
 
+from hardware import detect_hardware_selectors
+from package_manifest import parse_package_document, select_packages
 from runtime import SUDO
 from user_config import UserConfig
 
 
-# Conservative bootstrap set used until the package profiles in
-# manual/packages.md have been reviewed and explicitly enabled.
-OFFICIAL_PACKAGES = {
-    "archlinux-keyring",
-    "git",
-    "openssh",
-    "python",
-    "uv",
-}
 ARCHLINUXCN_KEYRING = "archlinuxcn-keyring"
-PROXY_PACKAGES = {"dae-git", "flclash"}
+NVIDIA_MODULE_PACKAGES = {
+    "nvidia",
+    "nvidia-dkms",
+    "nvidia-lts",
+    "nvidia-open",
+    "nvidia-open-dkms",
+    "nvidia-open-lts",
+}
 
 
-def _install_command(packages: set[str], *, refresh_and_upgrade: bool) -> str:
+def _install_command(
+    packages: set[str],
+    *,
+    refresh_and_upgrade: bool,
+    accept_known_conflict: bool = False,
+) -> str:
     action = "-Syu" if refresh_and_upgrade else "-S"
-    return shlex.join(["/usr/bin/pacman", action, "--needed", "--noconfirm", *sorted(packages)])
+    arguments = ["/usr/bin/pacman", action, "--needed", "--noconfirm"]
+    if accept_known_conflict:
+        # ALPM conflict-question bit. This is limited to the explicitly detected
+        # NVIDIA module-family transition below, never enabled globally.
+        arguments.extend(["--ask", "4"])
+    return shlex.join([*arguments, *sorted(packages)])
+
+
+def _installed(packages: set[str]) -> set[str]:
+    return {
+        package
+        for package in packages
+        if subprocess.run(
+            ["/usr/bin/pacman", "-Q", package],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        ).returncode
+        == 0
+    }
+
+
+def _synchronized_groups(candidates: set[str]) -> dict[str, set[str]]:
+    group_names = set(
+        subprocess.check_output(["/usr/bin/pacman", "-Sg"], text=True).splitlines(),
+    )
+    groups: dict[str, set[str]] = {}
+    for group in candidates & group_names:
+        output = subprocess.check_output(["/usr/bin/pacman", "-Sg", group], text=True)
+        groups[group] = {line.split(maxsplit=1)[1] for line in output.splitlines()}
+    return groups
+
+
+def _pacman_unmet(dependencies: set[str]) -> set[str]:
+    if not dependencies:
+        return set()
+    result = subprocess.run(
+        ["/usr/bin/pacman", "-T", *sorted(dependencies)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode not in {0, 127}:
+        raise RuntimeError(f"pacman dependency check failed: {result.stderr.strip()}")
+    return set(result.stdout.splitlines())
+
+
+def _unmet_packages(packages: set[str], groups: dict[str, set[str]]) -> set[str]:
+    # pacman -T understands virtual providers, but package groups are not
+    # dependency names. A group is satisfied only when all of its members are.
+    ordinary = packages - set(groups)
+    unmet = _pacman_unmet(ordinary)
+    for group in packages & set(groups):
+        if _pacman_unmet(groups[group]):
+            unmet.add(group)
+    return unmet
+
+
+def _synchronized_package_names(groups: dict[str, set[str]]) -> set[str]:
+    output = subprocess.check_output(["/usr/bin/pacman", "-Slq"], text=True)
+    return set(output.splitlines()) | set(groups)
 
 
 def configure_packages(settings: UserConfig) -> None:
-    installed = set(host.get_fact(PacmanPackages))
+    entries = parse_package_document()
+    hardware = detect_hardware_selectors(settings.kernel.flavor)
+    pacman_packages, aur_packages, mypkgbuilds_packages, selected_profiles = select_packages(
+        entries,
+        machine_kind=settings.machine.kind,
+        kernel_flavor=settings.kernel.flavor,
+        features=asdict(settings.features),
+        hardware=hardware,
+        profiles=set(settings.packages.profiles),
+    )
+    logger.info(
+        "Package manifest selected %d pacman, %d AUR, and %d myPKGBUILDS packages; "
+        "profiles: %s; hardware: %s",
+        len(pacman_packages),
+        len(aur_packages),
+        len(mypkgbuilds_packages),
+        ", ".join(sorted(selected_profiles)) or "none",
+        ", ".join(sorted(hardware)) or "none",
+    )
 
-    official_packages = set(OFFICIAL_PACKAGES)
-    if settings.features.tailscale:
-        official_packages.add("tailscale")
-    if settings.features.snapper:
-        official_packages.add("snapper")
+    groups = _synchronized_groups(pacman_packages)
+    missing = _unmet_packages(pacman_packages, groups)
+    synchronized = _synchronized_package_names(groups)
+    unavailable = missing - synchronized
+    if unavailable:
+        raise RuntimeError(
+            "selected packages are unavailable from configured pacman repositories: "
+            + ", ".join(sorted(unavailable)),
+        )
+    installable = missing & synchronized
 
-    previous_transaction = None
-    repositories_refreshed = False
-
-    missing_official = official_packages - installed
-    if missing_official:
-        previous_transaction = server.shell(
-            name="Synchronize Arch and install official bootstrap packages",
-            commands=[_install_command(missing_official, refresh_and_upgrade=True)],
+    if installable:
+        logger.info(
+            "Missing selected pacman packages (%d): %s",
+            len(installable),
+            ", ".join(sorted(installable)),
+        )
+        keyring = server.shell(
+            name="Synchronize Arch and update the ArchLinuxCN keyring",
+            commands=[_install_command({ARCHLINUXCN_KEYRING}, refresh_and_upgrade=True)],
             _sudo=SUDO,
         )
-        repositories_refreshed = True
-
-    missing_proxy = PROXY_PACKAGES - installed
-    if ARCHLINUXCN_KEYRING not in installed or missing_proxy:
-        keyring_kwargs = {}
-        if previous_transaction is not None:
-            keyring_kwargs["_if"] = previous_transaction.did_succeed
-        previous_transaction = server.shell(
-            name="Install the ArchLinuxCN repository keyring",
-            commands=[
-                _install_command(
-                    {ARCHLINUXCN_KEYRING},
-                    refresh_and_upgrade=not repositories_refreshed,
+        remaining = installable - {ARCHLINUXCN_KEYRING}
+        if remaining:
+            selected_nvidia = pacman_packages & NVIDIA_MODULE_PACKAGES
+            if len(selected_nvidia) > 1:
+                raise RuntimeError(
+                    "multiple NVIDIA kernel module variants selected: "
+                    + ", ".join(sorted(selected_nvidia)),
+                )
+            installed_nvidia = _installed(NVIDIA_MODULE_PACKAGES)
+            nvidia_transition = bool(
+                selected_nvidia
+                and installed_nvidia
+                and not selected_nvidia <= installed_nvidia
+            )
+            if nvidia_transition:
+                logger.warning(
+                    "Kernel selection requires an NVIDIA module transition: %s -> %s",
+                    ", ".join(sorted(installed_nvidia)),
+                    ", ".join(sorted(selected_nvidia)),
+                )
+            server.shell(
+                name=(
+                    "Install selected packages and switch the NVIDIA module family"
+                    if nvidia_transition
+                    else "Install packages selected by manual/packages.md"
                 ),
-            ],
-            _sudo=SUDO,
-            **keyring_kwargs,
-        )
-        repositories_refreshed = True
+                commands=[
+                    _install_command(
+                        remaining,
+                        refresh_and_upgrade=False,
+                        accept_known_conflict=nvidia_transition,
+                    ),
+                ],
+                _sudo=SUDO,
+                _if=keyring.did_succeed,
+            )
 
-    if missing_proxy:
-        proxy_kwargs = {}
-        if previous_transaction is not None:
-            proxy_kwargs["_if"] = previous_transaction.did_succeed
-        server.shell(
-            name="Install proxy frontends from ArchLinuxCN",
-            commands=[
-                _install_command(
-                    missing_proxy,
-                    refresh_and_upgrade=not repositories_refreshed,
-                ),
-            ],
-            _sudo=SUDO,
-            **proxy_kwargs,
-        )
-
-    if settings.features.localsend:
+    missing_aur = _pacman_unmet(aur_packages)
+    if missing_aur:
         logger.warning(
-            "LocalSend is enabled but localsend-bin is not in the configured pacman repositories; "
-            "AUR/private-repository installation remains a second-stage task.",
+            "Selected AUR packages are not installed and remain a second-stage task: %s",
+            ", ".join(sorted(missing_aur)),
+        )
+    missing_mypkgbuilds = _pacman_unmet(mypkgbuilds_packages)
+    if missing_mypkgbuilds:
+        logger.warning(
+            "Selected myPKGBUILDS packages are not installed and remain a second-stage task: %s",
+            ", ".join(sorted(missing_mypkgbuilds)),
         )

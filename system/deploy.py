@@ -4,6 +4,7 @@ from pyinfra import config, host, logger
 from pyinfra.facts.server import LinuxName
 
 from operations.dae import configure_dae
+from operations.external_packages import configure_external_packages
 from operations.packages import configure_packages
 from operations.repositories import configure_repositories
 from operations.services import configure_services
@@ -25,5 +26,6 @@ logger.info("Selected proxy backend: %s", settings.proxy.backend)
 configure_repositories(settings)
 configure_packages(settings)
 configure_dae(settings)
+configure_external_packages(settings)
 configure_sshd(settings)
 configure_services(settings)
