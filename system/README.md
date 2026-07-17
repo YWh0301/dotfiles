@@ -83,9 +83,10 @@ kept in a standalone auditable shell helper rather than embedded Python strings.
 - reviewed, Git-metadata-free PKGBUILDs under `pkgbuilds/`, built and installed
   one at a time as the normal user in an explicit dependency order; reusable
   sources and package artifacts live under `~/.cache/personal-system/makepkg/`;
-  each build first uses the selected
-  network path, then retries through a temporary DAE, and defers without aborting
-  the base install if both fail; every `makepkg -si` invocation includes `--needed`;
+  each build first uses the selected network path, then retries through a
+  temporary DAE; failures are recorded under the cache `status/` directory,
+  reported after all requested builds, and never abort later pyinfra operations;
+  every `makepkg -si` invocation includes `--needed`;
 - managed fstab generation, locale, timezone, hostname, login shell, tty1
   autologin, and first-boot GRUB installation/config validation in ArchISO chroot mode;
 - NetworkManager, time sync, Bluetooth, CUPS, Tailscale, an optional managed UFW policy selected by `features.firewall`,

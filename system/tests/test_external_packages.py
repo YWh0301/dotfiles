@@ -8,6 +8,7 @@ import unittest
 SYSTEM_ROOT = Path(__file__).resolve().parents[1]
 BUILD_HELPER = SYSTEM_ROOT / "files/scripts/build-external-with-dae"
 MAKEPKG_CONFIG = SYSTEM_ROOT / "files/makepkg/noninteractive.conf"
+EXTERNAL_OPERATION = SYSTEM_ROOT / "operations/external_packages.py"
 
 
 class ExternalPackageHelperTest(unittest.TestCase):
@@ -26,11 +27,19 @@ class ExternalPackageHelperTest(unittest.TestCase):
         self.assertIn('sudo -n -v', text)
         self.assertIn('--config "${MAKEPKG_CONFIG}"', text)
         self.assertIn("trap cleanup_dae", text)
-        self.assertIn("deferring ${package}", text)
+        self.assertIn("record_failure", text)
+        self.assertIn("continuing deployment", text)
 
     def test_makepkg_never_prompts_for_sudo(self) -> None:
         text = MAKEPKG_CONFIG.read_text(encoding="utf-8")
         self.assertIn("PACMAN_AUTH=(sudo -n)", text)
+
+    def test_unexpected_helper_failure_is_reported_but_nonfatal(self) -> None:
+        text = EXTERNAL_OPERATION.read_text(encoding="utf-8")
+        self.assertIn("unexpected build helper exit", text)
+        self.assertIn("_ignore_errors=True", text)
+        self.assertIn("Report external package build results", text)
+        self.assertIn("deployment continued", text)
 
 
 if __name__ == "__main__":

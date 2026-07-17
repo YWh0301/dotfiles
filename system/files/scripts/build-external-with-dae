@@ -6,11 +6,23 @@ set +e
 
 package=${1:?package name is required}
 dae_config=/etc/dae/config.dae
+failure_file=${STATUSDIR:?STATUSDIR is required}/${package}.failure
 
-/usr/bin/install -d "${BUILDDIR}" "${LOGDEST}" "${PKGDEST}" "${SRCDEST}"
-if ! sudo -n -v; then
-    printf '%s\n' "ERROR: sudo timestamp unavailable before building ${package}" >&2
+/usr/bin/install -d "${BUILDDIR}" "${LOGDEST}" "${PKGDEST}" "${SRCDEST}" "${STATUSDIR}"
+record_failure() {
+    local message=$1
+    printf '%s\n' "${message}" > "${failure_file}.tmp"
+    /usr/bin/mv -f "${failure_file}.tmp" "${failure_file}"
+    printf '%s\n' "WARNING: ${package}: ${message}; continuing deployment" >&2
     exit 1
+}
+record_success() {
+    /usr/bin/rm -f "${failure_file}"
+    exit 0
+}
+
+if ! sudo -n -v; then
+    record_failure "sudo timestamp unavailable before build"
 fi
 
 install_cached_package() {
@@ -35,18 +47,17 @@ build_package() {
         --clean
 }
 
-install_cached_package && exit 0
+install_cached_package && record_success
 build_package
 status=$?
 if (( status == 0 )) || install_cached_package; then
-    exit 0
+    record_success
 fi
 
 printf '%s\n' "WARNING: direct/selected-proxy build failed for ${package}; trying DAE fallback" >&2
 unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY all_proxy ALL_PROXY
 if ! sudo -n /usr/bin/dae validate -c "${dae_config}" >/dev/null 2>&1; then
-    printf '%s\n' "WARNING: DAE is unavailable or invalid; deferring ${package}" >&2
-    exit 0
+    record_failure "direct build failed and DAE is unavailable or invalid"
 fi
 
 started_dae=0
@@ -90,6 +101,6 @@ fi
 cleanup_dae
 trap - EXIT INT TERM
 if (( status != 0 )); then
-    printf '%s\n' "WARNING: DAE fallback also failed; deferring ${package} until a later apply" >&2
+    record_failure "direct build and DAE fallback both failed"
 fi
-exit 0
+record_success

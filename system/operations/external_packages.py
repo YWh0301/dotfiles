@@ -116,8 +116,10 @@ def configure_external_packages(
         ", ".join(f"{name}={version}" for name, _, version in builds),
     )
     makepkg_config = Path(__file__).resolve().parents[1] / "files/makepkg/noninteractive.conf"
+    status_dir = Path.home() / ".cache/personal-system/makepkg/status"
     environment = {
         "MAKEPKG_CONFIG": str(makepkg_config),
+        "STATUSDIR": str(status_dir),
         "BUILDDIR": str(Path.home() / ".cache/personal-system/makepkg/build"),
         "LOGDEST": str(Path.home() / ".cache/personal-system/makepkg/logs"),
         "PKGDEST": str(Path.home() / ".cache/personal-system/makepkg/packages"),
@@ -133,10 +135,46 @@ def configure_external_packages(
         )
 
     build_helper = Path(__file__).resolve().parents[1] / "files/scripts/build-external-with-dae"
+    failure_files = [status_dir / f"{package}.failure" for package, _, _ in builds]
+    server.shell(
+        name="Clear current external package build status",
+        commands=[shlex.join(["/usr/bin/rm", "-f", "--", *(str(path) for path in failure_files)])],
+    )
     for package, directory, desired in builds:
+        failure_file = status_dir / f"{package}.failure"
+        helper_command = shlex.join([str(build_helper), package])
+        unexpected_message = f"unexpected build helper exit for {package}"
+        command = (
+            f"{helper_command} || {{ "
+            f"status=$?; /usr/bin/install -d {shlex.quote(str(status_dir))}; "
+            f"/usr/bin/printf '%s\\n' {shlex.quote(unexpected_message)} "
+            f"> {shlex.quote(str(failure_file))}; "
+            f"/usr/bin/printf '%s\\n' "
+            f"{shlex.quote('WARNING: ' + unexpected_message + '; continuing deployment')} >&2; "
+            f"exit \"${{status}}\"; }}"
+        )
         server.shell(
             name=f"Build and install reviewed external package {package} {desired}",
-            commands=[shlex.join([str(build_helper), package])],
+            commands=[command],
             _chdir=str(directory),
             _env=environment,
+            _ignore_errors=True,
         )
+
+    report_parts = [
+        "failures=0",
+        *(
+            f"if test -s {shlex.quote(str(path))}; then "
+            f"failures=1; /usr/bin/printf 'WARNING: external package %s failed: %s\\n' "
+            f"{shlex.quote(package)} \"$(cat {shlex.quote(str(path))})\" >&2; fi"
+            for (package, _, _), path in zip(builds, failure_files, strict=True)
+        ),
+        "if test \"${failures}\" -eq 0; then "
+        "/usr/bin/printf '%s\\n' 'All requested external packages were installed successfully'; "
+        "else /usr/bin/printf '%s\\n' "
+        "'WARNING: one or more external packages failed; deployment continued' >&2; fi",
+    ]
+    server.shell(
+        name="Report external package build results",
+        commands=["; ".join(report_parts)],
+    )
