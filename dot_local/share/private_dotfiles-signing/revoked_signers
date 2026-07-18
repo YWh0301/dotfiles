@@ -1,0 +1,1 @@
+# Add one revoked SSH public key per line. Keep this file non-empty so chezmoi creates it.
