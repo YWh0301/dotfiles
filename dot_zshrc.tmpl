@@ -1,4 +1,8 @@
 {{- $personalConfig := includeTemplate "user-config.toml" . | fromToml }}
+case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
 source /usr/share/zsh/share/antigen.zsh
 
 antigen use oh-my-zsh
