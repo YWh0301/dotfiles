@@ -46,15 +46,31 @@ def verify(commits: list[str]) -> list[tuple[str, str]]:
     return failures
 
 
-def ask_to_continue() -> bool:
+def ask_to_continue(event: str) -> bool:
     try:
-        with open("/dev/tty", "r+", encoding="utf-8", buffering=1) as tty:
-            tty.write("Continue despite the untrusted Git state? [y/N] ")
-            return tty.readline().strip().lower() in {"y", "yes"}
+        tty_fd = os.open("/dev/tty", os.O_RDWR)
     except OSError:
         # Non-interactive automation remains advisory while policy=ask. Use
         # policy=enforce when non-interactive failures are desired.
         return True
+
+    try:
+        if event.startswith("post-"):
+            os.write(
+                tty_fd,
+                b"The Git operation may already have updated the worktree; "
+                b"N returns a failure but does not roll it back.\n",
+            )
+        os.write(tty_fd, b"Continue with this untrusted Git state? [y/N] ")
+        answer = bytearray()
+        while True:
+            byte = os.read(tty_fd, 1)
+            if not byte or byte in {b"\n", b"\r"}:
+                break
+            answer.extend(byte)
+        return answer.decode().strip().lower() in {"y", "yes"}
+    finally:
+        os.close(tty_fd)
 
 
 def run_local_hook(event: str, arguments: list[str], hook_input: str) -> int:
@@ -75,7 +91,9 @@ def main() -> int:
 
     event = sys.argv[1]
     arguments = sys.argv[2:]
-    hook_input = sys.stdin.read()
+    # Only these Git hooks receive a finite record stream on stdin. Reading the
+    # interactive terminal in post-checkout/post-merge would otherwise block.
+    hook_input = sys.stdin.read() if event in {"pre-push", "post-rewrite"} else ""
     policy_result = git("config", "--get", "personal.signaturePolicy", capture=True)
     policy = policy_result.stdout.strip() if policy_result.returncode == 0 else "warn"
     if policy not in {"warn", "ask", "enforce"}:
@@ -86,7 +104,10 @@ def main() -> int:
     failures = verify(commits)
     if failures:
         print("", file=sys.stderr)
-        print(f"WARNING: {event} produced or selected an untrusted Git state.", file=sys.stderr)
+        print("=" * 72, file=sys.stderr)
+        print("  WARNING: UNTRUSTED GIT COMMIT", file=sys.stderr)
+        print("=" * 72, file=sys.stderr)
+        print(f"Hook event: {event}", file=sys.stderr)
         for commit, detail in failures:
             print(f"  {commit[:12]}: signature missing, invalid, or not trusted", file=sys.stderr)
             if detail:
@@ -94,10 +115,11 @@ def main() -> int:
                     print(f"    {line}", file=sys.stderr)
         print("Expected a signature from the configured Personal Git Commit CA.", file=sys.stderr)
         print("Inspect with: git log -1 --show-signature", file=sys.stderr)
+        print("=" * 72, file=sys.stderr)
 
         if policy == "enforce":
             return 1
-        if policy == "ask" and not ask_to_continue():
+        if policy == "ask" and not ask_to_continue(event):
             return 1
 
     return run_local_hook(event, arguments, hook_input)
