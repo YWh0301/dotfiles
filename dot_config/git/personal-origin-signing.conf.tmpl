@@ -25,7 +25,7 @@
 # Keep ordinary operations usable while legacy GitHub history is unsigned.
 # Hooks warn (or ask/enforce when configured) instead of rejecting by default.
 [personal]
-    signaturePolicy = {{ dig "signature_policy" "warn" $userConfig.git }}
+    signaturePolicy = {{ dig "signature_policy" "ask" $userConfig.git }}
 
 [core]
     hooksPath = ~/.config/git/hooks/personal

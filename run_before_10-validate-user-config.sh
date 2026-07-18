@@ -46,7 +46,7 @@ require(isinstance(features.get("git_commit_signing", True), bool),
 git = config.get("git", {})
 require(isinstance(git.get("general_commit_signing", True), bool),
         "git.general_commit_signing must be boolean when set")
-require(git.get("signature_policy", "warn") in {"warn", "ask", "enforce"},
+require(git.get("signature_policy", "ask") in {"warn", "ask", "enforce"},
         "git.signature_policy must be warn, ask, or enforce")
 origin_patterns = git.get("signed_origin_patterns", [
     "git@github.com:YWh0301/**", "https://github.com/YWh0301/**",
