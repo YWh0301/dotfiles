@@ -122,9 +122,11 @@
       (cd d; B=$(chezmoi age decrypt -p b) && eval "$B")
     ```
   `b`是由高熵Passphrase认证加密的Bootstrap。它只在完整解密成功后运行，验证`main`的Commit CA签名，把临时仓库移动到`$(chezmoi source-path)`，安装仓库外的chezmoi验证Wrapper，然后才调用真正的`chezmoi init --apply`。明文Bootstrap只存在于Subshell内存，Subshell结束后自动消失。
-- 首次Bootstrap依次只要求一次仓库HTTPS密码（当前GitHub Public阶段不需要）、一次age解密密码和一次共享CA密码。共享CA密码在内存中复用于相互独立的SSH User CA与Dotfiles Commit CA，不写入命令行、环境变量或磁盘。
+- 首次Bootstrap依次只要求一次仓库HTTPS密码（当前GitHub Public阶段不需要）、一次age解密密码和一次共享CA密码。共享CA密码在内存中复用于相互独立的SSH User CA、Dotfiles Commit CA与Personal Git Commit CA，不写入命令行、环境变量或磁盘。
 - Bootstrap会创建`~/.config/chezmoi/user.toml`并自动打开编辑器。检查hostname、机器类型、时区、locale、Feature、代理与软件包Profile；保存退出后Bootstrap会自动继续第二次Apply。
-- `features.git_commit_signing`默认为`true`：为本机生成独立、无Passphrase且不能用于SSH登录的Commit叶子Key，由专用Commit CA签发证书，并在此仓库的`.git/config`中开启自动Commit/Tag签名。改为`false`后，下一次Apply会删除本机Commit证书并关闭自动签名；普通叶子Key保留以便以后重新启用。无论该Feature是否开启，chezmoi Wrapper都会继续拒绝未被Commit CA签名的源码状态，因此关闭它的机器只能安全消费配置，不能向受保护的`main`贡献合法Commit。
+- `features.git_commit_signing`默认为`true`：为本机生成独立、无Passphrase且不能用于SSH登录的Dotfiles Commit叶子Key，由Dotfiles Commit CA签发证书，并在此仓库的`.git/config`中开启自动Commit/Tag签名。改为`false`后，下一次Apply会删除本机Commit证书并关闭自动签名；普通叶子Key保留以便以后重新启用。无论该Feature是否开启，chezmoi Wrapper都会继续拒绝未被Dotfiles Commit CA签名的源码状态，因此关闭它的机器只能安全消费配置，不能向受保护的`main`贡献合法Commit。
+- `git.general_commit_signing`默认为`true`：使用相互独立的Personal Git Commit CA为本机签发`pingzi-git`叶子证书。`git.signed_origin_patterns`选择需要该策略的远端；当前同时匹配`git@github.com:YWh0301/**`和`https://github.com/YWh0301/**`，未来可追加自建Git的稳定SSH别名。匹配仓库中的普通`git commit`、`git tag`和Merge默认自动签名。
+- `git.signature_policy`支持`warn`、`ask`和`enforce`。迁移期默认为`warn`：可信Hook会在Clone/Checkout、Commit、Merge/Pull、Rewrite和Push时检查当前或将要推送的Tip，但旧仓库缺少可信签名时只给出警告，不破坏现有工作流。`ask`在有TTY时询问是否继续，`enforce`才会返回失败。仓库自己的额外Hook可放在`.git/hooks-local/`，由可信Hook在签名检查后继续调用。
 - 完成后退出并重启：
     ```sh
     exit

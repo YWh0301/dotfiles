@@ -1,0 +1,34 @@
+{{- $userConfig := includeTemplate "user-config.toml" . | fromToml -}}
+{{- $enabled := dig "general_commit_signing" true $userConfig.git -}}
+[gpg]
+    format = ssh
+    minTrustLevel = fully
+
+[gpg "ssh"]
+    allowedSignersFile = ~/.local/share/general-git-signing/allowed_signers
+    revocationFile = ~/.local/share/general-git-signing/revoked_signers
+
+{{- if $enabled }}
+[user]
+    signingKey = ~/.local/share/general-git-signing/id_ed25519-cert.pub
+
+[commit]
+    gpgSign = true
+
+[tag]
+    gpgSign = true
+
+[merge]
+    gpgSign = true
+{{- end }}
+
+# Keep ordinary operations usable while legacy GitHub history is unsigned.
+# Hooks warn (or ask/enforce when configured) instead of rejecting by default.
+[personal]
+    signaturePolicy = {{ dig "signature_policy" "warn" $userConfig.git }}
+
+[core]
+    hooksPath = ~/.config/git/hooks/personal
+
+[pull]
+    rebase = false

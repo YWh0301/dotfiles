@@ -22,6 +22,7 @@ IDENTITY = {{ $userConfig.identity.name | quote }}
 HOSTNAME = {{ $userConfig.machine.hostname | quote }}
 SSH_CERT_ENABLED = {{ if $userConfig.features.ssh_user_cert }}True{{ else }}False{{ end }}
 COMMIT_SIGNING_ENABLED = {{ if (dig "git_commit_signing" true $userConfig.features) }}True{{ else }}False{{ end }}
+GENERAL_GIT_SIGNING_ENABLED = {{ if (dig "general_commit_signing" true $userConfig.git) }}True{{ else }}False{{ end }}
 
 SSH_DIR = HOME / ".ssh"
 SSH_KEY = SSH_DIR / "id_ed25519"
@@ -34,6 +35,12 @@ SIGNING_CERT = SIGNING_DIR / "id_ed25519-cert.pub"
 COMMIT_CA = SIGNING_DIR / "commit_ca"
 ALLOWED_SIGNERS = SIGNING_DIR / "allowed_signers"
 COMMIT_PRINCIPAL = "pingzi-dotfiles"
+
+GENERAL_SIGNING_DIR = HOME / ".local/share/general-git-signing"
+GENERAL_SIGNING_KEY = GENERAL_SIGNING_DIR / "id_ed25519"
+GENERAL_SIGNING_CERT = GENERAL_SIGNING_DIR / "id_ed25519-cert.pub"
+GENERAL_COMMIT_CA = GENERAL_SIGNING_DIR / "commit_ca"
+GENERAL_COMMIT_PRINCIPAL = "pingzi-git"
 
 
 def run(*args: str, capture: bool = False) -> subprocess.CompletedProcess[str]:
@@ -180,40 +187,61 @@ def tty_secret(fd: int, prompt: str) -> str:
 
 ensure_key(SSH_KEY, f"{IDENTITY}@{HOSTNAME}")
 ensure_key(SIGNING_KEY, f"dotfiles-signing@{HOSTNAME}")
+ensure_key(GENERAL_SIGNING_KEY, f"general-git-signing@{HOSTNAME}")
 
 if not SSH_CERT_ENABLED:
     SSH_CERT.unlink(missing_ok=True)
 if not COMMIT_SIGNING_ENABLED:
     SIGNING_CERT.unlink(missing_ok=True)
+if not GENERAL_GIT_SIGNING_ENABLED:
+    GENERAL_SIGNING_CERT.unlink(missing_ok=True)
 
 user_ca_public = Path(f"{USER_CA}.pub")
 commit_ca_public = Path(f"{COMMIT_CA}.pub")
+general_commit_ca_public = Path(f"{GENERAL_COMMIT_CA}.pub")
 need_user = SSH_CERT_ENABLED and not certificate_valid(
     SSH_CERT, Path(f"{SSH_KEY}.pub"), user_ca_public, getpass.getuser()
 )
 need_commit = COMMIT_SIGNING_ENABLED and not certificate_valid(
     SIGNING_CERT, Path(f"{SIGNING_KEY}.pub"), commit_ca_public, COMMIT_PRINCIPAL
 )
+need_general_commit = GENERAL_GIT_SIGNING_ENABLED and not certificate_valid(
+    GENERAL_SIGNING_CERT,
+    Path(f"{GENERAL_SIGNING_KEY}.pub"),
+    general_commit_ca_public,
+    GENERAL_COMMIT_PRINCIPAL,
+)
 
 if need_user and (not USER_CA.is_file() or not user_ca_public.is_file()):
     raise SystemExit("SSH User CA enrollment is enabled, but the User CA is not installed")
 if need_commit and (not COMMIT_CA.is_file() or not commit_ca_public.is_file()):
     raise SystemExit("Git commit signing is enabled, but the Dotfiles Commit CA is not installed")
+if need_general_commit and (
+    not GENERAL_COMMIT_CA.is_file() or not general_commit_ca_public.is_file()
+):
+    raise SystemExit(
+        "General Git commit signing is enabled, but the Personal Git Commit CA is not installed"
+    )
 
-if need_user or need_commit:
+if need_user or need_commit or need_general_commit:
     tty_fd = os.open("/dev/tty", os.O_RDWR)
     try:
         lines = ["Personal certificate enrollment", ""]
         if need_user:
             lines.append(f"  SSH user certificate: {fingerprint(Path(f'{SSH_KEY}.pub'))}")
         if need_commit:
-            lines.append(f"  Git signing certificate: {fingerprint(Path(f'{SIGNING_KEY}.pub'))}")
+            lines.append(f"  Dotfiles signing certificate: {fingerprint(Path(f'{SIGNING_KEY}.pub'))}")
+        if need_general_commit:
+            lines.append(
+                f"  General Git signing certificate: "
+                f"{fingerprint(Path(f'{GENERAL_SIGNING_KEY}.pub'))}"
+            )
         lines.extend(["  Validity: -5m:+52w", "", "Issue the required certificate(s)? [y/N] "])
         os.write(tty_fd, "\n".join(lines).encode())
         answer = tty_readline(tty_fd).strip().lower()
         if answer not in {"y", "yes"}:
             raise SystemExit("Certificate enrollment cancelled")
-        passphrase = tty_secret(tty_fd, "Shared User/Commit CA passphrase: ")
+        passphrase = tty_secret(tty_fd, "Shared User/Dotfiles/General Git CA passphrase: ")
     finally:
         os.close(tty_fd)
     try:
@@ -237,6 +265,17 @@ if need_user or need_commit:
                     destination=SIGNING_CERT,
                     key_id=f"dotfiles@{HOSTNAME}-{datetime.now():%Y%m%d}",
                     principal=COMMIT_PRINCIPAL,
+                    clear_extensions=True,
+                    passphrase=passphrase,
+                    temporary_dir=temporary_dir,
+                )
+            if need_general_commit:
+                sign_certificate(
+                    ca=GENERAL_COMMIT_CA,
+                    public_key=Path(f"{GENERAL_SIGNING_KEY}.pub"),
+                    destination=GENERAL_SIGNING_CERT,
+                    key_id=f"git@{HOSTNAME}-{datetime.now():%Y%m%d}",
+                    principal=GENERAL_COMMIT_PRINCIPAL,
                     clear_extensions=True,
                     passphrase=passphrase,
                     temporary_dir=temporary_dir,

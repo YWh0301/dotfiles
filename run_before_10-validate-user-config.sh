@@ -43,6 +43,18 @@ for key in ("localsend", "sshd", "ssh_user_cert", "wayvnc", "tailscale", "firewa
 require(isinstance(features.get("git_commit_signing", True), bool),
         "features.git_commit_signing must be boolean when set")
 
+git = config.get("git", {})
+require(isinstance(git.get("general_commit_signing", True), bool),
+        "git.general_commit_signing must be boolean when set")
+require(git.get("signature_policy", "warn") in {"warn", "ask", "enforce"},
+        "git.signature_policy must be warn, ask, or enforce")
+origin_patterns = git.get("signed_origin_patterns", [
+    "git@github.com:YWh0301/**", "https://github.com/YWh0301/**",
+])
+require(isinstance(origin_patterns, list) and bool(origin_patterns)
+        and all(isinstance(value, str) and bool(value) for value in origin_patterns),
+        "git.signed_origin_patterns must be a non-empty string list")
+
 package_profiles = config.get("packages", {}).get("profiles", [])
 require(isinstance(package_profiles, list), "packages.profiles must be a list")
 require(all(isinstance(value, str) and re.fullmatch(r"[a-z][a-z0-9_-]*", value)

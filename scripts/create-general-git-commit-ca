@@ -1,0 +1,69 @@
+#!/bin/sh
+set -eu
+
+ca_dir="${HOME}/.local/share/general-git-signing"
+ca_private="${ca_dir}/commit_ca"
+ca_public="${ca_private}.pub"
+source_dir="$(chezmoi source-path)/dot_local/share/private_general-git-signing"
+source_private="${source_dir}/encrypted_private_commit_ca.age"
+source_public="${source_dir}/commit_ca.pub"
+source_allowed_signers="${source_dir}/allowed_signers"
+source_revoked_signers="${source_dir}/revoked_signers"
+principal="pingzi-git"
+
+if [ -e "${ca_private}" ] || [ -e "${ca_public}" ]; then
+    echo "Refusing to overwrite an existing Personal Git Commit CA in ${ca_dir}." >&2
+    exit 1
+fi
+
+mkdir -p "${ca_dir}"
+chmod 700 "${ca_dir}"
+
+cat <<'EOF'
+Creating the independent Personal Git Commit CA.
+
+This CA signs commits in personal repositories selected by remote URL. It is
+separate from both the Dotfiles Commit CA and the SSH User CA.
+
+Enter the same high-entropy passphrase as those CAs so one enrollment prompt
+can issue all required certificates. The CA keys remain independent.
+EOF
+
+/usr/bin/ssh-keygen -t ed25519 -f "${ca_private}" -C "personal-general-git-commit-ca"
+chmod 600 "${ca_private}"
+chmod 644 "${ca_public}"
+
+if /usr/bin/ssh-keygen -y -P "" -f "${ca_private}" >/dev/null 2>&1; then
+    rm -f "${ca_private}" "${ca_public}"
+    echo "The Personal Git Commit CA had an empty passphrase and was deleted." >&2
+    exit 1
+fi
+
+mkdir -p "${source_dir}"
+chezmoi encrypt --output "${source_private}" "${ca_private}"
+install -m 644 "${ca_public}" "${source_public}"
+{
+    printf '%s cert-authority,namespaces="git" ' "${principal}"
+    awk '{ print $1, $2 }' "${ca_public}"
+} >"${source_allowed_signers}"
+printf '%s\n' '# Add one revoked SSH public key per line.' >"${source_revoked_signers}"
+chmod 644 "${source_public}" "${source_allowed_signers}" "${source_revoked_signers}"
+
+cat <<EOF
+
+Personal Git Commit CA created and added to the chezmoi source state.
+
+Private target:  ${ca_private}
+Private source:  ${source_private}
+Public key:      ${source_public}
+Allowed signers: ${source_allowed_signers}
+Fingerprint:
+EOF
+/usr/bin/ssh-keygen -lf "${ca_public}"
+
+cat <<'EOF'
+
+Do not delete the existing Dotfiles Commit CA. The two trust domains are
+intentionally separate. Run chezmoi apply only after the enrollment templates
+and Git policy changes have been committed with the Dotfiles signing identity.
+EOF

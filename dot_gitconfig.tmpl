@@ -54,5 +54,14 @@
 [color]
     ui = true
 
+# Repositories whose remote URL matches one of these patterns automatically
+# use the separately trusted Personal Git Commit CA and advisory hooks.
+{{- $originPatterns := dig "signed_origin_patterns" (list "git@github.com:YWh0301/**" "https://github.com/YWh0301/**") $userConfig.git }}
+{{- range $pattern := $originPatterns }}
+[includeIf "hasconfig:remote.*.url:{{ $pattern }}"]
+    path = ~/.config/git/personal-origin-signing.conf
+{{- end }}
+
+# Machine-local overrides are deliberately loaded last.
 [include]
     path = ~/.config/git/local.conf

@@ -1,0 +1,107 @@
+#!/usr/bin/python3
+"""Advisory SSH commit-signature policy for personally hosted Git repositories."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+ZERO_OID = "0" * 40
+
+
+def git(*args: str, capture: bool = False) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["/usr/bin/git", *args],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE if capture else None,
+        stderr=subprocess.PIPE if capture else None,
+    )
+
+
+def commits_for_event(event: str, hook_input: str) -> list[str]:
+    if event != "pre-push":
+        result = git("rev-parse", "--verify", "HEAD", capture=True)
+        return [result.stdout.strip()] if result.returncode == 0 else []
+
+    commits: list[str] = []
+    for line in hook_input.splitlines():
+        fields = line.split()
+        if len(fields) >= 4:
+            local_oid = fields[1]
+            if local_oid and local_oid != ZERO_OID and set(local_oid) != {"0"}:
+                commits.append(local_oid)
+    return list(dict.fromkeys(commits))
+
+
+def verify(commits: list[str]) -> list[tuple[str, str]]:
+    failures: list[tuple[str, str]] = []
+    for commit in commits:
+        result = git("verify-commit", commit, capture=True)
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout).strip()
+            failures.append((commit, detail))
+    return failures
+
+
+def ask_to_continue() -> bool:
+    try:
+        with open("/dev/tty", "r+", encoding="utf-8", buffering=1) as tty:
+            tty.write("Continue despite the untrusted Git state? [y/N] ")
+            return tty.readline().strip().lower() in {"y", "yes"}
+    except OSError:
+        # Non-interactive automation remains advisory while policy=ask. Use
+        # policy=enforce when non-interactive failures are desired.
+        return True
+
+
+def run_local_hook(event: str, arguments: list[str], hook_input: str) -> int:
+    result = git("rev-parse", "--git-path", f"hooks-local/{event}", capture=True)
+    if result.returncode != 0:
+        return 0
+    hook = Path(result.stdout.strip())
+    if not hook.is_file() or not os.access(hook, os.X_OK):
+        return 0
+    completed = subprocess.run([str(hook), *arguments], input=hook_input, text=True, check=False)
+    return completed.returncode
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print("git-personal-signature-policy: missing hook event", file=sys.stderr)
+        return 2
+
+    event = sys.argv[1]
+    arguments = sys.argv[2:]
+    hook_input = sys.stdin.read()
+    policy_result = git("config", "--get", "personal.signaturePolicy", capture=True)
+    policy = policy_result.stdout.strip() if policy_result.returncode == 0 else "warn"
+    if policy not in {"warn", "ask", "enforce"}:
+        print(f"git-personal-signature-policy: invalid policy {policy!r}", file=sys.stderr)
+        return 2
+
+    commits = commits_for_event(event, hook_input)
+    failures = verify(commits)
+    if failures:
+        print("", file=sys.stderr)
+        print(f"WARNING: {event} produced or selected an untrusted Git state.", file=sys.stderr)
+        for commit, detail in failures:
+            print(f"  {commit[:12]}: signature missing, invalid, or not trusted", file=sys.stderr)
+            if detail:
+                for line in detail.splitlines()[-3:]:
+                    print(f"    {line}", file=sys.stderr)
+        print("Expected a signature from the configured Personal Git Commit CA.", file=sys.stderr)
+        print("Inspect with: git log -1 --show-signature", file=sys.stderr)
+
+        if policy == "enforce":
+            return 1
+        if policy == "ask" and not ask_to_continue():
+            return 1
+
+    return run_local_hook(event, arguments, hook_input)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
