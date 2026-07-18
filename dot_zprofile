@@ -1,4 +1,4 @@
-export PATH="$HOME/.local/share/chezmoi/scripts:$PATH"
+export PATH="$HOME/.local/bin:$HOME/.local/share/chezmoi/scripts:$PATH"
 
 if [ -z "$DISPLAY" ] && [ "$XDG_VTNR" = 1 ]; then
   exec start-hyprland > /dev/null 2>&1

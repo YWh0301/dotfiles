@@ -1,0 +1,66 @@
+#!/bin/sh
+set -eu
+
+ca_dir="${HOME}/.local/share/dotfiles-signing"
+ca_private="${ca_dir}/commit_ca"
+ca_public="${ca_private}.pub"
+source_dir="$(chezmoi source-path)/dot_local/share/private_dotfiles-signing"
+source_private="${source_dir}/encrypted_private_commit_ca.age"
+source_public="${source_dir}/commit_ca.pub"
+source_allowed_signers="${source_dir}/allowed_signers"
+principal="pingzi-dotfiles"
+
+if [ -e "${ca_private}" ] || [ -e "${ca_public}" ]; then
+    echo "Refusing to overwrite an existing Dotfiles Commit CA in ${ca_dir}." >&2
+    exit 1
+fi
+
+mkdir -p "${ca_dir}"
+chmod 700 "${ca_dir}"
+
+cat <<'EOF'
+Creating the dedicated Dotfiles Commit Signing CA.
+
+For the planned one-prompt enrollment flow, enter the same high-entropy
+passphrase used by the personal OpenSSH User CA. The two CA keys remain
+cryptographically independent; only their passphrase is shared.
+EOF
+
+/usr/bin/ssh-keygen -t ed25519 -f "${ca_private}" -C "personal-dotfiles-commit-ca"
+chmod 600 "${ca_private}"
+chmod 644 "${ca_public}"
+
+# Refuse an accidentally unencrypted CA private key.
+if /usr/bin/ssh-keygen -y -P "" -f "${ca_private}" >/dev/null 2>&1; then
+    rm -f "${ca_private}" "${ca_public}"
+    echo "The Commit CA had an empty passphrase and was deleted. Try again with a strong passphrase." >&2
+    exit 1
+fi
+
+mkdir -p "${source_dir}"
+chezmoi encrypt --output "${source_private}" "${ca_private}"
+install -m 644 "${ca_public}" "${source_public}"
+
+{
+    printf '%s cert-authority,namespaces="git" ' "${principal}"
+    awk '{ print $1, $2 }' "${ca_public}"
+} > "${source_allowed_signers}"
+chmod 644 "${source_public}" "${source_allowed_signers}"
+
+cat <<EOF
+
+Dotfiles Commit CA created and added to the chezmoi source state.
+
+Private target: ${ca_private}
+Private source: ${source_private}
+Public key:    ${source_public}
+Allowed signers: ${source_allowed_signers}
+Fingerprint:
+EOF
+/usr/bin/ssh-keygen -lf "${ca_public}"
+
+cat <<'EOF'
+
+Do not commit yet. The repository still needs the enrollment, verification,
+and bootstrap implementation before the first signed trust-root commit.
+EOF

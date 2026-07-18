@@ -1,0 +1,126 @@
+#!/usr/bin/python
+from __future__ import annotations
+
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+import termios
+
+HOME = Path.home()
+SOURCE = Path(subprocess.check_output(["/usr/bin/chezmoi", "source-path"], text=True).strip())
+AGE_IDENTITY = HOME / ".config/chezmoi/key.txt"
+ALLOWED_SIGNERS = SOURCE / "dot_local/share/private_dotfiles-signing/allowed_signers"
+COMMIT_CA_PUBLIC = SOURCE / "dot_local/share/private_dotfiles-signing/commit_ca.pub"
+BOOTSTRAP_SOURCE = SOURCE / "scripts/bootstrap-dotfiles"
+EXISTING_KEY_ARCHIVE = SOURCE / "key.txt.age"
+OUTPUT = SOURCE / "b"
+
+
+def require_file(path: Path) -> str:
+    if not path.is_file() or path.stat().st_size == 0:
+        raise SystemExit(f"Missing required bootstrap input: {path}")
+    return path.read_text()
+
+
+def heredoc(name: str, delimiter: str, value: str) -> str:
+    if delimiter in value:
+        raise SystemExit(f"Unexpected bootstrap delimiter in {name}")
+    return f"{name}=$(cat <<'{delimiter}'\n{value.rstrip()}\n{delimiter}\n)\n"
+
+
+def tty_readline(fd: int) -> str:
+    value = bytearray()
+    while True:
+        byte = os.read(fd, 1)
+        if not byte or byte in {b"\n", b"\r"}:
+            return value.decode()
+        value.extend(byte)
+
+
+def ask_passphrase(prompt: str) -> str:
+    fd = os.open("/dev/tty", os.O_RDWR)
+    previous = termios.tcgetattr(fd)
+    hidden = termios.tcgetattr(fd)
+    hidden[3] &= ~termios.ECHO
+    os.write(fd, prompt.encode())
+    try:
+        termios.tcsetattr(fd, termios.TCSANOW, hidden)
+        return tty_readline(fd)
+    finally:
+        termios.tcsetattr(fd, termios.TCSANOW, previous)
+        os.write(fd, b"\n")
+        os.close(fd)
+
+
+def verify_existing_passphrase(passphrase: str) -> None:
+    result = subprocess.run(
+        [
+            "/usr/bin/chezmoi", "--no-tty", "age", "decrypt", "--passphrase",
+            str(EXISTING_KEY_ARCHIVE),
+        ],
+        input=f"{passphrase}\n",
+        text=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        env={**os.environ, "LC_ALL": "C", "LANG": "C", "NO_COLOR": "1"},
+    )
+    if result.returncode != 0:
+        raise SystemExit("The supplied passphrase does not decrypt the existing key.txt.age")
+
+
+def encrypt_with_one_prompt(source: Path, destination: Path, passphrase: str) -> None:
+    # --no-tty selects chezmoi's simple line-oriented prompt instead of its
+    # interactive TUI. Feed the one passphrase twice for encryption confirmation
+    # through an anonymous pipe; it never appears in argv, env, or a file.
+    result = subprocess.run(
+        [
+            "/usr/bin/chezmoi", "--no-tty", "age", "encrypt", "--passphrase",
+            "--output", str(destination), str(source),
+        ],
+        input=f"{passphrase}\n{passphrase}\n",
+        text=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        env={**os.environ, "LC_ALL": "C", "LANG": "C", "NO_COLOR": "1"},
+    )
+    if result.returncode != 0:
+        destination.unlink(missing_ok=True)
+        raise SystemExit("Failed to encrypt bootstrap with the supplied passphrase")
+
+
+age_identity = require_file(AGE_IDENTITY)
+allowed_signers = require_file(ALLOWED_SIGNERS)
+commit_ca_public = require_file(COMMIT_CA_PUBLIC)
+bootstrap_source = require_file(BOOTSTRAP_SOURCE)
+require_file(EXISTING_KEY_ARCHIVE)
+payload = "".join(
+    (
+        heredoc("BOOTSTRAP_AGE_IDENTITY", "__PERSONAL_AGE_IDENTITY__", age_identity),
+        heredoc("BOOTSTRAP_ALLOWED_SIGNERS", "__PERSONAL_ALLOWED_SIGNERS__", allowed_signers),
+        heredoc("BOOTSTRAP_COMMIT_CA_PUBLIC", "__PERSONAL_COMMIT_CA_PUBLIC__", commit_ca_public),
+        bootstrap_source,
+    )
+)
+
+passphrase = ask_passphrase("Existing age bootstrap passphrase: ")
+try:
+    verify_existing_passphrase(passphrase)
+    with tempfile.NamedTemporaryFile("w", prefix="personal-bootstrap-", delete=False) as temporary:
+        temporary.write(payload)
+        temporary_path = Path(temporary.name)
+    temporary_path.chmod(0o600)
+    output_tmp = OUTPUT.with_suffix(".tmp")
+    output_tmp.unlink(missing_ok=True)
+    try:
+        encrypt_with_one_prompt(temporary_path, output_tmp, passphrase)
+        output_tmp.chmod(0o600)
+        output_tmp.replace(OUTPUT)
+    finally:
+        output_tmp.unlink(missing_ok=True)
+        temporary_path.unlink(missing_ok=True)
+finally:
+    passphrase = ""
+
+print(f"Bootstrap updated: {OUTPUT}")
+print("The age identity and trust anchor exist only inside this authenticated ciphertext.")

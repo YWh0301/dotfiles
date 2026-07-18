@@ -19,8 +19,9 @@ chmod 700 "${ca_dir}"
 cat <<'EOF'
 Creating the personal OpenSSH User CA.
 
-Use a new, high-entropy CA-specific passphrase from Bitwarden.
-The passphrase must never be stored in chezmoi or user.toml.
+Use the same high-entropy passphrase as the dedicated Dotfiles Commit CA.
+The CA keys remain independent; sharing the passphrase permits one-prompt
+machine enrollment. The passphrase must never be stored in chezmoi or user.toml.
 EOF
 
 /usr/bin/ssh-keygen -t ed25519 -f "${ca_private}" -C "personal-user-ca"

@@ -16,6 +16,9 @@ class Features:
     firewall: bool
     snapper: bool
     autologin: bool
+    # User-space Git signing is consumed by chezmoi, not pyinfra. Keeping it
+    # here lets both layers accept the same explicit host-intent document.
+    git_commit_signing: bool = True
 
 
 @dataclass(frozen=True)

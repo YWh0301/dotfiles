@@ -7,6 +7,7 @@ scripts/
 manual/
 pkgbuilds/
 system/
+b
 key.txt.age
 {{- if not (dig "features" "wayvnc" false $userConfig) }}
 .config/wayvnc

@@ -1,0 +1,44 @@
+#!/bin/sh
+set -eu
+
+real_chezmoi=/usr/bin/chezmoi
+source_dir="${HOME}/.local/share/chezmoi"
+signing_dir="${HOME}/.local/share/dotfiles-signing"
+allowed_signers="${signing_dir}/allowed_signers"
+revoked_signers="${signing_dir}/revoked_signers"
+
+# Commands launched by an already verified chezmoi process inherit this guard.
+if [ "${PERSONAL_CHEZMOI_VERIFIED:-}" = 1 ]; then
+    exec "${real_chezmoi}" "$@"
+fi
+
+if /usr/bin/git -C "${source_dir}" rev-parse --verify HEAD >/dev/null 2>&1; then
+    if [ ! -s "${allowed_signers}" ]; then
+        echo "chezmoi: trusted Dotfiles Commit CA is not installed: ${allowed_signers}" >&2
+        exit 1
+    fi
+    if ! verification="$({
+        /usr/bin/git -C "${source_dir}" \
+            -c gpg.format=ssh \
+            -c gpg.ssh.allowedSignersFile="${allowed_signers}" \
+            -c gpg.ssh.revocationFile="${revoked_signers}" \
+            -c gpg.minTrustLevel=fully \
+            verify-commit HEAD
+    } 2>&1)"; then
+        cat >&2 <<EOF
+chezmoi: refusing to read or execute an untrusted source state.
+
+${verification}
+
+Expected: HEAD signed for principal pingzi-dotfiles by the installed Commit CA.
+To inspect without executing chezmoi templates, use git directly:
+
+  git -C '${source_dir}' status
+  git -C '${source_dir}' log -1 --show-signature
+EOF
+        exit 1
+    fi
+fi
+
+export PERSONAL_CHEZMOI_VERIFIED=1
+exec "${real_chezmoi}" "$@"

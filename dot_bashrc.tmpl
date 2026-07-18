@@ -1,4 +1,5 @@
 {{- $personalConfig := includeTemplate "user-config.toml" . | fromToml }}
+export PATH="$HOME/.local/bin:$HOME/.local/share/chezmoi/scripts:$PATH"
 {{- if eq $personalConfig.proxy.backend "flclash" }}
 export HTTP_PROXY='http://127.0.0.1:{{ $personalConfig.proxy.flclash_http_port }}'
 export HTTPS_PROXY='http://127.0.0.1:{{ $personalConfig.proxy.flclash_http_port }}'

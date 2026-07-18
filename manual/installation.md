@@ -115,12 +115,16 @@
     visudo
     ```
     找到`%wheel ALL=(ALL:ALL) ALL`并删除行首注释。
-- 切换到普通用户并拉取、应用配置：
+- 切换到普通用户，以认证Bootstrap拉取并应用配置。原生`chezmoi init`会在验证Git签名之前解析仓库模板，因此不能直接用于首次拉取：
     ```sh
     su - pingzi
-    chezmoi init --apply https://github.com/YWh0301/dotfiles.git
+    git clone https://github.com/YWh0301/dotfiles.git d && \
+      (cd d; B=$(chezmoi age decrypt -p b) && eval "$B")
     ```
-- 首次运行会创建`~/.config/chezmoi/user.toml`并中止。使用`nvim ~/.config/chezmoi/user.toml`检查hostname、机器类型、时区、locale、Feature、代理与软件包Profile，然后再次运行`chezmoi apply`。
+  `b`是由高熵Passphrase认证加密的Bootstrap。它只在完整解密成功后运行，验证`main`的Commit CA签名，把临时仓库移动到`$(chezmoi source-path)`，安装仓库外的chezmoi验证Wrapper，然后才调用真正的`chezmoi init --apply`。明文Bootstrap只存在于Subshell内存，Subshell结束后自动消失。
+- 首次Bootstrap依次只要求一次仓库HTTPS密码（当前GitHub Public阶段不需要）、一次age解密密码和一次共享CA密码。共享CA密码在内存中复用于相互独立的SSH User CA与Dotfiles Commit CA，不写入命令行、环境变量或磁盘。
+- Bootstrap会创建`~/.config/chezmoi/user.toml`并自动打开编辑器。检查hostname、机器类型、时区、locale、Feature、代理与软件包Profile；保存退出后Bootstrap会自动继续第二次Apply。
+- `features.git_commit_signing`默认为`true`：为本机生成独立、无Passphrase且不能用于SSH登录的Commit叶子Key，由专用Commit CA签发证书，并在此仓库的`.git/config`中开启自动Commit/Tag签名。改为`false`后，下一次Apply会删除本机Commit证书并关闭自动签名；普通叶子Key保留以便以后重新启用。无论该Feature是否开启，chezmoi Wrapper都会继续拒绝未被Commit CA签名的源码状态，因此关闭它的机器只能安全消费配置，不能向受保护的`main`贡献合法Commit。
 - 完成后退出并重启：
     ```sh
     exit
@@ -132,6 +136,18 @@
 ## 第一次正常启动后
 
 - 为保险起见，可以登录后再运行一次`chezmoi apply`检查并补齐配置。
+
+### 已验证的日常操作
+
+正常使用方式不变：
+
+```sh
+git -C "$(chezmoi source-path)" commit -m '...'
+git -C "$(chezmoi source-path)" pull
+chezmoi apply
+```
+
+当`features.git_commit_signing = true`时，Commit和Tag自动签名且不提示密码。`~/.local/bin/chezmoi`会在解析任何模板或执行任何Run Script前验证当前`HEAD`；如需在验证失败时只检查仓库，请直接使用`git -C "$(chezmoi source-path)" status`和`git log -1 --show-signature`。不要用`/usr/bin/chezmoi`绕过Wrapper。
 
 ### 针对应用进行用户空间设置
 

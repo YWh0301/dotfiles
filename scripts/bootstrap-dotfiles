@@ -1,0 +1,89 @@
+#!/bin/bash
+set -euo pipefail
+
+: "${BOOTSTRAP_AGE_IDENTITY:?missing authenticated age identity}"
+: "${BOOTSTRAP_ALLOWED_SIGNERS:?missing authenticated Commit CA trust}"
+: "${BOOTSTRAP_COMMIT_CA_PUBLIC:?missing authenticated Commit CA public key}"
+
+repo=$(/usr/bin/git rev-parse --show-toplevel)
+if [[ $(/usr/bin/git -C "$repo" rev-parse --is-inside-work-tree) != true ]]; then
+    echo "Bootstrap must run from the cloned dotfiles repository." >&2
+    exit 1
+fi
+
+config_dir="${HOME}/.config/chezmoi"
+signing_dir="${HOME}/.local/share/dotfiles-signing"
+mkdir -p "$config_dir" "$signing_dir"
+chmod 700 "$config_dir" "$signing_dir"
+printf '%s\n' "$BOOTSTRAP_AGE_IDENTITY" >"${config_dir}/key.txt"
+printf '%s\n' "$BOOTSTRAP_ALLOWED_SIGNERS" >"${signing_dir}/allowed_signers"
+printf '%s\n' "$BOOTSTRAP_COMMIT_CA_PUBLIC" >"${signing_dir}/commit_ca.pub"
+: >"${signing_dir}/revoked_signers"
+chmod 600 "${config_dir}/key.txt"
+chmod 644 "${signing_dir}/allowed_signers" "${signing_dir}/commit_ca.pub" "${signing_dir}/revoked_signers"
+
+verify_head() {
+    /usr/bin/git -C "$repo" \
+        -c gpg.format=ssh \
+        -c gpg.ssh.allowedSignersFile="${signing_dir}/allowed_signers" \
+        -c gpg.ssh.revocationFile="${signing_dir}/revoked_signers" \
+        -c gpg.minTrustLevel=fully \
+        verify-commit HEAD
+}
+
+if ! verify_head; then
+    echo "Bootstrap refused an unsigned or untrusted dotfiles HEAD." >&2
+    exit 1
+fi
+
+target=$(/usr/bin/chezmoi source-path)
+if [[ "$repo" != "$target" ]]; then
+    if [[ -e "$target" ]]; then
+        echo "Refusing to replace existing chezmoi source directory: $target" >&2
+        exit 1
+    fi
+    mkdir -p "$(dirname "$target")"
+    mv -- "$repo" "$target"
+    repo="$target"
+    cd "$repo"
+fi
+
+/usr/bin/git -C "$repo" config --local gpg.format ssh
+/usr/bin/git -C "$repo" config --local gpg.ssh.allowedSignersFile "${signing_dir}/allowed_signers"
+/usr/bin/git -C "$repo" config --local gpg.ssh.revocationFile "${signing_dir}/revoked_signers"
+/usr/bin/git -C "$repo" config --local gpg.minTrustLevel fully
+
+mkdir -p "${HOME}/.local/bin"
+chmod 700 "${HOME}/.local/bin"
+install -m 755 "${repo}/dot_local/bin/executable_chezmoi" "${HOME}/.local/bin/chezmoi"
+export PATH="${HOME}/.local/bin:${PATH}"
+export PERSONAL_CHEZMOI_VERIFIED=1
+
+user_config="${HOME}/.config/chezmoi/user.toml"
+user_existed=false
+[[ -f "$user_config" ]] && user_existed=true
+
+if ! /usr/bin/chezmoi init --apply; then
+    if [[ "$user_existed" == false && -f "$user_config" ]]; then
+        editor=${EDITOR:-/usr/bin/nvim}
+        "$editor" "$user_config"
+        "${HOME}/.local/bin/chezmoi" apply
+    else
+        echo "chezmoi initialization failed after repository verification." >&2
+        exit 1
+    fi
+fi
+
+origin=$(/usr/bin/git -C "$repo" remote get-url origin 2>/dev/null || true)
+case "$origin" in
+    https://github.com/*)
+        /usr/bin/git -C "$repo" remote set-url origin "git@github.com:${origin#https://github.com/}"
+        ;;
+esac
+
+cat <<'EOF'
+
+Verified dotfiles bootstrap completed.
+Future commits are signed automatically when features.git_commit_signing=true.
+Every invocation through ~/.local/bin/chezmoi verifies the source HEAD first.
+EOF

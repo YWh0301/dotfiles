@@ -1,0 +1,260 @@
+#!/usr/bin/python
+{{- $userConfig := includeTemplate "user-config.toml" . | fromToml }}
+
+from __future__ import annotations
+
+from datetime import datetime, timedelta
+import getpass
+import os
+from pathlib import Path
+import pty
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import termios
+import time
+
+HOME = Path.home()
+SOURCE = Path({{ .chezmoi.sourceDir | toJson }})
+IDENTITY = {{ $userConfig.identity.name | quote }}
+HOSTNAME = {{ $userConfig.machine.hostname | quote }}
+SSH_CERT_ENABLED = {{ if $userConfig.features.ssh_user_cert }}True{{ else }}False{{ end }}
+COMMIT_SIGNING_ENABLED = {{ if (dig "git_commit_signing" true $userConfig.features) }}True{{ else }}False{{ end }}
+
+SSH_DIR = HOME / ".ssh"
+SSH_KEY = SSH_DIR / "id_ed25519"
+SSH_CERT = SSH_DIR / "id_ed25519-cert.pub"
+USER_CA = HOME / ".local/share/ssh-ca/user_ca"
+
+SIGNING_DIR = HOME / ".local/share/dotfiles-signing"
+SIGNING_KEY = SIGNING_DIR / "id_ed25519"
+SIGNING_CERT = SIGNING_DIR / "id_ed25519-cert.pub"
+COMMIT_CA = SIGNING_DIR / "commit_ca"
+ALLOWED_SIGNERS = SIGNING_DIR / "allowed_signers"
+COMMIT_PRINCIPAL = "pingzi-dotfiles"
+
+
+def run(*args: str, capture: bool = False) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        args,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE if capture else None,
+        stderr=subprocess.PIPE if capture else None,
+    )
+
+
+def ensure_key(private_key: Path, comment: str) -> None:
+    private_key.parent.mkdir(parents=True, exist_ok=True)
+    private_key.parent.chmod(0o700)
+    public_key = Path(f"{private_key}.pub")
+    if not private_key.exists():
+        run("/usr/bin/ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-C", comment, "-f", str(private_key))
+    if not public_key.exists():
+        result = run("/usr/bin/ssh-keygen", "-y", "-f", str(private_key), capture=True)
+        public_key.write_text(result.stdout)
+    private_key.chmod(0o600)
+    public_key.chmod(0o644)
+
+
+def fingerprint(path: Path) -> str:
+    return run("/usr/bin/ssh-keygen", "-lf", str(path), capture=True).stdout.split()[1]
+
+
+def certificate_valid(certificate: Path, public_key: Path, ca_public: Path, principal: str) -> bool:
+    if not certificate.is_file() or not public_key.is_file() or not ca_public.is_file():
+        return False
+    try:
+        text = run("/usr/bin/ssh-keygen", "-L", "-f", str(certificate), capture=True).stdout
+        public_match = re.search(r"^\s*Public key:.*(SHA256:[^ ]+)$", text, re.MULTILINE)
+        ca_match = re.search(r"^\s*Signing CA:.*(SHA256:[^ ]+)", text, re.MULTILINE)
+        valid_match = re.search(r"^\s*Valid: from ([^ ]+) to ([^ ]+)$", text, re.MULTILINE)
+        principals_match = re.search(
+            r"^\s*Principals:\s*$\n(?P<body>.*?)(?=^\s*Critical Options:)",
+            text,
+            re.MULTILINE | re.DOTALL,
+        )
+        if not all((public_match, ca_match, valid_match, principals_match)):
+            return False
+        principals = {line.strip() for line in principals_match.group("body").splitlines() if line.strip()}
+        expires = datetime.fromisoformat(valid_match.group(2))
+        return (
+            public_match.group(1) == fingerprint(public_key)
+            and ca_match.group(1) == fingerprint(ca_public)
+            and principal in principals
+            and expires > datetime.now() + timedelta(days=30)
+        )
+    except (OSError, ValueError, subprocess.CalledProcessError):
+        return False
+
+
+def run_with_ca_passphrase(args: list[str], passphrase: str) -> None:
+    """Run ssh-keygen on a PTY and answer all CA passphrase prompts from memory."""
+    pid, fd = pty.fork()
+    if pid == 0:
+        env = os.environ.copy()
+        env.update({"LC_ALL": "C", "LANG": "C"})
+        os.execve(args[0], args, env)
+
+    transcript = bytearray()
+    searched = 0
+    try:
+        while True:
+            try:
+                chunk = os.read(fd, 4096)
+            except OSError:
+                break
+            if not chunk:
+                break
+            transcript.extend(chunk)
+            while True:
+                prompt = transcript.find(b"Enter passphrase", searched)
+                if prompt < 0:
+                    searched = max(searched, len(transcript) - 256)
+                    break
+                prompt_end = transcript.find(b": ", prompt)
+                if prompt_end < 0:
+                    searched = prompt
+                    break
+                os.write(fd, passphrase.encode() + b"\n")
+                searched = prompt_end + 2
+    finally:
+        os.close(fd)
+
+    _, status = os.waitpid(pid, 0)
+    if os.waitstatus_to_exitcode(status) != 0:
+        raise RuntimeError("ssh-keygen rejected the shared CA passphrase or failed to sign")
+
+
+def sign_certificate(
+    *, ca: Path, public_key: Path, destination: Path, key_id: str, principal: str,
+    clear_extensions: bool, passphrase: str, temporary_dir: Path,
+) -> None:
+    temporary_public = temporary_dir / f"{destination.parent.name}-{public_key.name}"
+    shutil.copyfile(public_key, temporary_public)
+    args = [
+        "/usr/bin/ssh-keygen", "-s", str(ca), "-I", key_id,
+        "-n", principal, "-V", "-5m:+52w", "-z", str(time.time_ns()),
+    ]
+    if clear_extensions:
+        args.extend(["-O", "clear"])
+    args.append(str(temporary_public))
+    run_with_ca_passphrase(args, passphrase)
+    generated = temporary_public.with_name(f"{temporary_public.stem}-cert.pub")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(generated, destination)
+    destination.chmod(0o644)
+
+
+def git_config(key: str, value: str | None) -> None:
+    command = ["/usr/bin/git", "-C", str(SOURCE), "config", "--local"]
+    if value is None:
+        subprocess.run([*command, "--unset-all", key], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        run(*command, key, value)
+
+
+def tty_readline(fd: int) -> str:
+    value = bytearray()
+    while True:
+        byte = os.read(fd, 1)
+        if not byte or byte in {b"\n", b"\r"}:
+            return value.decode()
+        value.extend(byte)
+
+
+def tty_secret(fd: int, prompt: str) -> str:
+    previous = termios.tcgetattr(fd)
+    hidden = termios.tcgetattr(fd)
+    hidden[3] &= ~termios.ECHO
+    os.write(fd, prompt.encode())
+    try:
+        termios.tcsetattr(fd, termios.TCSANOW, hidden)
+        return tty_readline(fd)
+    finally:
+        termios.tcsetattr(fd, termios.TCSANOW, previous)
+        os.write(fd, b"\n")
+
+
+ensure_key(SSH_KEY, f"{IDENTITY}@{HOSTNAME}")
+ensure_key(SIGNING_KEY, f"dotfiles-signing@{HOSTNAME}")
+
+if not SSH_CERT_ENABLED:
+    SSH_CERT.unlink(missing_ok=True)
+if not COMMIT_SIGNING_ENABLED:
+    SIGNING_CERT.unlink(missing_ok=True)
+
+user_ca_public = Path(f"{USER_CA}.pub")
+commit_ca_public = Path(f"{COMMIT_CA}.pub")
+need_user = SSH_CERT_ENABLED and not certificate_valid(
+    SSH_CERT, Path(f"{SSH_KEY}.pub"), user_ca_public, getpass.getuser()
+)
+need_commit = COMMIT_SIGNING_ENABLED and not certificate_valid(
+    SIGNING_CERT, Path(f"{SIGNING_KEY}.pub"), commit_ca_public, COMMIT_PRINCIPAL
+)
+
+if need_user and (not USER_CA.is_file() or not user_ca_public.is_file()):
+    raise SystemExit("SSH User CA enrollment is enabled, but the User CA is not installed")
+if need_commit and (not COMMIT_CA.is_file() or not commit_ca_public.is_file()):
+    raise SystemExit("Git commit signing is enabled, but the Dotfiles Commit CA is not installed")
+
+if need_user or need_commit:
+    tty_fd = os.open("/dev/tty", os.O_RDWR)
+    try:
+        lines = ["Personal certificate enrollment", ""]
+        if need_user:
+            lines.append(f"  SSH user certificate: {fingerprint(Path(f'{SSH_KEY}.pub'))}")
+        if need_commit:
+            lines.append(f"  Git signing certificate: {fingerprint(Path(f'{SIGNING_KEY}.pub'))}")
+        lines.extend(["  Validity: -5m:+52w", "", "Issue the required certificate(s)? [y/N] "])
+        os.write(tty_fd, "\n".join(lines).encode())
+        answer = tty_readline(tty_fd).strip().lower()
+        if answer not in {"y", "yes"}:
+            raise SystemExit("Certificate enrollment cancelled")
+        passphrase = tty_secret(tty_fd, "Shared User/Commit CA passphrase: ")
+    finally:
+        os.close(tty_fd)
+    try:
+        with tempfile.TemporaryDirectory(prefix="personal-certificates-") as directory:
+            temporary_dir = Path(directory)
+            if need_user:
+                sign_certificate(
+                    ca=USER_CA,
+                    public_key=Path(f"{SSH_KEY}.pub"),
+                    destination=SSH_CERT,
+                    key_id=f"{IDENTITY}@{HOSTNAME}-{datetime.now():%Y%m%d}",
+                    principal=getpass.getuser(),
+                    clear_extensions=False,
+                    passphrase=passphrase,
+                    temporary_dir=temporary_dir,
+                )
+            if need_commit:
+                sign_certificate(
+                    ca=COMMIT_CA,
+                    public_key=Path(f"{SIGNING_KEY}.pub"),
+                    destination=SIGNING_CERT,
+                    key_id=f"dotfiles@{HOSTNAME}-{datetime.now():%Y%m%d}",
+                    principal=COMMIT_PRINCIPAL,
+                    clear_extensions=True,
+                    passphrase=passphrase,
+                    temporary_dir=temporary_dir,
+                )
+    finally:
+        passphrase = ""
+
+# Verification remains configured even on read-only machines that have disabled
+# local commit signing. The feature controls signing capability, not trust checks.
+git_config("gpg.format", "ssh")
+git_config("gpg.ssh.allowedSignersFile", str(ALLOWED_SIGNERS))
+git_config("gpg.ssh.revocationFile", str(SIGNING_DIR / "revoked_signers"))
+git_config("gpg.minTrustLevel", "fully")
+if COMMIT_SIGNING_ENABLED:
+    git_config("user.signingKey", str(Path(f"{SIGNING_KEY}-cert.pub")))
+    git_config("commit.gpgSign", "true")
+    git_config("tag.gpgSign", "true")
+else:
+    git_config("user.signingKey", None)
+    git_config("commit.gpgSign", None)
+    git_config("tag.gpgSign", None)

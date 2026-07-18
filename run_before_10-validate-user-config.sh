@@ -40,6 +40,8 @@ for section, key in (("kitty", "font_size"), ("sshd", "port"), ("wayvnc", "port"
 features = config.get("features", {})
 for key in ("localsend", "sshd", "ssh_user_cert", "wayvnc", "tailscale", "firewall", "snapper", "autologin"):
     require(isinstance(features.get(key), bool), f"features.{key} must be boolean")
+require(isinstance(features.get("git_commit_signing", True), bool),
+        "features.git_commit_signing must be boolean when set")
 
 package_profiles = config.get("packages", {}).get("profiles", [])
 require(isinstance(package_profiles, list), "packages.profiles must be a list")
