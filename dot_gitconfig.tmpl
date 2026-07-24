@@ -1,4 +1,5 @@
 {{- $userConfig := includeTemplate "user-config.toml" . | fromToml -}}
+{{- $servers := includeTemplate "servers-config.toml" . | fromToml -}}
 [user]
 	email = {{ $userConfig.git.email }}
 	name = {{ $userConfig.identity.name }}
@@ -59,6 +60,12 @@
 {{- $originPatterns := dig "signed_origin_patterns" (list "git@github.com:YWh0301/**" "https://github.com/YWh0301/**") $userConfig.git }}
 {{- range $pattern := $originPatterns }}
 [includeIf "hasconfig:remote.*.url:{{ $pattern }}"]
+    path = ~/.config/git/personal-origin-signing.conf
+{{- end }}
+{{- if $servers.enabled }}
+# The private Servers repository reuses the same Commit CA and hooks. Its
+# checkout sets personal.signaturePolicy=enforce in repository-local config.
+[includeIf "hasconfig:remote.*.url:{{ $servers.repository_url }}"]
     path = ~/.config/git/personal-origin-signing.conf
 {{- end }}
 

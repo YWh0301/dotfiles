@@ -1,0 +1,2 @@
+{{- $servers := includeTemplate "servers-config.toml" . | fromToml -}}
+{{ $servers.ssh_alias }} {{ $servers.ssh_host_key }}

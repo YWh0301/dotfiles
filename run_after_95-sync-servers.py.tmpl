@@ -1,0 +1,154 @@
+#!/usr/bin/python
+{{- $servers := includeTemplate "servers-config.toml" . | fromToml }}
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tempfile
+
+ENABLED = {{ if $servers.enabled }}True{{ else }}False{{ end }}
+ROOT = Path({{ $servers.root | toJson }})
+REPOSITORY_URL = {{ $servers.repository_url | toJson }}
+BRANCH = {{ $servers.branch | toJson }}
+
+
+def git(*arguments: str, cwd: Path | None = None, capture: bool = False) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["/usr/bin/git", *arguments],
+        cwd=cwd,
+        text=True,
+        stdout=subprocess.PIPE if capture else None,
+        stderr=subprocess.PIPE if capture else None,
+        check=False,
+    )
+
+
+def require_success(result: subprocess.CompletedProcess[str], action: str) -> None:
+    if result.returncode == 0:
+        return
+    detail = ((result.stdout or "") + (result.stderr or "")).strip()
+    raise RuntimeError(f"{action} failed" + (f":\n{detail}" if detail else ""))
+
+
+def verify_commit(repository: Path, revision: str) -> None:
+    result = git("-C", str(repository), "verify-commit", revision, capture=True)
+    require_success(result, f"signature verification for {revision}")
+
+
+def configure_enforcement(repository: Path) -> None:
+    result = git(
+        "-C", str(repository), "config", "--local",
+        "personal.signaturePolicy", "enforce", capture=True,
+    )
+    require_success(result, "configuring enforce signature policy")
+
+
+def verify_origin(repository: Path) -> None:
+    result = git("-C", str(repository), "remote", "get-url", "origin", capture=True)
+    require_success(result, "reading Servers origin")
+    actual = result.stdout.strip()
+    if actual != REPOSITORY_URL:
+        raise RuntimeError(
+            "Servers origin differs from encrypted chezmoi bootstrap intent:\n"
+            f"  expected: {REPOSITORY_URL}\n"
+            f"  actual:   {actual}"
+        )
+
+
+def ensure_environment(repository: Path) -> None:
+    if (repository / ".venv/bin/python").is_file():
+        return
+    uv = shutil.which("uv")
+    if uv is None:
+        print(
+            "servers: trusted repository is present, but uv is unavailable; "
+            "run 'uv sync --frozen' after installing uv",
+            file=sys.stderr,
+        )
+        return
+    result = subprocess.run([uv, "sync", "--frozen"], cwd=repository, check=False)
+    if result.returncode != 0:
+        raise RuntimeError("uv sync --frozen failed for the trusted Servers HEAD")
+
+
+def clone_repository() -> None:
+    ROOT.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix=".servers.clone-", dir=ROOT.parent))
+    try:
+        result = git(
+            "clone", "--origin", "origin", "--branch", BRANCH,
+            "--single-branch", REPOSITORY_URL, str(temporary),
+        )
+        require_success(result, "cloning Servers")
+        verify_origin(temporary)
+        verify_commit(temporary, "HEAD")
+        configure_enforcement(temporary)
+        os.replace(temporary, ROOT)
+    finally:
+        if temporary.exists():
+            shutil.rmtree(temporary)
+    ensure_environment(ROOT)
+    print(f"servers: installed latest trusted {BRANCH} at {ROOT}")
+
+
+def fetch_repository() -> None:
+    verify_origin(ROOT)
+    configure_enforcement(ROOT)
+    verify_commit(ROOT, "HEAD")
+    remote_ref = f"refs/remotes/origin/{BRANCH}"
+    result = git(
+        "-C", str(ROOT), "fetch", "--prune", "origin",
+        f"refs/heads/{BRANCH}:{remote_ref}", capture=True,
+    )
+    if result.returncode != 0:
+        detail = ((result.stdout or "") + (result.stderr or "")).strip()
+        print(
+            "servers: fetch failed; retaining the verified local HEAD"
+            + (f":\n{detail}" if detail else ""),
+            file=sys.stderr,
+        )
+        ensure_environment(ROOT)
+        return
+    verify_commit(ROOT, remote_ref)
+    counts = git(
+        "-C", str(ROOT), "rev-list", "--left-right", "--count",
+        f"HEAD...{remote_ref}", capture=True,
+    )
+    require_success(counts, "comparing local and remote Servers revisions")
+    ahead, behind = counts.stdout.strip().split()
+    local = git("-C", str(ROOT), "rev-parse", "--short", "HEAD", capture=True)
+    remote = git("-C", str(ROOT), "rev-parse", "--short", remote_ref, capture=True)
+    require_success(local, "reading local Servers revision")
+    require_success(remote, "reading remote Servers revision")
+    print(f"servers: local {local.stdout.strip()}, origin/{BRANCH} {remote.stdout.strip()}")
+    print(f"servers: ahead {ahead}, behind {behind}; fetched only, working tree unchanged")
+    ensure_environment(ROOT)
+
+
+def main() -> int:
+    if not ENABLED:
+        return 0
+    try:
+        if ROOT.exists() and not (ROOT / ".git").is_dir():
+            print(
+                f"servers: bootstrap deferred because {ROOT} already exists and is not a Git repository; "
+                "migrate the existing image artifacts before installing the fixed checkout",
+                file=sys.stderr,
+            )
+            return 0
+        if ROOT.exists():
+            fetch_repository()
+        else:
+            clone_repository()
+        return 0
+    except (OSError, RuntimeError, ValueError) as error:
+        print(f"servers: {error}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

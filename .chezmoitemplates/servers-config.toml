@@ -1,0 +1,17 @@
+{{- $userConfig := includeTemplate "user-config.toml" . | fromToml -}}
+{{- $servers := $userConfig.servers -}}
+{{- $root := joinPath .chezmoi.homeDir $servers.root -}}
+enabled = {{ $servers.enabled }}
+root = {{ $root | toJson }}
+scripts = {{ joinPath $root "scripts" | toJson }}
+serverctl = {{ joinPath $root "scripts" "serverctl" | toJson }}
+repository_url = {{ $servers.repository_url | toJson }}
+branch = {{ $servers.branch | toJson }}
+ssh_alias = {{ $servers.ssh.alias | toJson }}
+ssh_hostname = {{ $servers.ssh.hostname | toJson }}
+ssh_port = {{ $servers.ssh.port }}
+ssh_user = {{ $servers.ssh.user | toJson }}
+ssh_identity_file = {{ $servers.ssh.identity_file | toJson }}
+ssh_certificate_file = {{ $servers.ssh.certificate_file | toJson }}
+ssh_host_key = {{ $servers.ssh.host_key | toJson }}
+known_hosts_file = {{ joinPath .chezmoi.homeDir ".ssh" "known_hosts.personal-servers" | toJson }}

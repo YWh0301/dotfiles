@@ -1,5 +1,20 @@
 {{- $userConfig := includeTemplate "user-config.toml" . | fromToml -}}
-{{- range $userConfig.ssh.hosts -}}
+{{- $servers := includeTemplate "servers-config.toml" . | fromToml -}}
+{{- if $servers.enabled }}
+Host {{ $servers.ssh_alias }}
+    HostName {{ $servers.ssh_hostname }}
+    User {{ $servers.ssh_user }}
+    Port {{ $servers.ssh_port }}
+    IdentityFile {{ $servers.ssh_identity_file }}
+    CertificateFile {{ $servers.ssh_certificate_file }}
+    IdentitiesOnly yes
+    StrictHostKeyChecking yes
+    UpdateHostKeys no
+    HostKeyAlias {{ $servers.ssh_alias }}
+    UserKnownHostsFile {{ $servers.known_hosts_file }}
+
+{{ end }}
+{{ range $userConfig.ssh.hosts -}}
 Host {{ .name }}
     HostName {{ .hostname }}
     User {{ .user }}

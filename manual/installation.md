@@ -127,6 +127,8 @@
 - `features.git_commit_signing`默认为`true`：为本机生成独立、无Passphrase且不能用于SSH登录的Dotfiles Commit叶子Key，由Dotfiles Commit CA签发证书，并在此仓库的`.git/config`中开启自动Commit/Tag签名。改为`false`后，下一次Apply会删除本机Commit证书并关闭自动签名；普通叶子Key保留以便以后重新启用。无论该Feature是否开启，chezmoi Wrapper都会继续拒绝未被Dotfiles Commit CA签名的源码状态，因此关闭它的机器只能安全消费配置，不能向受保护的`main`贡献合法Commit。
 - `git.general_commit_signing`默认为`true`：使用相互独立的Personal Git Commit CA为本机签发`pingzi-git`叶子证书。`git.signed_origin_patterns`选择需要该策略的远端；当前同时匹配`git@github.com:YWh0301/**`和`https://github.com/YWh0301/**`，未来可追加自建Git的稳定SSH别名。匹配仓库中的普通`git commit`、`git tag`和Merge默认自动签名。
 - `git.signature_policy`支持`warn`、`ask`和`enforce`。迁移期默认为`ask`：可信Hook会在Clone/Checkout、Commit、Merge/Pull、Rewrite和Push时检查当前或将要推送的Tip；旧仓库缺少可信签名时会显示醒目警告，并在有TTY时询问`[y/N]`。非交互任务仍按警告处理，避免突然破坏既有自动化；`enforce`才会无条件返回失败。Checkout、Merge等Post Hook发生时工作区可能已经更新，回答`N`会让Git命令返回失败但不会自动回滚，必须先检查`git log -1 --show-signature`。仓库自己的额外Hook可放在`.git/hooks-local/`，由可信Hook在签名检查后继续调用。
+- 加密的`[servers]`配置保存私有Servers仓库的固定安装目录、SSH Alias、Remote URL和经控制台确认的Host Key。Apply在SSH User Certificate签发后将缺失的仓库安装到`~/.local/share/servers`；已有仓库只执行Fetch，不自动Pull、Merge、Rebase或Reset。同步脚本在Clone和Fetch后显式验证Personal Git Commit CA，并把该仓库的本地`personal.signaturePolicy`固定为`enforce`；其他个人仓库继续使用全局`ask`策略。
+- `~/.local/share/servers/scripts`由chezmoi加入交互式`PATH`，同时导出`PERSONAL_SERVERS_ROOT`。非交互配置仍应从同一加密变量派生绝对路径，不依赖Shell是否已重新载入。Servers Bootstrap中的Endpoint和Host Key是私有仓库首次Clone前不可避免的最小副本；仓库提供对应只读Observation后，由同步脚本检查两侧是否一致。
 - 完成后退出并重启：
     ```sh
     exit

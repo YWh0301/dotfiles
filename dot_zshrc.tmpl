@@ -1,7 +1,13 @@
 {{- $personalConfig := includeTemplate "user-config.toml" . | fromToml }}
+{{- $servers := includeTemplate "servers-config.toml" . | fromToml }}
 case ":$PATH:" in
     *":$HOME/.local/bin:"*) ;;
     *) export PATH="$HOME/.local/bin:$PATH" ;;
+esac
+export PERSONAL_SERVERS_ROOT={{ $servers.root | quote }}
+case ":$PATH:" in
+    *":$PERSONAL_SERVERS_ROOT/scripts:"*) ;;
+    *) export PATH="$PERSONAL_SERVERS_ROOT/scripts:$PATH" ;;
 esac
 source /usr/share/zsh/share/antigen.zsh
 
