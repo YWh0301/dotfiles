@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -14,17 +15,44 @@ ENABLED = {{ if $servers.enabled }}True{{ else }}False{{ end }}
 ROOT = Path({{ $servers.root | toJson }})
 REPOSITORY_URL = {{ $servers.repository_url | toJson }}
 BRANCH = {{ $servers.branch | toJson }}
+NETWORK_TIMEOUT_SECONDS = 90
 
 
-def git(*arguments: str, cwd: Path | None = None, capture: bool = False) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["/usr/bin/git", *arguments],
+def git(
+    *arguments: str,
+    cwd: Path | None = None,
+    capture: bool = False,
+    timeout: int | None = None,
+) -> subprocess.CompletedProcess[str]:
+    command = ["/usr/bin/git", *arguments]
+    if timeout is None:
+        return subprocess.run(
+            command,
+            cwd=cwd,
+            text=True,
+            stdout=subprocess.PIPE if capture else None,
+            stderr=subprocess.PIPE if capture else None,
+            check=False,
+        )
+    process = subprocess.Popen(
+        command,
         cwd=cwd,
         text=True,
         stdout=subprocess.PIPE if capture else None,
         stderr=subprocess.PIPE if capture else None,
-        check=False,
+        start_new_session=True,
     )
+    try:
+        stdout, stderr = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, signal.SIGTERM)
+        try:
+            process.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            os.killpg(process.pid, signal.SIGKILL)
+            process.communicate()
+        raise
+    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
 
 def require_success(result: subprocess.CompletedProcess[str], action: str) -> None:
@@ -82,6 +110,7 @@ def clone_repository() -> None:
         result = git(
             "clone", "--origin", "origin", "--branch", BRANCH,
             "--single-branch", REPOSITORY_URL, str(temporary),
+            timeout=NETWORK_TIMEOUT_SECONDS,
         )
         require_success(result, "cloning Servers")
         verify_origin(temporary)
@@ -100,10 +129,19 @@ def fetch_repository() -> None:
     configure_enforcement(ROOT)
     verify_commit(ROOT, "HEAD")
     remote_ref = f"refs/remotes/origin/{BRANCH}"
-    result = git(
-        "-C", str(ROOT), "fetch", "--prune", "origin",
-        f"refs/heads/{BRANCH}:{remote_ref}", capture=True,
-    )
+    try:
+        result = git(
+            "-C", str(ROOT), "fetch", "--prune", "origin",
+            f"refs/heads/{BRANCH}:{remote_ref}", capture=True,
+            timeout=NETWORK_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        print(
+            "servers: fetch timed out; retaining the verified local HEAD",
+            file=sys.stderr,
+        )
+        ensure_environment(ROOT)
+        return
     if result.returncode != 0:
         detail = ((result.stdout or "") + (result.stderr or "")).strip()
         print(
@@ -145,7 +183,7 @@ def main() -> int:
         else:
             clone_repository()
         return 0
-    except (OSError, RuntimeError, ValueError) as error:
+    except (OSError, RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
         print(f"servers: {error}", file=sys.stderr)
         return 1
 

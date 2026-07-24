@@ -39,6 +39,8 @@ class ServersBootstrapTest(unittest.TestCase):
             path.write_text(text, encoding="utf-8")
             py_compile.compile(str(path), doraise=True)
         self.assertIn('"fetch", "--prune"', text)
+        self.assertIn("NETWORK_TIMEOUT_SECONDS = 90", text)
+        self.assertIn("timeout=NETWORK_TIMEOUT_SECONDS", text)
         self.assertIn('"personal.signaturePolicy", "enforce"', text)
         self.assertNotIn('"pull"', text)
         self.assertNotIn('"merge"', text)
